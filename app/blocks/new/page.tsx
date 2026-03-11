@@ -1,621 +1,264 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import Generating from "./_components/Generating";
-import ReviewEdit from "./_components/ReviewEdit";
+import type { BlockData } from "@/lib/types";
 
-/** ---------------- Types ---------------- */
+type Step = "form" | "generating";
 
-export type Accent = "blue" | "green" | "orange" | "purple";
-
-export type ValuePoint = {
-  title: string;
-  text: string;
-  accent: Accent;
-};
-
-export type BlockData = {
-  eyebrow: string;
-  headline: string;
-  subheading: string;
-  imageUrl?: string;
-  valuePoints: ValuePoint[];
-};
-
-type Generated = {
-  name: string;
-  blockData: BlockData;
-  css: string;
+type GenerateResponse = {
+  name?: string;
+  blockData?: BlockData;
+  css?: string;
   notes?: string[];
 };
 
-type Step = "create" | "generating" | "review";
+const progressLabels = [
+  "Analysing prompt...",
+  "Applying Kiwa governance...",
+  "Validating accessibility...",
+  "Generating layout structure...",
+  "Rendering preview...",
+  "Finalising block...",
+];
 
-type Governance = {
-  score: number;
-  checks: Array<{ id: string; label: string; ok: boolean }>;
-  bannedHit?: string | null;
-} | null;
-
-/** ---------------- Helpers ---------------- */
-
-function escapeHtml(s: string) {
-  return (s || "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function renderHtml(block: BlockData) {
-  const acc = (a: string) => `ac-${a}`;
-
-  return `
-<section class="visionir-wrap">
-  <div class="visionir-inner">
-    <div class="visionir-grid">
-      <div>
-        <p class="visionir-eyebrow">${escapeHtml(block.eyebrow)}</p>
-        <h2 class="visionir-h">${escapeHtml(block.headline)}</h2>
-        <p class="visionir-sub">${escapeHtml(block.subheading)}</p>
-
-        <div class="visionir-cards">
-          ${block.valuePoints
-            .map(
-              (v) => `
-            <div class="visionir-card ${acc(v.accent)}">
-              <p class="t">${escapeHtml(v.title)}</p>
-              <p class="p">${escapeHtml(v.text)}</p>
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-      </div>
-
-      <div class="visionir-img">
-        ${
-          block.imageUrl
-            ? `<img src="${block.imageUrl}" alt="Supporting image" />`
-            : `<div style="height:360px;border-radius:18px;background:#eef2ff"></div>`
-        }
-      </div>
-    </div>
-  </div>
-</section>
-`.trim();
-}
-
-function applyPatch(prev: BlockData, patch: any): BlockData {
-  const next = structuredClone(prev);
-
-  if (typeof patch?.eyebrow === "string") next.eyebrow = patch.eyebrow;
-  if (typeof patch?.headline === "string") next.headline = patch.headline;
-  if (typeof patch?.subheading === "string") next.subheading = patch.subheading;
-
-  if (Array.isArray(patch?.valuePoints)) {
-    next.valuePoints = patch.valuePoints;
-  } else if (patch?.valuePoints && typeof patch.valuePoints === "object") {
-    for (const [k, v] of Object.entries(patch.valuePoints)) {
-      const idx = Number(k);
-      if (!Number.isFinite(idx) || !next.valuePoints[idx]) continue;
-      const item: any = v;
-      if (typeof item.title === "string") next.valuePoints[idx].title = item.title;
-      if (typeof item.text === "string") next.valuePoints[idx].text = item.text;
-      if (typeof item.accent === "string") next.valuePoints[idx].accent = item.accent;
-    }
-  }
-
-  return next;
-}
-
-function computeGovernanceLocal(block: BlockData): Governance {
-  const checks: Array<{ id: string; label: string; ok: boolean }> = [];
-
-  checks.push({ id: "eyebrow_len", label: "Eyebrow ≤ 60 characters", ok: (block.eyebrow || "").length <= 60 });
-  checks.push({ id: "headline_len", label: "Headline ≤ 80 characters", ok: (block.headline || "").length <= 80 });
-  checks.push({ id: "subheading_len", label: "Subheading ≤ 220 characters", ok: (block.subheading || "").length <= 220 });
-
-  checks.push({ id: "vp_count", label: "Exactly 4 value points", ok: Array.isArray(block.valuePoints) && block.valuePoints.length === 4 });
-
-  const accents = ["blue", "green", "orange", "purple"];
-  const accentOk =
-    Array.isArray(block.valuePoints) &&
-    block.valuePoints.length === 4 &&
-    block.valuePoints.every((vp, i) => vp.accent === accents[i]);
-  checks.push({ id: "accent_order", label: "Accent tokens enforced (blue/green/orange/purple)", ok: !!accentOk });
-
-  const bannedWords = ["cheap", "guarantee", "best in class"];
-  const joined = [
-    block.eyebrow,
-    block.headline,
-    block.subheading,
-    ...(block.valuePoints || []).flatMap((v) => [v.title, v.text]),
-  ]
-    .join(" ")
-    .toLowerCase();
-  const bannedHit = bannedWords.find((w) => joined.includes(w));
-  checks.push({ id: "banned_words", label: "No banned claims/phrases", ok: !bannedHit });
-
-  const passed = checks.filter((c) => c.ok).length;
-  const score = Math.round((passed / checks.length) * 100);
-
-  return { score, checks, bannedHit: bannedHit || null };
-}
-
-/** ---------------- Page ---------------- */
-
-export default function CreateBlockPage() {
+export default function NewBlockPage() {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("create");
+
+  const [step, setStep] = useState<Step>("form");
 
   const [blockName, setBlockName] = useState("Why Choose Kiwa Agri-Food");
-  const [usedFor, setUsedFor] = useState("Food, Feed & Agriculture");
-  const [category, setCategory] = useState("Why Choose Us");
+  const [location, setLocation] = useState("Kiwa Agri-Food");
   const [prompt, setPrompt] = useState(
-    [
-      'Create a “Why Choose Kiwa Agri Food” content block.',
-      "Include a strong headline, short introduction paragraph, and four value points.",
-      "Each value point should use a different Kiwa brand colour accent.",
-      "Include the supplied farmer image as a supporting visual.",
-      "Maintain a professional, compliance-focused tone.",
-    ].join("\n")
+    'Create a "Why Choose Kiwa Agri-Food" content block. Include a strong headline, short introduction paragraph, and four value points. Each value point should use a different Kiwa brand colour accent. Include the supplied farmer image as a supporting visual. Maintain a professional, compliance-focused tone.'
   );
-
-  const GENERATE_DURATION_MS = 7000;
-
-  const [loading, setLoading] = useState(false);
-  const [data, setData] = useState<Generated | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const [progress, setProgress] = useState(0);
-  const [progressLabel, setProgressLabel] = useState("Generating block structure… 0%");
+  const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const [editable, setEditable] = useState<BlockData | null>(null);
-  const [describe, setDescribe] = useState("");
+  const progressLabel = useMemo(() => {
+    if (progress < 15) return progressLabels[0];
+    if (progress < 30) return progressLabels[1];
+    if (progress < 45) return progressLabels[2];
+    if (progress < 65) return progressLabels[3];
+    if (progress < 85) return progressLabels[4];
+    return progressLabels[5];
+  }, [progress]);
 
-  const [pendingPatch, setPendingPatch] = useState<any | null>(null);
-  const [patchNotes, setPatchNotes] = useState<string[]>([]);
-  const [changeLog, setChangeLog] = useState<string[]>([]);
-  const [governance, setGovernance] = useState<Governance>(null);
-  const [versions, setVersions] = useState<Array<{ ts: number; block: BlockData; notes: string[] }>>([]);
+  useEffect(() => {
+    if (step !== "generating") return;
+    if (progress >= 92) return;
 
-  const [approvalStatus, setApprovalStatus] = useState<"none" | "pending" | "approved" | "rejected">("none");
-  const [approvalId, setApprovalId] = useState<string | null>(null);
+    const timer = window.setInterval(() => {
+      setProgress((p) => Math.min(p + Math.floor(Math.random() * 8) + 4, 92));
+    }, 220);
 
-  const runIdRef = useRef(0);
+    return () => window.clearInterval(timer);
+  }, [step, progress]);
 
-  const previewDoc = useMemo(() => {
-    if (!editable || !data) return "";
-    const html = renderHtml(editable);
-
-    return `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<style>${data.css}</style>
-</head>
-<body>${html}</body>
-</html>`;
-  }, [editable, data]);
-
-  async function onGenerate() {
+  async function handleGenerate() {
     setError(null);
-    setLoading(true);
+    setIsGenerating(true);
     setStep("generating");
+    setProgress(8);
 
-    setPendingPatch(null);
-    setPatchNotes([]);
-    setChangeLog([]);
-    setVersions([]);
-    setApprovalStatus("none");
-    setApprovalId(null);
+    try {
+      const generateRes = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ blockName, location, prompt }),
+      });
 
-    const myRun = ++runIdRef.current;
+      const generateJson = (await generateRes.json().catch(() => ({}))) as GenerateResponse;
 
-    setProgress(0);
-    setProgressLabel("Generating block structure… 0%");
+      if (!generateRes.ok || !generateJson?.blockData) {
+        throw new Error("Failed to generate block");
+      }
 
-    const START = performance.now();
-    const tick = (now: number) => {
-      if (runIdRef.current !== myRun) return;
-      const elapsed = now - START;
-      const pct = Math.min(100, Math.round((elapsed / GENERATE_DURATION_MS) * 100));
-      setProgress(pct);
-      setProgressLabel(`Generating block structure… ${pct}%`);
-      if (pct < 100) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
+      setProgress(96);
 
-    await new Promise((r) => setTimeout(r, GENERATE_DURATION_MS));
-    if (runIdRef.current !== myRun) return;
+      const createRes = await fetch("/api/blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: generateJson.blockData }),
+      });
 
-    const mock: Generated = {
-      name: blockName,
-      css: `
-.visionir-wrap{padding:40px 0;font-family:Inter,system-ui,Arial;}
-.visionir-inner{max-width:1100px;margin:0 auto;padding:0 24px;}
-.visionir-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;}
-.visionir-eyebrow{letter-spacing:.18em;text-transform:uppercase;font-size:11px;color:#3b5bdb;font-weight:800;}
-.visionir-h{margin:.35rem 0 0;font-size:44px;line-height:1.05;font-weight:900;color:#0f172a;}
-.visionir-sub{margin:.85rem 0 0;color:#475569;font-size:15px;line-height:1.6;max-width:54ch;}
-.visionir-cards{margin-top:18px;display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.visionir-card{border:1px solid #e2e8f0;border-radius:14px;padding:14px 14px 12px;background:#fff;}
-.visionir-card .t{font-weight:900;color:#0f172a;margin:0 0 6px;font-size:14px;}
-.visionir-card .p{margin:0;color:#475569;font-size:13px;line-height:1.5;}
-.visionir-img img{width:100%;height:360px;object-fit:cover;border-radius:18px;box-shadow:0 18px 60px rgba(15,23,42,.15);}
-.ac-blue{box-shadow:inset 3px 0 0 #3b5bdb;}
-.ac-green{box-shadow:inset 3px 0 0 #16a34a;}
-.ac-orange{box-shadow:inset 3px 0 0 #f59e0b;}
-.ac-purple{box-shadow:inset 3px 0 0 #7c3aed;}
-@media(max-width:900px){.visionir-grid{grid-template-columns:1fr}.visionir-h{font-size:36px}.visionir-img img{height:300px}}
-      `.trim(),
-      blockData: {
-        eyebrow: "WHY CHOOSE KIWA AGRI-FOOD",
-        headline: "Why Partner with Us",
-        subheading:
-          "From accredited certification to tailored technical support, we help you strengthen compliance, credibility, and growth.",
-        imageUrl: "/farmer.jpg",
-        valuePoints: [
-          { title: "Accredited confidence", text: "UKAS-accredited certification delivered by technical specialists.", accent: "blue" },
-          { title: "Practical support", text: "Clear guidance and responsive service across your audit journey.", accent: "green" },
-          { title: "Risk reduction", text: "Robust processes that help protect your brand and supply chain.", accent: "orange" },
-          { title: "Global credibility", text: "Recognised assurance that builds trust with buyers and regulators.", accent: "purple" },
-        ],
-      },
-    };
+      const createJson = await createRes.json().catch(() => ({}));
 
-    setData(mock);
-    setEditable(mock.blockData);
-    setGovernance(computeGovernanceLocal(mock.blockData));
+      if (!createRes.ok || !createJson?.block?.id) {
+        throw new Error(createJson?.error || "Failed to save generated block");
+      }
 
-    setLoading(false);
-    setStep("review");
-  }
+      setProgress(100);
 
-  async function improveField(field: string, text: string, apply: (improved: string) => void) {
-    const res = await fetch("/api/refine", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "field", field, text }),
-    });
-
-    if (!res.ok) {
-      console.error("Improve failed", await res.text());
-      return;
+      window.setTimeout(() => {
+        router.push(`/blocks/${createJson.block.id}`);
+      }, 350);
+    } catch (e: any) {
+      setError(e?.message || "Something went wrong");
+      setIsGenerating(false);
+      setStep("form");
+      setProgress(0);
     }
-
-    const json = (await res.json()) as { field: string; improved: string };
-    apply(json.improved ?? text);
   }
 
-  async function requestDescribeChanges() {
-    if (!editable) return;
-    const note = describe.trim();
-    if (!note) return;
-
-    const res = await fetch("/api/refine", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mode: "describe", text: note, block: editable }),
-    });
-
-    if (!res.ok) {
-      console.error("Describe failed", await res.text());
-      return;
-    }
-
-    const json = (await res.json()) as { patch: any; notes?: string[]; governance?: Governance };
-
-    setPendingPatch(json.patch);
-    setPatchNotes(json.notes ?? []);
-    setGovernance(json.governance ?? null);
-  }
-
-  function snapshot(notes: string[]) {
-    if (!editable) return;
-    setVersions((v) => [{ ts: Date.now(), block: structuredClone(editable), notes }, ...v]);
-  }
-
-  function applyPendingPatch() {
-    if (!pendingPatch || !editable) return;
-
-    snapshot(patchNotes.length ? patchNotes : ["Applied patch"]);
-
-    const next = applyPatch(editable, pendingPatch);
-    setEditable(next);
-
-    setGovernance(computeGovernanceLocal(next));
-    setChangeLog((p) => [...(patchNotes.length ? patchNotes : ["Applied patch"]), ...p]);
-
-    setPendingPatch(null);
-    setPatchNotes([]);
-    setDescribe("");
-  }
-
-  function rejectPendingPatch() {
-    setPendingPatch(null);
-    setPatchNotes([]);
-    setDescribe("");
-    if (editable) setGovernance(computeGovernanceLocal(editable));
-  }
-
-  function restoreLatest() {
-    const latest = versions[0];
-    if (!latest) return;
-    setEditable(structuredClone(latest.block));
-    setGovernance(computeGovernanceLocal(latest.block));
-    setChangeLog((p) => [`Restored previous version`, ...p]);
-    setVersions((v) => v.slice(1));
-  }
-
-  async function submitForApproval() {
-    if (!data || !editable) return;
-
-    const html = renderHtml(editable);
-    const embed = `<!-- Visionir Embed (MVP) -->
-<style>${data.css}</style>
-${html}`;
-
-    const payload = {
-      submittedBy: "Jamie",
-      blockName,
-      usedFor,
-      category,
-      block: editable,
-      embed,
-      governance: governance ?? computeGovernanceLocal(editable),
-      changeLog: changeLog.slice(0, 50),
-      createdAt: new Date().toISOString(),
-    };
-
-    const res = await fetch("/api/approvals", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      console.error("Approval submit failed", await res.text());
-      return;
-    }
-
-    const json = (await res.json()) as { ok: boolean; approvalId: string; status: "pending" };
-
-    setApprovalStatus("pending");
-    setApprovalId(json.approvalId);
-    setChangeLog((p) => [`Submitted for approval (#${json.approvalId})`, ...p]);
-
-    router.push(`/approvals/${json.approvalId}`);
+  if (step === "generating") {
+    return (
+      <main className="min-h-screen bg-[#f5f7fb] px-6 py-10 md:px-10">
+        <Generating progress={progress} label={progressLabel} />
+      </main>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fb] text-slate-900">
-      <div className="flex">
-        <Sidebar />
-        <div className="flex-1">
-          <TopBar step={step} />
+    <main className="min-h-screen bg-[#f5f7fb] px-6 py-10 md:px-10">
+      <div className="mx-auto max-w-[1180px]">
+        <div className="rounded-[36px] bg-white shadow-[0_24px_80px_rgba(15,23,42,0.10)] ring-1 ring-slate-200 overflow-hidden">
+          <div className="grid lg:grid-cols-[1.05fr_.95fr]">
+            <section className="px-8 py-10 md:px-12 md:py-12">
+              <div className="max-w-[640px]">
+                <div className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                  Visionir · Governed Block Creation
+                </div>
 
-          {/* IMPORTANT: full width container for review */}
-          {step === "review" ? (
-            <ReviewEdit
-              editable={editable!}
-              setEditable={setEditable}
-              previewDoc={previewDoc}
-              describe={describe}
-              setDescribe={setDescribe}
-              improveField={improveField}
-              requestDescribeChanges={requestDescribeChanges}
-              pendingPatchExists={!!pendingPatch}
-              onApplyPatch={applyPendingPatch}
-              onRejectPatch={rejectPendingPatch}
-              patchNotes={patchNotes}
-              governance={governance ?? computeGovernanceLocal(editable!)}
-              versionsCount={versions.length}
-              onRestoreLatest={restoreLatest}
-              approvalStatus={approvalStatus}
-              approvalId={approvalId}
-              onSubmitForApproval={submitForApproval}
-              changeLog={changeLog}
-            />
-          ) : (
-            <div className="px-6 py-10">
-              <div className="mx-auto max-w-6xl">
-                {step === "create" && (
-                  <CreateCard
-                    blockName={blockName}
-                    usedFor={usedFor}
-                    category={category}
-                    prompt={prompt}
-                    setBlockName={setBlockName}
-                    setUsedFor={setUsedFor}
-                    setCategory={setCategory}
-                    setPrompt={setPrompt}
-                    loading={loading}
-                    error={error}
-                    onGenerate={onGenerate}
-                    onCancel={() => {
-                      runIdRef.current++;
-                      setError(null);
-                      setData(null);
-                      setEditable(null);
-                      setLoading(false);
-                      setProgress(0);
-                      setProgressLabel("Generating block structure… 0%");
-                    }}
-                  />
-                )}
+                <h1 className="mt-5 text-[40px] leading-[1.05] font-semibold text-slate-900 md:text-[52px]">
+                  Generate a governed content block
+                </h1>
 
-                {step === "generating" && <Generating progress={progress} label={progressLabel} />}
+                <p className="mt-4 max-w-[58ch] text-[15px] leading-7 text-slate-600">
+                  Enter the block context, location, and creative prompt. Visionir will generate
+                  the content structure, apply governance rules, and prepare the block for review.
+                </p>
+
+                <div className="mt-8 grid gap-5">
+                  <Field label="Block name">
+                    <input
+                      value={blockName}
+                      onChange={(e) => setBlockName(e.target.value)}
+                      placeholder="Why Choose Kiwa Agri-Food"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-300"
+                    />
+                  </Field>
+
+                  <Field label="Placement / location">
+                    <input
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Homepage · Agri-Food section"
+                      className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-300"
+                    />
+                  </Field>
+
+                  <Field label="AI prompt">
+                    <textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="Describe the content block you want to create..."
+                      className="h-48 w-full resize-none rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-slate-300"
+                    />
+                  </Field>
+                </div>
+
+                {error ? (
+                  <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {error}
+                  </div>
+                ) : null}
+
+                <div className="mt-8 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={handleGenerate}
+                    disabled={
+                      isGenerating ||
+                      !blockName.trim() ||
+                      !location.trim() ||
+                      !prompt.trim()
+                    }
+                    className="rounded-2xl bg-[#4f7dff] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#3f6eff] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isGenerating ? "Generating..." : "Generate block"}
+                  </button>
+
+                  <p className="text-xs text-slate-500">
+                    Brand rules, accessibility checks, and design tokens are applied automatically.
+                  </p>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
+            </section>
 
-/* -------------------- Step 1 UI -------------------- */
+            <aside className="border-t border-slate-200 bg-slate-50 px-8 py-10 lg:border-l lg:border-t-0 md:px-10 md:py-12">
+              <div className="rounded-[28px] bg-white p-6 shadow-sm ring-1 ring-slate-200">
+                <p className="text-sm font-semibold text-slate-900">Generation overview</p>
 
-function CreateCard(props: any) {
-  return (
-    <div className="mx-auto w-full max-w-[760px] rounded-[28px] bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)] ring-1 ring-slate-200">
-      <div className="px-10 py-10">
-        <Field label="Block Name">
-          <Input value={props.blockName} onChange={props.setBlockName} />
-        </Field>
+                <div className="mt-5 space-y-4">
+                  <InfoRow
+                    title="Governance"
+                    text="Checks brand alignment, restricted language, token usage, and structural consistency."
+                  />
+                  <InfoRow
+                    title="Accessibility"
+                    text="Applies WCAG-aware layout and content patterns suitable for enterprise publishing."
+                  />
+                  <InfoRow
+                    title="CMS readiness"
+                    text="Creates a structured content block ready for review, approval, and deployment."
+                  />
+                </div>
 
-        <Field label="Where will this block be used">
-          <Input value={props.usedFor} onChange={props.setUsedFor} />
-        </Field>
+                <div className="mt-6 rounded-2xl bg-[#f6f8fd] p-5 ring-1 ring-slate-200">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                    Current request
+                  </p>
 
-        <Field label="Category">
-          <Input value={props.category} onChange={props.setCategory} />
-        </Field>
-
-        <Field label="AI Prompt">
-          <Textarea value={props.prompt} onChange={props.setPrompt} />
-        </Field>
-
-        {props.error && (
-          <div className="mt-4 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 ring-1 ring-red-200">
-            {props.error}
-          </div>
-        )}
-
-        <div className="mt-8 flex items-center justify-center gap-4">
-          <button
-            onClick={props.onGenerate}
-            disabled={props.loading}
-            className="h-11 min-w-[180px] rounded-xl bg-[#4f7dff] px-5 text-sm font-semibold text-white shadow-sm hover:bg-[#3f6eff] disabled:opacity-60"
-          >
-            {props.loading ? "Generating..." : "Generate Block"}
-          </button>
-
-          <button
-            type="button"
-            onClick={props.onCancel}
-            className="h-11 min-w-[140px] rounded-xl bg-[#eef2ff] px-5 text-sm font-semibold text-[#3b5bdb] hover:bg-[#e6ebff]"
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* -------------------- Shared UI bits -------------------- */
-
-function TopBar({ step }: { step: Step }) {
-  const label =
-    step === "create"
-      ? "Step 1 of 3"
-      : step === "generating"
-      ? "Step 2 of 3 - Generating"
-      : "Step 3 of 3 - Review & Edit";
-
-  return (
-    <div className="sticky top-0 z-10 border-b border-slate-200 bg-white/85 backdrop-blur">
-      <div className="flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <button className="grid h-9 w-9 place-items-center rounded-lg hover:bg-slate-100" aria-label="Menu">
-            <span className="text-slate-600">≡</span>
-          </button>
-          <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold">Create Block</p>
-            <span className="text-slate-300">•</span>
-            <p className="text-sm text-slate-500">{label}</p>
+                  <div className="mt-4 space-y-3 text-sm text-slate-700">
+                    <div>
+                      <span className="font-semibold text-slate-900">Block:</span>{" "}
+                      {blockName || "—"}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-900">Location:</span>{" "}
+                      {location || "—"}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-slate-900">Prompt length:</span>{" "}
+                      {prompt.trim().length} characters
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <IconButton label="Search" glyph="⌕" />
-          <IconButton label="Help" glyph="?" />
-        </div>
       </div>
+    </main>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+function InfoRow({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <p className="mt-1 text-sm leading-6 text-slate-600">{text}</p>
     </div>
-  );
-}
-
-function Sidebar() {
-  return (
-    <aside className="sticky top-0 h-screen w-[72px] border-r border-slate-200 bg-white">
-      <div className="flex h-full flex-col items-center py-4">
-        <div className="mb-5 grid h-10 w-10 place-items-center rounded-xl bg-[#eef2ff] text-[#3b5bdb] font-bold">
-          V
-        </div>
-
-        <nav className="flex flex-1 flex-col items-center gap-2">
-          <SideIcon active glyph="⌁" label="Dashboard" />
-          <SideIcon glyph="▦" label="Blocks" />
-          <SideIcon glyph="✓" label="Approvals" />
-          <SideIcon glyph="≋" label="Activity" />
-          <SideIcon glyph="⚙" label="Settings" />
-        </nav>
-
-        <div className="mt-auto grid h-10 w-10 place-items-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
-          <span className="text-xs font-semibold">ki</span>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-function SideIcon({ glyph, label, active }: { glyph: string; label: string; active?: boolean }) {
-  return (
-    <button
-      className={[
-        "relative grid h-10 w-10 place-items-center rounded-xl transition",
-        active ? "bg-[#eef2ff] text-[#3b5bdb]" : "text-slate-500 hover:bg-slate-100",
-      ].join(" ")}
-      title={label}
-      aria-label={label}
-    >
-      <span className="text-sm">{glyph}</span>
-      {active ? <span className="absolute left-0 h-6 w-1 rounded-r bg-[#4f7dff]" /> : null}
-    </button>
-  );
-}
-
-function IconButton({ label, glyph }: { label: string; glyph: string }) {
-  return (
-    <button className="grid h-9 w-9 place-items-center rounded-lg hover:bg-slate-100" aria-label={label} title={label}>
-      <span className="text-slate-600">{glyph}</span>
-    </button>
-  );
-}
-
-function Field({ label, children }: { label: string; children: any }) {
-  return (
-    <div className="mt-6">
-      <p className="text-sm font-semibold text-slate-900">{label}</p>
-      <div className="mt-2">{children}</div>
-      <div className="mt-5 h-px w-full bg-slate-200" />
-    </div>
-  );
-}
-
-function Input({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <input
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl border border-transparent bg-transparent px-0 py-1 text-[15px] text-slate-600 outline-none focus:text-slate-900"
-    />
-  );
-}
-
-function Textarea({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <textarea
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="h-28 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-[14px] leading-relaxed text-slate-700 outline-none focus:border-slate-300"
-    />
   );
 }
