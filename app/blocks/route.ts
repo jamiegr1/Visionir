@@ -1,4 +1,4 @@
-import type { BlockData } from "./types";
+import type { BlockData } from "@/lib/types";
 
 function esc(s: string) {
   return (s || "")

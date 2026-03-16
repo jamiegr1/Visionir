@@ -37,8 +37,14 @@ type ReviewEditProps = {
   governance?: Governance;
   onSaveDraft?: () => void;
   onSubmitApproval?: () => void;
+  onPublish?: () => void;
   submitLabel?: string;
+  publishLabel?: string;
   changeLog?: ChangeLogItem[];
+  canEdit?: boolean;
+  canSubmit?: boolean;
+  canPublish?: boolean;
+  currentUserRoleLabel?: string;
 };
 
 const ACCENT_STYLES: Record<
@@ -119,8 +125,14 @@ export default function ReviewEdit({
   governance,
   onSaveDraft,
   onSubmitApproval,
+  onPublish,
   submitLabel = "Submit for Approval",
+  publishLabel = "Publish to CMS",
   changeLog = [],
+  canEdit = true,
+  canSubmit = true,
+  canPublish = false,
+  currentUserRoleLabel = "User",
 }: ReviewEditProps) {
   const [loadingField, setLoadingField] = useState<string | null>(null);
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -143,6 +155,8 @@ export default function ReviewEdit({
     text: string,
     apply: (improved: string) => void
   ) {
+    if (!canEdit) return;
+
     try {
       setLoadingField(key);
       await improveField(field, text, apply);
@@ -152,6 +166,8 @@ export default function ReviewEdit({
   }
 
   async function runDescribeChanges() {
+    if (!canEdit) return;
+
     try {
       setDescribeBusy(true);
       await requestDescribeChanges();
@@ -161,6 +177,8 @@ export default function ReviewEdit({
   }
 
   function updateValuePoint(index: number, updates: Partial<ValuePoint>) {
+    if (!canEdit) return;
+
     setEditable((prev) => {
       if (!prev) return prev;
 
@@ -185,16 +203,17 @@ export default function ReviewEdit({
 
   const shellWidthClass =
     viewport === "mobile"
-      ? "max-w-[430px]"
+      ? "max-w-[410px]"
       : viewport === "tablet"
-      ? "max-w-[860px]"
-      : "max-w-[1240px]";
+        ? "max-w-[760px]"
+        : "max-w-[1240px]";
 
   const previewViewportWidth =
-    viewport === "mobile" ? 390 : viewport === "tablet" ? 820 : 1180;
+    viewport === "mobile" ? 360 : viewport === "tablet" ? 680 : 1180;
 
-  const previewViewportHeight =
-    viewport === "mobile" ? 780 : viewport === "tablet" ? 760 : 560;
+  const desktopViewportHeight = 560;
+  const tabletViewportHeight = 980;
+  const mobileViewportHeight = 1180;
 
   function clearMeasureTimeouts() {
     measureTimeoutsRef.current.forEach((id) => window.clearTimeout(id));
@@ -222,7 +241,7 @@ export default function ReviewEdit({
       );
 
       if (height > 0) {
-        setIframeContentHeight(height + 24);
+        setIframeContentHeight(height);
       }
     } catch {
       // ignore measurement issues
@@ -243,7 +262,11 @@ export default function ReviewEdit({
 
   useEffect(() => {
     setIframeContentHeight(
-      viewport === "desktop" ? 560 : viewport === "tablet" ? 760 : 780
+      viewport === "desktop"
+        ? desktopViewportHeight
+        : viewport === "tablet"
+          ? tabletViewportHeight
+          : mobileViewportHeight
     );
 
     const id = window.setTimeout(() => {
@@ -256,9 +279,16 @@ export default function ReviewEdit({
     };
   }, [previewDoc, viewport]);
 
+  const previewCanvasHeight =
+    viewport === "desktop"
+      ? "min(560px, calc(100dvh - 356px))"
+      : viewport === "tablet"
+        ? "min(620px, calc(100dvh - 336px))"
+        : "min(620px, calc(100dvh - 336px))";
+
   return (
-    <div className="h-screen overflow-hidden bg-[#f5f7fb] text-slate-900">
-      <div className="flex h-screen">
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
+      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
         <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
           <div className="mb-8 flex items-center justify-center">
             <div className="relative h-10 w-10">
@@ -371,14 +401,19 @@ export default function ReviewEdit({
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-slate-200 px-6 py-6">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Refine with AI
-                </h2>
+                <div>
+                  <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Refine with AI
+                  </h2>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
+                    Role: {currentUserRoleLabel}
+                  </p>
+                </div>
 
                 <button
                   type="button"
                   onClick={runDescribeChanges}
-                  disabled={describeBusy || !describe.trim()}
+                  disabled={!canEdit || describeBusy || !describe.trim()}
                   className="rounded-2xl bg-[#eef3ff] px-4 py-2 text-sm font-medium text-[#5b7cff] transition hover:bg-[#e7eeff] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {describeBusy ? "Applying..." : "Request Changes"}
@@ -386,7 +421,7 @@ export default function ReviewEdit({
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="flex-1 overflow-y-auto px-5 py-5 pr-3">
               <section className="mb-8">
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
                   <div className="mb-3">
@@ -401,8 +436,9 @@ export default function ReviewEdit({
                   <textarea
                     value={describe}
                     onChange={(e) => setDescribe(e.target.value)}
+                    disabled={!canEdit}
                     placeholder="Use Kiwa blue for all four cards, make the heading more strategic, tighten the copy and make the design more corporate."
-                    className="min-h-[122px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white"
+                    className="min-h-[122px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>
               </section>
@@ -421,27 +457,34 @@ export default function ReviewEdit({
                       <button
                         type="button"
                         onClick={() =>
-                          runImprove("eyebrow", "eyebrow", editable.eyebrow ?? "", (improved) =>
-                            setEditable((prev) =>
-                              prev ? { ...prev, eyebrow: improved } : prev
-                            )
+                          runImprove(
+                            "eyebrow",
+                            "eyebrow",
+                            editable.eyebrow ?? "",
+                            (improved) =>
+                              setEditable((prev) =>
+                                prev ? { ...prev, eyebrow: improved } : prev
+                              )
                           )
                         }
-                        disabled={loadingField === "eyebrow"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700"
+                        disabled={!canEdit || loadingField === "eyebrow"}
+                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {loadingField === "eyebrow" ? "Improving..." : "✦ Improve with AI"}
+                        {loadingField === "eyebrow"
+                          ? "Improving..."
+                          : "✦ Improve with AI"}
                       </button>
                     </div>
 
                     <input
                       value={editable.eyebrow ?? ""}
+                      disabled={!canEdit}
                       onChange={(e) =>
                         setEditable((prev) =>
                           prev ? { ...prev, eyebrow: e.target.value } : prev
                         )
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
 
@@ -453,27 +496,34 @@ export default function ReviewEdit({
                       <button
                         type="button"
                         onClick={() =>
-                          runImprove("headline", "headline", editable.headline ?? "", (improved) =>
-                            setEditable((prev) =>
-                              prev ? { ...prev, headline: improved } : prev
-                            )
+                          runImprove(
+                            "headline",
+                            "headline",
+                            editable.headline ?? "",
+                            (improved) =>
+                              setEditable((prev) =>
+                                prev ? { ...prev, headline: improved } : prev
+                              )
                           )
                         }
-                        disabled={loadingField === "headline"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700"
+                        disabled={!canEdit || loadingField === "headline"}
+                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {loadingField === "headline" ? "Improving..." : "✦ Improve with AI"}
+                        {loadingField === "headline"
+                          ? "Improving..."
+                          : "✦ Improve with AI"}
                       </button>
                     </div>
 
                     <input
                       value={editable.headline ?? ""}
+                      disabled={!canEdit}
                       onChange={(e) =>
                         setEditable((prev) =>
                           prev ? { ...prev, headline: e.target.value } : prev
                         )
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
 
@@ -495,21 +545,24 @@ export default function ReviewEdit({
                               )
                           )
                         }
-                        disabled={loadingField === "subheading"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700"
+                        disabled={!canEdit || loadingField === "subheading"}
+                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
-                        {loadingField === "subheading" ? "Improving..." : "✦ Improve with AI"}
+                        {loadingField === "subheading"
+                          ? "Improving..."
+                          : "✦ Improve with AI"}
                       </button>
                     </div>
 
                     <textarea
                       value={editable.subheading ?? ""}
+                      disabled={!canEdit}
                       onChange={(e) =>
                         setEditable((prev) =>
                           prev ? { ...prev, subheading: e.target.value } : prev
                         )
                       }
-                      className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+                      className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
                 </div>
@@ -543,7 +596,10 @@ export default function ReviewEdit({
                         >
                           <div className="mb-4 flex items-center gap-2">
                             <span
-                              className={cx("h-2.5 w-2.5 rounded-full", accent.dot)}
+                              className={cx(
+                                "h-2.5 w-2.5 rounded-full",
+                                accent.dot
+                              )}
                             />
                             <span className="text-sm font-medium text-slate-800">
                               Value Point {index + 1}
@@ -569,8 +625,8 @@ export default function ReviewEdit({
                                         })
                                     )
                                   }
-                                  disabled={loadingField === improveKeyTitle}
-                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700"
+                                  disabled={!canEdit || loadingField === improveKeyTitle}
+                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {loadingField === improveKeyTitle
                                     ? "Improving..."
@@ -580,10 +636,13 @@ export default function ReviewEdit({
 
                               <input
                                 value={point.title ?? ""}
+                                disabled={!canEdit}
                                 onChange={(e) =>
-                                  updateValuePoint(index, { title: e.target.value })
+                                  updateValuePoint(index, {
+                                    title: e.target.value,
+                                  })
                                 }
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                               />
                             </div>
 
@@ -605,8 +664,8 @@ export default function ReviewEdit({
                                         })
                                     )
                                   }
-                                  disabled={loadingField === improveKeyText}
-                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700"
+                                  disabled={!canEdit || loadingField === improveKeyText}
+                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                   {loadingField === improveKeyText
                                     ? "Improving..."
@@ -616,10 +675,13 @@ export default function ReviewEdit({
 
                               <textarea
                                 value={point.text ?? ""}
+                                disabled={!canEdit}
                                 onChange={(e) =>
-                                  updateValuePoint(index, { text: e.target.value })
+                                  updateValuePoint(index, {
+                                    text: e.target.value,
+                                  })
                                 }
-                                className="min-h-[86px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white"
+                                className="min-h-[86px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                               />
                             </div>
 
@@ -628,32 +690,34 @@ export default function ReviewEdit({
                                 Accent
                               </label>
                               <div className="grid grid-cols-4 gap-2">
-                                {(["blue", "green", "orange", "purple"] as Accent[]).map(
-                                  (accentOption) => {
-                                    const accentStyle = ACCENT_STYLES[accentOption];
-                                    const active = safeAccent === accentOption;
+                                {(
+                                  ["blue", "green", "orange", "purple"] as Accent[]
+                                ).map((accentOption) => {
+                                  const accentStyle =
+                                    ACCENT_STYLES[accentOption];
+                                  const active = safeAccent === accentOption;
 
-                                    return (
-                                      <button
-                                        key={accentOption}
-                                        type="button"
-                                        onClick={() =>
-                                          updateValuePoint(index, {
-                                            accent: accentOption,
-                                          })
-                                        }
-                                        className={cx(
-                                          "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition",
-                                          active
-                                            ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
-                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                        )}
-                                      >
-                                        {accentOption}
-                                      </button>
-                                    );
-                                  }
-                                )}
+                                  return (
+                                    <button
+                                      key={accentOption}
+                                      type="button"
+                                      disabled={!canEdit}
+                                      onClick={() =>
+                                        updateValuePoint(index, {
+                                          accent: accentOption,
+                                        })
+                                      }
+                                      className={cx(
+                                        "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60",
+                                        active
+                                          ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
+                                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                      )}
+                                    >
+                                      {accentOption}
+                                    </button>
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>
@@ -675,7 +739,8 @@ export default function ReviewEdit({
                       Recent Changes
                     </p>
                     <span className="text-xs text-slate-400">
-                      {changeLog.length} {changeLog.length === 1 ? "update" : "updates"}
+                      {changeLog.length}{" "}
+                      {changeLog.length === 1 ? "update" : "updates"}
                     </span>
                   </div>
 
@@ -728,7 +793,7 @@ export default function ReviewEdit({
           </div>
         </aside>
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f5f7fb]">
+        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -748,8 +813,8 @@ export default function ReviewEdit({
                 </button>
 
                 <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-  Create Block • Step 3 of 3 - Review & Edit
-</h1>
+                  Create Block • Step 3 of 3 - Review & Edit
+                </h1>
               </div>
 
               <div className="flex items-center gap-2">
@@ -793,55 +858,72 @@ export default function ReviewEdit({
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden px-8 py-6">
-            {pendingPatchExists && (
-              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                This block has been submitted and is now pending approval.
-              </div>
-            )}
+          <div className="min-h-0 overflow-hidden px-8 py-5">
+            <div className="flex h-full min-h-0 flex-col">
+              {pendingPatchExists && (
+                <div className="mb-4 shrink-0 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  This block has been submitted and is now pending approval.
+                </div>
+              )}
 
-            <div className="flex h-full items-center justify-center">
-              <div
-                className={cx(
-                  "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
-                  shellWidthClass
-                )}
-              >
-                <div
-                  className={cx(
-                    "rounded-[28px] bg-white",
-                    viewport === "desktop"
-                      ? "overflow-hidden"
-                      : "overflow-y-auto overflow-x-hidden"
-                  )}
-                  style={{ height: `${previewViewportHeight}px` }}
-                >
-                  <div className="flex items-start justify-center">
-                    <iframe
-                      key={viewport}
-                      ref={iframeRef}
-                      title="Block Preview"
-                      srcDoc={previewDoc}
-                      onLoad={syncIframeHeightRepeated}
-                      className="block border-0 bg-white align-top"
+              {!canEdit && (
+                <div className="mb-4 shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                  This block is currently read-only for your role and its current status.
+                </div>
+              )}
+
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="flex h-full items-center justify-center">
+                  <div
+                    className={cx(
+                      "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      shellWidthClass
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "rounded-[28px] bg-white",
+                        viewport === "desktop"
+                          ? "overflow-hidden"
+                          : "overflow-y-auto overflow-x-hidden"
+                      )}
                       style={{
-                        width: `${previewViewportWidth}px`,
-                        minWidth: `${previewViewportWidth}px`,
-                        height:
-                          viewport === "desktop"
-                            ? `${previewViewportHeight}px`
-                            : `${iframeContentHeight}px`,
-                        display: "block",
+                        height: previewCanvasHeight,
                       }}
-                      scrolling="no"
-                    />
+                    >
+                      <div
+                        className={cx(
+                          "flex min-h-full justify-center",
+                          viewport === "tablet" ? "items-start py-6" : "items-start"
+                        )}
+                      >
+                        <iframe
+                          key={viewport}
+                          ref={iframeRef}
+                          title="Block Preview"
+                          srcDoc={previewDoc}
+                          onLoad={syncIframeHeightRepeated}
+                          className="block border-0 bg-white align-top"
+                          style={{
+                            width: `${previewViewportWidth}px`,
+                            minWidth: `${previewViewportWidth}px`,
+                            height:
+                              viewport === "desktop"
+                                ? `${desktopViewportHeight}px`
+                                : `${Math.max(iframeContentHeight, 200)}px`,
+                            display: "block",
+                          }}
+                          scrolling="no"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-5">
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
                 <span>{complianceLabel}</span>
@@ -850,22 +932,36 @@ export default function ReviewEdit({
               </div>
 
               <div className="flex items-center gap-3">
-  <button
-    type="button"
-    onClick={onSaveDraft}
-    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-  >
-    Save Draft
-  </button>
+                {canEdit && onSaveDraft && (
+                  <button
+                    type="button"
+                    onClick={onSaveDraft}
+                    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Save Draft
+                  </button>
+                )}
 
-  <button
-    type="button"
-    onClick={onSubmitApproval}
-    className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
-  >
-    {submitLabel}
-  </button>
-</div>
+                {canSubmit && onSubmitApproval && (
+                  <button
+                    type="button"
+                    onClick={onSubmitApproval}
+                    className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                  >
+                    {submitLabel}
+                  </button>
+                )}
+
+                {canPublish && onPublish && (
+                  <button
+                    type="button"
+                    onClick={onPublish}
+                    className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-emerald-700 active:bg-emerald-800"
+                  >
+                    {publishLabel}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </main>

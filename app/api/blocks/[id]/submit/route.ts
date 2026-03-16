@@ -1,16 +1,38 @@
 import { NextResponse } from "next/server";
+import { getBlockById, updateBlock } from "@/lib/storage";
+import { getMockCurrentUser } from "@/lib/current-user";
+import { canSubmitBlock } from "@/lib/permissions";
 
 export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  req: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
+  const currentUser = getMockCurrentUser(req);
+  const { id } = await context.params;
 
-  console.log("Submitting block:", id);
+  const block = await getBlockById(id);
 
-  return NextResponse.json({
-    ok: true,
-    id,
+  if (!block) {
+    return NextResponse.json({ error: "Block not found" }, { status: 404 });
+  }
+
+  if (!canSubmitBlock(currentUser, block)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const now = new Date().toISOString();
+
+  const updated = await updateBlock(id, {
     status: "pending_approval",
+    submittedByUserId: currentUser.id,
+    submittedAt: now,
+    updatedByUserId: currentUser.id,
+    updatedAt: now,
   });
+
+  if (!updated) {
+    return NextResponse.json({ error: "Failed to submit block" }, { status: 500 });
+  }
+
+  return NextResponse.json({ block: updated }, { status: 200 });
 }

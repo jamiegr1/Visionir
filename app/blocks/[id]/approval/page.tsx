@@ -1,21 +1,274 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
+import { getMockCurrentUser } from "@/lib/current-user";
+import {
+  canApproveBlock,
+  canRejectBlock,
+  type BlockStatus,
+} from "@/lib/permissions";
+import {
+  GOVERNANCE_CHECKS,
+  shouldShowInternalTeamReview,
+} from "@/lib/approval";
 
-type BlockStatus = "draft" | "in_review" | "approved" | "rejected";
+type ViewportMode = "mobile" | "tablet" | "desktop";
+
+type CheckState = "pending" | "running" | "approved" | "waiting" | "rejected";
+
+type GovernanceCheck = {
+  id: string;
+  label: string;
+  helper: string;
+  state: CheckState;
+};
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function NavIcon({
+  active = false,
+  children,
+}: {
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={cx(
+        "flex h-11 w-11 items-center justify-center rounded-xl transition",
+        active
+          ? "bg-[#eef3ff] text-[#5b7cff] shadow-sm"
+          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function StatusPill({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "blue" | "green" | "orange" | "red" | "slate";
+}) {
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none",
+        tone === "blue" && "bg-[#eef3ff] text-[#4f6fff]",
+        tone === "green" && "bg-emerald-50 text-emerald-700",
+        tone === "orange" && "bg-amber-50 text-amber-700",
+        tone === "red" && "bg-rose-50 text-rose-700",
+        tone === "slate" && "bg-slate-100 text-slate-600"
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function CheckIcon({ state }: { state: CheckState }) {
+  if (state === "approved") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+        >
+          <path d="M5 12.5 9.2 16.7 19 7.5" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "running") {
+    return (
+      <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+        <span className="absolute inset-0 rounded-2xl animate-ping bg-[#dfe7ff] opacity-50" />
+        <svg
+          className="relative h-4.5 w-4.5 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M12 3a9 9 0 1 0 9 9" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "waiting") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M12 7v5l3 2" />
+          <circle cx="12" cy="12" r="8.5" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "rejected") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+        >
+          <path d="M8 8l8 8M16 8l-8 8" />
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+      <span className="h-2 w-2 rounded-full bg-slate-300" />
+    </span>
+  );
+}
+
+function CheckStatusLabel({ state }: { state: CheckState }) {
+  if (state === "approved") return <StatusPill tone="green">Approved</StatusPill>;
+  if (state === "running") return <StatusPill tone="blue">Running</StatusPill>;
+  if (state === "waiting") {
+    return <StatusPill tone="orange">Awaiting internal review</StatusPill>;
+  }
+  if (state === "rejected") return <StatusPill tone="red">Rejected</StatusPill>;
+  return <StatusPill tone="slate">Pending</StatusPill>;
+}
+
+function TimelineCheckRow({
+  item,
+  isLast,
+}: {
+  item: GovernanceCheck;
+  isLast: boolean;
+}) {
+  return (
+    <div className="relative flex gap-3.5">
+      {!isLast && (
+        <span
+          className={cx(
+            "absolute left-5 top-11 w-px",
+            item.state === "approved" ? "bg-emerald-200" : "bg-slate-200"
+          )}
+          style={{ height: "calc(100% + 8px)" }}
+        />
+      )}
+
+      <div className="relative z-10 shrink-0">
+        <CheckIcon state={item.state} />
+      </div>
+
+      <div className="min-w-0 flex-1 pb-4">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[14px] font-semibold leading-5 text-slate-900">
+            {item.label}
+          </p>
+          <p className="text-[12.5px] leading-5 text-slate-500">
+            {item.helper}
+          </p>
+          <div className="pt-0.5">
+            <CheckStatusLabel state={item.state} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
+  if (value === "pending_approval" || value === "in_review") {
+    return "pending_approval";
+  }
+
+  if (
+    value === "draft" ||
+    value === "changes_requested" ||
+    value === "approved" ||
+    value === "published" ||
+    value === "rejected" ||
+    value === "archived"
+  ) {
+    return value;
+  }
+
+  return "draft";
+}
+
+function buildChecks(includeInternalReview: boolean): GovernanceCheck[] {
+  const baseChecks: GovernanceCheck[] = GOVERNANCE_CHECKS.map((item) => ({
+    id: item.id,
+    label: item.label,
+    helper: item.helper,
+    state: "pending",
+  }));
+
+  if (includeInternalReview) {
+    return [
+      ...baseChecks,
+      {
+        id: "internal-review",
+        label: "Internal Team Review",
+        helper:
+          "Waiting for a Visionir internal reviewer to manually approve this block.",
+        state: "pending",
+      },
+    ];
+  }
+
+  return baseChecks;
+}
 
 export default function BlockApprovalPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+  const currentUser = getMockCurrentUser();
   const id = params.id;
+
+  const showInternalReview = shouldShowInternalTeamReview(currentUser.role);
 
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [status, setStatus] = useState<BlockStatus>("draft");
+  const [createdByUserId, setCreatedByUserId] = useState("user_1");
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [viewport, setViewport] = useState<ViewportMode>("desktop");
+  const [pipelineStarted, setPipelineStarted] = useState(false);
+  const [checks, setChecks] = useState<GovernanceCheck[]>(() =>
+    buildChecks(showInternalReview)
+  );
+
+  const runTimeoutsRef = useRef<number[]>([]);
+  const redirectedRef = useRef(false);
+
+  useEffect(() => {
+    setChecks(buildChecks(showInternalReview));
+  }, [showInternalReview]);
 
   useEffect(() => {
     async function loadBlock() {
@@ -31,7 +284,8 @@ export default function BlockApprovalPage() {
         }
 
         setEditable(json.block.data);
-        setStatus((json.block.status as BlockStatus) || "draft");
+        setStatus(mapApiStatusToBlockStatus(json.block.status));
+        setCreatedByUserId(json.block.createdByUserId ?? "user_1");
       } catch (error) {
         console.error("Failed to load approval page:", error);
         setEditable(null);
@@ -45,18 +299,154 @@ export default function BlockApprovalPage() {
     }
   }, [id]);
 
+  useEffect(() => {
+    return () => {
+      runTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+      runTimeoutsRef.current = [];
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    if (loading) return;
+    if (redirectedRef.current) return;
+
+    if (status === "approved" || status === "published") {
+      redirectedRef.current = true;
+      router.replace(`/blocks/${id}/deploy`);
+    }
+  }, [id, loading, router, status]);
+
+  useEffect(() => {
+    if (loading || !editable || pipelineStarted) return;
+
+    if (status === "approved" || status === "published") {
+      setChecks((prev) => prev.map((item) => ({ ...item, state: "approved" })));
+      setPipelineStarted(true);
+      return;
+    }
+
+    if (status === "rejected") {
+      setChecks((prev) =>
+        prev.map((item, index) => ({
+          ...item,
+          state: index === prev.length - 1 ? "rejected" : "approved",
+        }))
+      );
+      setPipelineStarted(true);
+      return;
+    }
+
+    setPipelineStarted(true);
+
+    const autoCheckCount = Math.min(GOVERNANCE_CHECKS.length, checks.length);
+    const runningDuration = 1200;
+    const gapDuration = 260;
+
+    for (let i = 0; i < autoCheckCount; i += 1) {
+      const startAt = i * (runningDuration + gapDuration);
+      const finishAt = startAt + runningDuration;
+
+      const startTimer = window.setTimeout(() => {
+        setChecks((prev) =>
+          prev.map((item, index) =>
+            index === i
+              ? { ...item, state: "running" }
+              : index < i
+                ? { ...item, state: "approved" }
+                : { ...item, state: "pending" }
+          )
+        );
+      }, startAt);
+
+      const finishTimer = window.setTimeout(() => {
+        setChecks((prev) =>
+          prev.map((item, index) =>
+            index === i
+              ? { ...item, state: "approved" }
+              : index < i
+                ? { ...item, state: "approved" }
+                : item
+          )
+        );
+      }, finishAt);
+
+      runTimeoutsRef.current.push(startTimer, finishTimer);
+    }
+
+    const afterAutomatedChecksAt = autoCheckCount * (runningDuration + gapDuration);
+
+    if (showInternalReview) {
+      const finalTimer = window.setTimeout(() => {
+        setChecks((prev) =>
+          prev.map((item, index) => {
+            if (index < autoCheckCount) return { ...item, state: "approved" };
+            if (index === autoCheckCount) return { ...item, state: "waiting" };
+            return item;
+          })
+        );
+      }, afterAutomatedChecksAt);
+
+      runTimeoutsRef.current.push(finalTimer);
+    } else {
+      const finalTimer = window.setTimeout(async () => {
+        try {
+          setChecks((prev) =>
+            prev.map((item, index) =>
+              index < autoCheckCount ? { ...item, state: "approved" } : item
+            )
+          );
+
+          await updateStatus("approved");
+
+          if (!redirectedRef.current) {
+            redirectedRef.current = true;
+            router.replace(`/blocks/${id}/deploy`);
+          }
+        } catch (error) {
+          console.error("Auto-approve failed:", error);
+        }
+      }, afterAutomatedChecksAt + 250);
+
+      runTimeoutsRef.current.push(finalTimer);
+    }
+  }, [checks.length, editable, id, loading, pipelineStarted, router, showInternalReview, status]);
+
+  const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
+
   const previewDoc = useMemo(() => {
     if (!editable) return "<html><body></body></html>";
-    return makePreviewHtml(editable);
+
+    const rawImageUrl =
+      typeof editable.imageUrl === "string" && editable.imageUrl.trim()
+        ? editable.imageUrl
+        : DEFAULT_BLOCK_IMAGE;
+
+    let resolvedImageUrl = rawImageUrl;
+
+    if (typeof window !== "undefined" && resolvedImageUrl) {
+      const isAbsolute = /^https?:\/\//i.test(resolvedImageUrl);
+
+      if (!isAbsolute) {
+        const cleanPath = resolvedImageUrl.startsWith("/")
+          ? resolvedImageUrl
+          : `/${resolvedImageUrl}`;
+
+        resolvedImageUrl = `${window.location.origin}${cleanPath}`;
+      }
+    }
+
+    return makePreviewHtml({
+      ...editable,
+      imageUrl: resolvedImageUrl,
+    });
   }, [editable]);
 
   async function updateStatus(nextStatus: BlockStatus) {
     const res = await fetch(`/api/blocks/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: nextStatus,
-      }),
+      body: JSON.stringify({ status: nextStatus }),
     });
 
     const json = await res.json().catch(() => ({}));
@@ -72,6 +462,13 @@ export default function BlockApprovalPage() {
     try {
       setIsApproving(true);
       await updateStatus("approved");
+
+      setChecks((prev) => prev.map((item) => ({ ...item, state: "approved" })));
+
+      if (!redirectedRef.current) {
+        redirectedRef.current = true;
+        router.replace(`/blocks/${id}/deploy`);
+      }
     } catch (error) {
       console.error("Approve failed:", error);
       alert("Failed to approve block");
@@ -84,6 +481,13 @@ export default function BlockApprovalPage() {
     try {
       setIsRejecting(true);
       await updateStatus("rejected");
+
+      setChecks((prev) =>
+        prev.map((item, index) => ({
+          ...item,
+          state: index === prev.length - 1 ? "rejected" : "approved",
+        }))
+      );
     } catch (error) {
       console.error("Reject failed:", error);
       alert("Failed to reject block");
@@ -92,211 +496,482 @@ export default function BlockApprovalPage() {
     }
   }
 
-  if (loading) return <div className="p-6">Loading…</div>;
-  if (!editable) return <div className="p-6">Block not found.</div>;
+  const approvedCount = checks.filter((item) => item.state === "approved").length;
+  const totalCount = checks.length;
+  const progressPercent = Math.round((approvedCount / totalCount) * 100);
+
+  const internalReviewIndex = checks.findIndex((item) => item.id === "internal-review");
+  const internalReviewWaiting =
+    internalReviewIndex >= 0 && checks[internalReviewIndex]?.state === "waiting";
+
+  const statusLabel =
+    status === "approved"
+      ? "Approved"
+      : status === "published"
+        ? "Published"
+        : status === "rejected"
+          ? "Rejected"
+          : internalReviewWaiting
+            ? "Awaiting Internal Review"
+            : "AI Checks Running";
+
+  const statusColorClass =
+    status === "approved" || status === "published"
+      ? "text-emerald-600"
+      : status === "rejected"
+        ? "text-rose-600"
+        : internalReviewWaiting
+          ? "text-amber-600"
+          : "text-[#4f6fff]";
+
+  const shellWidthClass =
+    viewport === "mobile"
+      ? "max-w-[410px]"
+      : viewport === "tablet"
+        ? "max-w-[760px]"
+        : "max-w-[1240px]";
+
+  const previewViewportWidth =
+    viewport === "mobile" ? 360 : viewport === "tablet" ? 680 : 1180;
+
+  const previewHeight =
+    viewport === "mobile" ? 1180 : viewport === "tablet" ? 1220 : 560;
+
+  const manualReviewReady =
+    showInternalReview &&
+    internalReviewIndex >= 0 &&
+    checks[internalReviewIndex]?.state === "waiting" &&
+    status === "pending_approval";
+
+  const permissionBlock = {
+    createdByUserId,
+    status,
+  };
+
+  const userCanApprove =
+    showInternalReview && canApproveBlock(currentUser, permissionBlock);
+  const userCanReject =
+    showInternalReview && canRejectBlock(currentUser, permissionBlock);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!editable) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Block not found.
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-[#f6f5fb] text-slate-900">
-      <div className="flex min-h-screen">
-        {/* Left rail */}
-        <aside className="hidden w-[86px] shrink-0 border-r border-slate-200 bg-white xl:flex xl:flex-col xl:items-center xl:justify-between">
-          <div className="w-full px-3 pt-6">
-            <div className="mb-8 flex justify-center">
-              <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-400" />
-            </div>
-
-            <div className="space-y-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`mx-auto flex h-11 w-11 items-center justify-center rounded-xl ${
-                    i === 1
-                      ? "bg-blue-50 text-blue-600 ring-1 ring-blue-100"
-                      : "text-slate-400 hover:bg-slate-50"
-                  }`}
-                >
-                  <div className="h-4 w-4 rounded-sm border border-current" />
-                </div>
-              ))}
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
+      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
+        <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
+          <div className="mb-8 flex items-center justify-center">
+            <div className="relative h-10 w-10">
+              <Image
+                src="/visionirlogo.png"
+                alt="Visionir"
+                fill
+                priority
+                className="object-contain"
+              />
             </div>
           </div>
 
-          <div className="w-full px-3 pb-5">
-            <div className="mx-auto h-10 w-10 rounded-xl bg-white ring-1 ring-slate-200" />
+          <div className="flex flex-1 flex-col items-center gap-3">
+            <NavIcon active>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="4" />
+                <path d="M8 12h8M12 8v8" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M4 7h16M7 4v16" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <rect x="4" y="5" width="16" height="14" rx="3" />
+                <path d="M8 9h8M8 13h5" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M7 3v4M17 3v4M4 9h16" />
+                <rect x="4" y="5" width="16" height="15" rx="3" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M5 20a7 7 0 0 1 14 0" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M5 7h14M5 12h14M5 17h8" />
+              </svg>
+            </NavIcon>
+          </div>
+
+          <div className="mt-4">
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </NavIcon>
           </div>
         </aside>
 
-        {/* Timeline panel */}
         <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
-          <div className="px-8 py-10">
-            <div className="mb-10">
-              <div className="mb-8 h-10 w-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-400" />
-              <p className="text-[18px] font-light text-slate-500">Block Submitted</p>
-              <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
-                Approval Timeline
-              </h1>
-            </div>
-
-            <div className="rounded-[28px] bg-[#fbfbfe] p-6 ring-1 ring-slate-200/70">
-              <div className="mb-6 flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-[18px] font-semibold text-slate-900">Draft Created — Jamie</p>
-                </div>
-                <button
-                  type="button"
-                  className="text-slate-400"
-                >
-                  •••
-                </button>
-              </div>
-
-              <div className="space-y-5">
-                <div className="flex items-center gap-3 text-[15px] font-medium text-emerald-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  <span>AI Governance Checks Passed</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-[15px] font-medium text-blue-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                  <span>Submitted for Review</span>
-                </div>
-
-                <div className="flex items-center gap-3 text-[15px] font-medium text-amber-500">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                  <span>
-                    Brand Review —{" "}
-                    {status === "approved"
-                      ? "Approved"
-                      : status === "rejected"
-                      ? "Rejected"
-                      : "Pending"}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-3 text-[15px] font-medium text-amber-500">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-                  <span>
-                    Compliance Review —{" "}
-                    {status === "approved"
-                      ? "Approved"
-                      : status === "rejected"
-                      ? "Rejected"
-                      : "Pending"}
-                  </span>
-                </div>
-
-                <div
-                  className={`flex items-center gap-3 text-[15px] font-medium ${
-                    status === "approved" ? "text-emerald-600" : "text-slate-400"
-                  }`}
-                >
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full ${
-                      status === "approved" ? "bg-emerald-500" : "bg-slate-300"
-                    }`}
-                  />
-                  <span>Approved for Deployment</span>
-                </div>
-              </div>
-
-              <div className="mt-8 flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleApprove}
-                  disabled={status !== "in_review" || isApproving}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-emerald-600 px-5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isApproving ? "Approving..." : "Approve"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleReject}
-                  disabled={status !== "in_review" || isRejecting}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-100 px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {isRejecting ? "Rejecting..." : "Reject"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <main className="min-w-0 flex-1">
-          <div className="flex h-screen flex-col">
-            <div className="flex items-center justify-between px-8 pb-4 pt-8">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-slate-200 px-5 py-5">
               <div>
                 <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Block Submitted for Approval
+                  Approval Timeline
                 </h2>
-                <p className="mt-3 text-[15px] text-slate-500">
-                  This block is now under governance review before publishing.
+                <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                  {showInternalReview
+                    ? "Automated checks are validating this block before final internal review."
+                    : "Automated governance checks are validating this block before approval."}
                 </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
-                  📱
-                </button>
-                <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
-                  💻
-                </button>
-                <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-500 ring-1 ring-slate-200">
-                  🖥️
-                </button>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Role: {currentUser.role}
+                </p>
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 px-6 pb-4">
-              <div className="flex h-full flex-col rounded-[34px] bg-transparent">
-                <div className="flex min-h-0 flex-1 items-start justify-center overflow-auto rounded-[34px] bg-[#f6f5fb] px-4 pb-4 pt-2">
-                  <div className="w-full max-w-[1180px]">
-                    <div className="mx-auto rounded-[42px] bg-white px-6 py-6 shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+            <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
+              <section>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Governance Overview
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="text-slate-400 transition hover:text-slate-600"
+                    >
+                      •••
+                    </button>
+                  </div>
+
+                  <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[13px] font-semibold text-slate-900">
+                          Progress
+                        </p>
+                        <p className="mt-0.5 text-[12px] text-slate-500">
+                          {approvedCount} of {totalCount} checks completed
+                        </p>
+                      </div>
+
+                      <p className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {progressPercent}%
+                      </p>
+                    </div>
+
+                    <div className="mt-3 h-1.5 rounded-full bg-slate-200">
                       <div
-                        className="overflow-hidden rounded-[36px] bg-white"
-                        dangerouslySetInnerHTML={{ __html: previewDoc }}
+                        className="h-1.5 rounded-full bg-[#5b7cff] transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
                       />
                     </div>
                   </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-slate-200/70 px-8 py-5 text-[13px] text-slate-500">
-                  <span>This block is now under governance review before publishing.</span>
-                  <span>
-                    Version <span className="font-medium text-slate-700">1.0</span>
-                  </span>
-                  <span>
-                    Status:{" "}
-                    <span
-                      className={
-                        status === "approved"
-                          ? "font-medium text-emerald-600"
-                          : status === "rejected"
-                          ? "font-medium text-rose-600"
-                          : "font-medium text-amber-500"
-                      }
+                  <div className="mt-5">
+                    {checks.map((item, index) => (
+                      <TimelineCheckRow
+                        key={item.id}
+                        item={item}
+                        isLast={index === checks.length - 1}
+                      />
+                    ))}
+                  </div>
+
+                  {(userCanApprove || userCanReject) && (
+                    <div className="mt-4 flex gap-2.5">
+                      {userCanApprove && (
+                        <button
+                          type="button"
+                          onClick={handleApprove}
+                          disabled={!manualReviewReady || isApproving}
+                          className="inline-flex h-10 items-center justify-center rounded-2xl bg-emerald-600 px-4 text-[13px] font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isApproving ? "Approving..." : "Approve"}
+                        </button>
+                      )}
+
+                      {userCanReject && (
+                        <button
+                          type="button"
+                          onClick={handleReject}
+                          disabled={!manualReviewReady || isRejecting}
+                          className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-100 px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isRejecting ? "Rejecting..." : "Reject"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {!showInternalReview && (
+                    <div className="mt-4 rounded-2xl border border-[#dbe5ff] bg-[#f7f9ff] px-4 py-3 text-sm text-[#4f6fff]">
+                      Your role bypasses internal team review. Once all 5 governance
+                      checks pass, this block will be approved automatically.
+                    </div>
+                  )}
+
+                  {showInternalReview && !userCanApprove && !userCanReject && (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      Your role can view this approval workflow, but cannot approve or
+                      reject this block.
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        </aside>
+
+        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
+          <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm hover:text-slate-600"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <path d="M5 7h14M5 12h14M5 17h14" />
+                  </svg>
+                </button>
+
+                <div>
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    {showInternalReview
+                      ? "Block Submitted for Approval"
+                      : "Running Governance Checks"}
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {showInternalReview
+                      ? "Visionir is now running automated compliance and governance checks before final internal sign-off."
+                      : "Visionir is running the 5 automated governance checks. Internal team review is skipped for your role."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewport("mobile")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "mobile"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Mobile
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewport("tablet")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "tablet"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Tablet
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewport("desktop")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "desktop"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Desktop
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="min-h-0 overflow-hidden px-8 py-5">
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="flex h-full items-center justify-center">
+                  <div
+                    className={cx(
+                      "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      shellWidthClass
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "rounded-[28px] bg-white",
+                        viewport === "desktop"
+                          ? "overflow-hidden"
+                          : "overflow-y-auto overflow-x-hidden"
+                      )}
+                      style={{
+                        height:
+                          viewport === "desktop"
+                            ? "min(560px, calc(100dvh - 356px))"
+                            : "min(620px, calc(100dvh - 336px))",
+                      }}
                     >
-                      {status === "approved"
-                        ? "Approved"
-                        : status === "rejected"
-                        ? "Rejected"
-                        : "Pending Review"}
-                    </span>
-                  </span>
+                      <div
+                        className={cx(
+                          "flex min-h-full justify-center",
+                          viewport === "tablet"
+                            ? "items-start py-0"
+                            : "items-start"
+                        )}
+                      >
+                        <iframe
+                          title="Block Approval Preview"
+                          srcDoc={previewDoc}
+                          className="block border-0 bg-white align-top"
+                          style={{
+                            width: `${previewViewportWidth}px`,
+                            minWidth: `${previewViewportWidth}px`,
+                            height: `${previewHeight}px`,
+                            display: "block",
+                          }}
+                          scrolling="no"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-3 border-t border-slate-200/70 px-8 py-5 text-[13px] text-slate-500">
-                  <span>
-                    Brand Compliance: <span className="font-medium text-slate-700">100% ✓</span>
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>Version 1.0</span>
+                <span>
+                  Status:{" "}
+                  <span className={cx("font-medium", statusColorClass)}>
+                    {statusLabel}
                   </span>
-                  <span>
-                    Accessibility: <span className="font-medium text-slate-700">WCAG AA ✓</span>
-                  </span>
-                  <span>
-                    Design Tokens: <span className="font-medium text-slate-700">Locked</span>
-                  </span>
+                </span>
+                <span>
+                  Governance checks completed: {approvedCount}/{totalCount}
+                </span>
+              </div>
+
+              {(userCanReject || userCanApprove) && (
+                <div className="flex items-center gap-3">
+                  {userCanReject && (
+                    <button
+                      type="button"
+                      onClick={handleReject}
+                      disabled={!manualReviewReady || isRejecting}
+                      className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isRejecting ? "Rejecting..." : "Reject"}
+                    </button>
+                  )}
+
+                  {userCanApprove && (
+                    <button
+                      type="button"
+                      onClick={handleApprove}
+                      disabled={!manualReviewReady || isApproving}
+                      className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isApproving ? "Approving..." : "Approve"}
+                    </button>
+                  )}
                 </div>
+              )}
+            </div>
+          </div>
+
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>Brand Compliance: 100% ✓</span>
+                <span>Accessibility: WCAG AA ✓</span>
+                <span>Design Tokens: Locked ✓</span>
               </div>
             </div>
           </div>

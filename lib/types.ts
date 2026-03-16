@@ -35,13 +35,34 @@ export type BlockData = {
   design: BlockDesign;
 };
 
-export type BlockStatus = "draft" | "in_review" | "approved" | "rejected";
+export type BlockStatus =
+  | "draft"
+  | "pending_approval"
+  | "in_review"
+  | "changes_requested"
+  | "approved"
+  | "published"
+  | "rejected"
+  | "archived";
 
 export type BlockRecord = {
   id: string;
   data: BlockData;
   status: BlockStatus;
-  approvalId: string | null;
-  createdAt: number;
-  updatedAt: number;
+
+  createdByUserId: string;
+  updatedByUserId: string;
+
+  submittedByUserId?: string | null;
+  approvedByUserId?: string | null;
+  rejectedByUserId?: string | null;
+  publishedByUserId?: string | null;
+
+  submittedAt?: string | null;
+  approvedAt?: string | null;
+  rejectedAt?: string | null;
+  publishedAt?: string | null;
+
+  createdAt: string;
+  updatedAt: string;
 };

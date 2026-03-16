@@ -1,423 +1,977 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import ReviewEdit from "../new/_components/ReviewEdit";
-import type { BlockData, Accent } from "@/lib/types";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
+import {
+  hasPermission,
+  type BlockStatus,
+  type Role,
+} from "@/lib/permissions";
 
-type Governance =
-  | {
-      score: number;
-      checks: Array<{ id: string; label: string; ok: boolean }>;
-      bannedHit?: string | null;
-    }
-  | null;
+type ViewportMode = "mobile" | "tablet" | "desktop";
 
-type ApprovalStatus = "none" | "pending" | "approved" | "rejected";
+type CheckState = "pending" | "running" | "approved" | "waiting" | "rejected";
 
-type ChangeLogItem = {
+type GovernanceCheck = {
   id: string;
   label: string;
-  from: string;
-  to: string;
-  time: string;
+  helper: string;
+  state: CheckState;
 };
 
-const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
 
-function isAccent(value: unknown): value is Accent {
+function isRole(value: string | null): value is Role {
+  return value === "creator" || value === "approver" || value === "admin";
+}
+
+function NavIcon({
+  active = false,
+  children,
+}: {
+  active?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    value === "blue" ||
-    value === "green" ||
-    value === "orange" ||
-    value === "purple"
+    <button
+      type="button"
+      className={cx(
+        "flex h-11 w-11 items-center justify-center rounded-xl transition",
+        active
+          ? "bg-[#eef3ff] text-[#5b7cff] shadow-sm"
+          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+      )}
+    >
+      {children}
+    </button>
   );
 }
 
-function normaliseBlock(block: any): BlockData {
-  const source = block?.data ?? block ?? {};
-  console.log("source.imageUrl:", source?.imageUrl);
-console.log("final imageUrl:", typeof source?.imageUrl === "string" && source.imageUrl.trim()
-  ? source.imageUrl
-  : DEFAULT_BLOCK_IMAGE);
-
-  return {
-    eyebrow: source?.eyebrow ?? "",
-    headline: source?.headline ?? "",
-    subheading: source?.subheading ?? "",
-    imageUrl: DEFAULT_BLOCK_IMAGE,
-    valuePoints: Array.isArray(source?.valuePoints)
-      ? source.valuePoints.map((point: any) => ({
-          title: point?.title ?? "",
-          text: point?.text ?? "",
-          accent: isAccent(point?.accent) ? point.accent : "blue",
-        }))
-      : [],
-    design: source?.design ?? {
-      theme: "light",
-      layout: "default",
-      variant: "standard",
-    },
-  };
-}
-
-function truncateText(value: string, max = 80) {
-  if (!value) return "Empty";
-  return value.length > max ? `${value.slice(0, max)}…` : value;
-}
-
-function getFieldChanges(prev: BlockData, next: BlockData): ChangeLogItem[] {
-  const changes: ChangeLogItem[] = [];
-  const now = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
-  const pushChange = (label: string, from: string, to: string) => {
-    if (from !== to) {
-      changes.push({
-        id: `${label}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        label,
-        from: truncateText(from),
-        to: truncateText(to),
-        time: now,
-      });
-    }
-  };
-
-  pushChange("Eyebrow", prev.eyebrow || "", next.eyebrow || "");
-  pushChange("Headline", prev.headline || "", next.headline || "");
-  pushChange("Subheading", prev.subheading || "", next.subheading || "");
-  pushChange("Image URL", prev.imageUrl || "", next.imageUrl || "");
-
-  const maxPoints = Math.max(
-    prev.valuePoints?.length ?? 0,
-    next.valuePoints?.length ?? 0
+function StatusPill({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "blue" | "green" | "orange" | "red" | "slate";
+}) {
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none",
+        tone === "blue" && "bg-[#eef3ff] text-[#4f6fff]",
+        tone === "green" && "bg-emerald-50 text-emerald-700",
+        tone === "orange" && "bg-amber-50 text-amber-700",
+        tone === "red" && "bg-rose-50 text-rose-700",
+        tone === "slate" && "bg-slate-100 text-slate-600"
+      )}
+    >
+      {children}
+    </span>
   );
+}
 
-  for (let i = 0; i < maxPoints; i++) {
-    const prevPoint = prev.valuePoints?.[i];
-    const nextPoint = next.valuePoints?.[i];
-
-    pushChange(
-      `Value Point ${i + 1} Title`,
-      prevPoint?.title || "",
-      nextPoint?.title || ""
-    );
-
-    pushChange(
-      `Value Point ${i + 1} Text`,
-      prevPoint?.text || "",
-      nextPoint?.text || ""
-    );
-
-    pushChange(
-      `Value Point ${i + 1} Accent`,
-      prevPoint?.accent || "",
-      nextPoint?.accent || ""
+function CheckIcon({ state }: { state: CheckState }) {
+  if (state === "approved") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+        >
+          <path d="M5 12.5 9.2 16.7 19 7.5" />
+        </svg>
+      </span>
     );
   }
 
-  return changes;
+  if (state === "running") {
+    return (
+      <span className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+        <span className="absolute inset-0 rounded-2xl animate-ping bg-[#dfe7ff] opacity-50" />
+        <svg
+          className="relative h-4.5 w-4.5 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M12 3a9 9 0 1 0 9 9" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "waiting") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M12 7v5l3 2" />
+          <circle cx="12" cy="12" r="8.5" />
+        </svg>
+      </span>
+    );
+  }
+
+  if (state === "rejected") {
+    return (
+      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+        <svg
+          className="h-4.5 w-4.5"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2.2"
+        >
+          <path d="M8 8l8 8M16 8l-8 8" />
+        </svg>
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+      <span className="h-2 w-2 rounded-full bg-slate-300" />
+    </span>
+  );
 }
 
-export default function BlockIdPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = Array.isArray(params?.id) ? params.id[0] : params?.id;
+function CheckStatusLabel({ state }: { state: CheckState }) {
+  if (state === "approved") {
+    return <StatusPill tone="green">Approved</StatusPill>;
+  }
+  if (state === "running") {
+    return <StatusPill tone="blue">Running</StatusPill>;
+  }
+  if (state === "waiting") {
+    return <StatusPill tone="orange">Awaiting internal review</StatusPill>;
+  }
+  if (state === "rejected") {
+    return <StatusPill tone="red">Rejected</StatusPill>;
+  }
+  return <StatusPill tone="slate">Pending</StatusPill>;
+}
 
+function TimelineCheckRow({
+  item,
+  isLast,
+}: {
+  item: GovernanceCheck;
+  isLast: boolean;
+}) {
+  return (
+    <div className="relative flex gap-3.5">
+      {!isLast && (
+        <span
+          className={cx(
+            "absolute left-5 top-11 w-px",
+            item.state === "approved" ? "bg-emerald-200" : "bg-slate-200"
+          )}
+          style={{ height: "calc(100% + 8px)" }}
+        />
+      )}
+
+      <div className="relative z-10 shrink-0">
+        <CheckIcon state={item.state} />
+      </div>
+
+      <div className="min-w-0 flex-1 pb-4">
+        <div className="flex flex-col gap-1.5">
+          <p className="text-[14px] font-semibold leading-5 text-slate-900">
+            {item.label}
+          </p>
+          <p className="text-[12.5px] leading-5 text-slate-500">
+            {item.helper}
+          </p>
+          <div className="pt-0.5">
+            <CheckStatusLabel state={item.state} />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
+  if (value === "pending_approval" || value === "in_review") {
+    return "pending_approval";
+  }
+
+  if (
+    value === "draft" ||
+    value === "changes_requested" ||
+    value === "approved" ||
+    value === "published" ||
+    value === "rejected" ||
+    value === "archived"
+  ) {
+    return value;
+  }
+
+  return "draft";
+}
+
+export default function BlockApprovalPage() {
+  const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+
+  const role = useMemo<Role>(() => {
+    const value = searchParams.get("role");
+    return isRole(value) ? value : "admin";
+  }, [searchParams]);
+
+  const currentUser = useMemo(
+    () => ({
+      id: "user-1",
+      role,
+    }),
+    [role]
+  );
+
+  const id = params.id;
+
+  const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
-  const [describe, setDescribe] = useState("");
-  const [pendingPatch, setPendingPatch] = useState<unknown>(null);
-  const [governance, setGovernance] = useState<Governance>(null);
-  const [approvalStatus, setApprovalStatus] =
-    useState<ApprovalStatus>("none");
-  const [changeLog, setChangeLog] = useState<ChangeLogItem[]>([]);
+  const [status, setStatus] = useState<BlockStatus>("draft");
+  const [createdByUserId, setCreatedByUserId] = useState("user-1");
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [viewport, setViewport] = useState<ViewportMode>("desktop");
+  const [pipelineStarted, setPipelineStarted] = useState(false);
+
+  const [checks, setChecks] = useState<GovernanceCheck[]>([
+    {
+      id: "brand-style",
+      label: "Brand Style Compliance",
+      helper:
+        "Validating typography, spacing, hierarchy, and approved visual patterns.",
+      state: "pending",
+    },
+    {
+      id: "design-integrity",
+      label: "Component Design Integrity",
+      helper:
+        "Checking layout structure, responsive behaviour, and component consistency.",
+      state: "pending",
+    },
+    {
+      id: "tone-messaging",
+      label: "Tone & Messaging Validation",
+      helper:
+        "Reviewing tone of voice, clarity, and alignment with brand messaging rules.",
+      state: "pending",
+    },
+    {
+      id: "color-governance",
+      label: "Colour & Token Governance",
+      helper:
+        "Ensuring approved brand colours, contrast ratios, and design tokens are respected.",
+      state: "pending",
+    },
+    {
+      id: "visual-qa",
+      label: "Visual Quality Assurance",
+      helper:
+        "Final AI inspection for polish, spacing quality, and overall look and feel.",
+      state: "pending",
+    },
+    {
+      id: "internal-review",
+      label: "Internal Team Review",
+      helper:
+        "Waiting for a Visionir internal reviewer to manually approve this block.",
+      state: "pending",
+    },
+  ]);
+
+  const runTimeoutsRef = useRef<number[]>([]);
 
   useEffect(() => {
-    if (!id) return;
-
-    const loadBlock = async () => {
+    async function loadBlock() {
       try {
-        const res = await fetch(`/api/blocks/${id}`, { cache: "no-store" });
+        setLoading(true);
 
-        if (!res.ok) {
-          console.error("Failed to load block");
+        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+          cache: "no-store",
+        });
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || !json?.block) {
+          setEditable(null);
           return;
         }
 
-        const data = await res.json();
-        console.log("RAW BLOCK API RESPONSE:", data);
+        const blockPayload = json.block;
+        const resolvedData = blockPayload.data ?? blockPayload;
 
-        const rawBlock = data?.block ?? data;
-
-        if (!rawBlock) {
-          console.error("No block returned from API");
+        if (!resolvedData) {
+          setEditable(null);
           return;
         }
 
-        const normalised = normaliseBlock(rawBlock);
-        console.log("NORMALISED BLOCK:", normalised);
-
-        setEditable(normalised);
-
-        setApprovalStatus(
-          rawBlock.status === "pending_approval"
-            ? "pending"
-            : rawBlock.status === "approved"
-            ? "approved"
-            : rawBlock.status === "rejected"
-            ? "rejected"
-            : "none"
-        );
+        setEditable(resolvedData);
+        setStatus(mapApiStatusToBlockStatus(blockPayload.status));
+        setCreatedByUserId(blockPayload.createdByUserId ?? "user-1");
       } catch (error) {
-        console.error("Error loading block:", error);
+        console.error("Failed to load approval page:", error);
+        setEditable(null);
+      } finally {
+        setLoading(false);
       }
-    };
+    }
 
-    void loadBlock();
-  }, [id]);
+    if (id) {
+      void loadBlock();
+    }
+  }, [id, role]);
+
+  useEffect(() => {
+    return () => {
+      runTimeoutsRef.current.forEach((timeoutId) =>
+        window.clearTimeout(timeoutId)
+      );
+      runTimeoutsRef.current = [];
+    };
+  }, []);
+
+  useEffect(() => {
+    if (loading || !editable || pipelineStarted) return;
+
+    if (status === "approved" || status === "published") {
+      setChecks((prev) =>
+        prev.map((item) => ({ ...item, state: "approved" }))
+      );
+      setPipelineStarted(true);
+      return;
+    }
+
+    if (status === "rejected") {
+      setChecks((prev) =>
+        prev.map((item, index) => ({
+          ...item,
+          state: index === prev.length - 1 ? "rejected" : "approved",
+        }))
+      );
+      setPipelineStarted(true);
+      return;
+    }
+
+    setPipelineStarted(true);
+
+    const autoCheckCount = 5;
+    const runningDuration = 1200;
+    const gapDuration = 260;
+
+    for (let i = 0; i < autoCheckCount; i += 1) {
+      const startAt = i * (runningDuration + gapDuration);
+      const finishAt = startAt + runningDuration;
+
+      const startTimer = window.setTimeout(() => {
+        setChecks((prev) =>
+          prev.map((item, index) =>
+            index === i
+              ? { ...item, state: "running" }
+              : index < i
+                ? { ...item, state: "approved" }
+                : { ...item, state: "pending" }
+          )
+        );
+      }, startAt);
+
+      const finishTimer = window.setTimeout(() => {
+        setChecks((prev) =>
+          prev.map((item, index) =>
+            index === i
+              ? { ...item, state: "approved" }
+              : index < i
+                ? { ...item, state: "approved" }
+                : item
+          )
+        );
+      }, finishAt);
+
+      runTimeoutsRef.current.push(startTimer, finishTimer);
+    }
+
+    const finalTimer = window.setTimeout(() => {
+      setChecks((prev) =>
+        prev.map((item, index) => {
+          if (index < autoCheckCount) {
+            return { ...item, state: "approved" };
+          }
+
+          if (index === autoCheckCount) {
+            return {
+              ...item,
+              state: currentUser.role === "admin" ? "approved" : "waiting",
+            };
+          }
+
+          return item;
+        })
+      );
+    }, autoCheckCount * (runningDuration + gapDuration));
+
+    runTimeoutsRef.current.push(finalTimer);
+  }, [editable, loading, pipelineStarted, status, currentUser.role]);
+
+  const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
   const previewDoc = useMemo(() => {
-    if (!editable) return "";
-  
-    let resolvedImageUrl = editable.imageUrl || "";
-  
+    if (!editable) return "<html><body></body></html>";
+
+    const rawImageUrl =
+      typeof editable.imageUrl === "string" && editable.imageUrl.trim()
+        ? editable.imageUrl
+        : DEFAULT_BLOCK_IMAGE;
+
+    let resolvedImageUrl = rawImageUrl;
+
     if (typeof window !== "undefined" && resolvedImageUrl) {
       const isAbsolute = /^https?:\/\//i.test(resolvedImageUrl);
-  
+
       if (!isAbsolute) {
         const cleanPath = resolvedImageUrl.startsWith("/")
           ? resolvedImageUrl
           : `/${resolvedImageUrl}`;
-  
+
         resolvedImageUrl = `${window.location.origin}${cleanPath}`;
       }
     }
-  
-    console.log("editable.imageUrl:", editable.imageUrl);
-    console.log("resolvedImageUrl:", resolvedImageUrl);
-  
+
     return makePreviewHtml({
       ...editable,
       imageUrl: resolvedImageUrl,
     });
   }, [editable]);
 
-  async function saveDataToDb(next: BlockData) {
-    if (!id) return;
-
-    try {
-      await fetch(`/api/blocks/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          block: next,
-        }),
-      });
-    } catch (error) {
-      console.error("Failed to save block:", error);
-    }
-  }
-
-  async function improveField(
-    field: string,
-    text: string,
-    apply: (improved: string) => void
-  ) {
-    try {
-      console.log("IMPROVE REQUEST:", { field, text });
-
-      const res = await fetch("/api/refine", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field, text }),
-      });
-
-      const data = await res.json().catch(() => null);
-      console.log("IMPROVE RESPONSE:", data);
-
-      if (!res.ok) {
-        console.error("Failed to improve field", res.status, data);
-        return;
-      }
-
-      const improvedText =
-        data?.text ??
-        data?.improved ??
-        data?.content ??
-        data?.result?.text ??
-        data?.result?.content ??
-        "";
-
-      if (typeof improvedText === "string" && improvedText.trim()) {
-        apply(improvedText);
-      } else {
-        console.error("No improved text returned from /api/refine", data);
-      }
-    } catch (error) {
-      console.error("Error improving field:", error);
-    }
-  }
-
-  async function requestDescribeChanges() {
-    if (!editable || !describe.trim()) return;
-
-    try {
-      const res = await fetch("/api/describe-changes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          block: editable,
-          describe,
-        }),
-      });
-
-      if (!res.ok) {
-        console.error("Failed to describe changes");
-        return;
-      }
-
-      const data = await res.json();
-      console.log("DESCRIBE CHANGES RESPONSE:", data);
-
-      if (data?.patch) {
-        setPendingPatch(data.patch);
-      }
-
-      const rawBlock = data?.block ?? null;
-
-      if (rawBlock) {
-        const next = normaliseBlock(rawBlock);
-        const newChanges = getFieldChanges(editable, next);
-
-        if (newChanges.length > 0) {
-          setChangeLog((current) =>
-            [...newChanges.reverse(), ...current].slice(0, 20)
-          );
-        }
-
-        setEditable(next);
-        await saveDataToDb(next);
-        setDescribe("");
-      }
-    } catch (error) {
-      console.error("Error applying described changes:", error);
-    }
-  }
-
-  async function onSubmitForApproval() {
-    if (!id) return;
-
-    try {
-      const res = await fetch(`/api/blocks/${id}/submit`, {
-        method: "POST",
-      });
-
-      if (!res.ok) {
-        console.error("Failed to submit for approval");
-        return;
-      }
-
-      setApprovalStatus("pending");
-      router.push(`/blocks/${id}/approval`);
-    } catch (error) {
-      console.error("Error submitting for approval:", error);
-    }
-  }
-
-  useEffect(() => {
-    if (!editable) return;
-
-    const score =
-      editable.headline?.trim() &&
-      editable.subheading?.trim() &&
-      editable.valuePoints?.length &&
-      editable.imageUrl?.trim()
-        ? 96
-        : editable.headline?.trim() &&
-          editable.subheading?.trim() &&
-          editable.valuePoints?.length
-        ? 92
-        : 68;
-
-    setGovernance({
-      score,
-      checks: [
-        {
-          id: "headline",
-          label: "Headline added",
-          ok: !!editable.headline?.trim(),
-        },
-        {
-          id: "subheading",
-          label: "Subheading added",
-          ok: !!editable.subheading?.trim(),
-        },
-        {
-          id: "valuePoints",
-          label: "Value points configured",
-          ok: !!editable.valuePoints?.length,
-        },
-        {
-          id: "image",
-          label: "Approved image source provided",
-          ok: !!editable.imageUrl?.trim(),
-        },
-      ],
-      bannedHit: null,
+  async function updateStatus(nextStatus: BlockStatus) {
+    const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: nextStatus }),
     });
-  }, [editable]);
+
+    const json = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(json?.error || "Failed to update status");
+    }
+
+    setStatus(nextStatus);
+  }
+
+  async function handleApprove() {
+    try {
+      setIsApproving(true);
+      await updateStatus("approved");
+
+      setChecks((prev) =>
+        prev.map((item) => ({ ...item, state: "approved" }))
+      );
+    } catch (error) {
+      console.error("Approve failed:", error);
+      alert("Failed to approve block");
+    } finally {
+      setIsApproving(false);
+    }
+  }
+
+  async function handleReject() {
+    try {
+      setIsRejecting(true);
+      await updateStatus("rejected");
+
+      setChecks((prev) =>
+        prev.map((item, index) => ({
+          ...item,
+          state: index === prev.length - 1 ? "rejected" : "approved",
+        }))
+      );
+    } catch (error) {
+      console.error("Reject failed:", error);
+      alert("Failed to reject block");
+    } finally {
+      setIsRejecting(false);
+    }
+  }
+
+  const approvedCount = checks.filter(
+    (item) => item.state === "approved"
+  ).length;
+  const totalCount = checks.length;
+  const progressPercent = Math.round((approvedCount / totalCount) * 100);
+
+  const statusLabel =
+    status === "approved"
+      ? "Approved"
+      : status === "published"
+        ? "Published"
+        : status === "rejected"
+          ? "Rejected"
+          : checks[5]?.state === "waiting"
+            ? "Awaiting Internal Review"
+            : "AI Checks Running";
+
+  const statusColorClass =
+    status === "approved" || status === "published"
+      ? "text-emerald-600"
+      : status === "rejected"
+        ? "text-rose-600"
+        : checks[5]?.state === "waiting"
+          ? "text-amber-600"
+          : "text-[#4f6fff]";
+
+  const shellWidthClass =
+    viewport === "mobile"
+      ? "max-w-[410px]"
+      : viewport === "tablet"
+        ? "max-w-[760px]"
+        : "max-w-[1240px]";
+
+  const previewViewportWidth =
+    viewport === "mobile" ? 360 : viewport === "tablet" ? 680 : 1180;
+
+  const previewHeight =
+    viewport === "mobile" ? 1180 : viewport === "tablet" ? 1220 : 560;
+
+    const manualReviewReady =
+    currentUser.role === "admin"
+      ? status === "pending_approval"
+      : checks[checks.length - 1]?.state === "waiting" &&
+        status === "pending_approval";
+
+        const userCanReviewByRole =
+        hasPermission(currentUser.role, "block.approve") ||
+        hasPermission(currentUser.role, "block.reject");
+    
+      const userCanApprove = hasPermission(currentUser.role, "block.approve");
+      const userCanReject = hasPermission(currentUser.role, "block.reject");
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Loading…
+      </div>
+    );
+  }
 
   if (!editable) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f7f9fc] px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-5 text-sm text-slate-500 shadow-sm">
-          Loading block…
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Block not found.
       </div>
     );
   }
 
   return (
-    <ReviewEdit
-      editable={editable}
-      setEditable={(updater) => {
-        setEditable((prev) => {
-          const next =
-            typeof updater === "function"
-              ? (updater as (prev: BlockData | null) => BlockData | null)(prev)
-              : updater;
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
+      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
+        <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
+          <div className="mb-8 flex items-center justify-center">
+            <div className="relative h-10 w-10">
+              <Image
+                src="/visionirlogo.png"
+                alt="Visionir"
+                fill
+                priority
+                className="object-contain"
+              />
+            </div>
+          </div>
 
-          if (next && prev) {
-            const changed = JSON.stringify(next) !== JSON.stringify(prev);
+          <div className="flex flex-1 flex-col items-center gap-3">
+            <NavIcon active>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="4" />
+                <path d="M8 12h8M12 8v8" />
+              </svg>
+            </NavIcon>
 
-            if (changed) {
-              const newChanges = getFieldChanges(prev, next);
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M4 7h16M7 4v16" />
+              </svg>
+            </NavIcon>
 
-              if (newChanges.length > 0) {
-                setChangeLog((current) =>
-                  [...newChanges.reverse(), ...current].slice(0, 20)
-                );
-              }
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <rect x="4" y="5" width="16" height="14" rx="3" />
+                <path d="M8 9h8M8 13h5" />
+              </svg>
+            </NavIcon>
 
-              void saveDataToDb(next);
-            }
-          }
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M7 3v4M17 3v4M4 9h16" />
+                <rect x="4" y="5" width="16" height="15" rx="3" />
+              </svg>
+            </NavIcon>
 
-          return next;
-        });
-      }}
-      previewDoc={previewDoc}
-      describe={describe}
-      setDescribe={setDescribe}
-      improveField={improveField}
-      requestDescribeChanges={requestDescribeChanges}
-      pendingPatchExists={!!pendingPatch || approvalStatus === "pending"}
-      governance={governance}
-      onSubmitApproval={onSubmitForApproval}
-      changeLog={changeLog}
-    />
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <circle cx="12" cy="8" r="3.5" />
+                <path d="M5 20a7 7 0 0 1 14 0" />
+              </svg>
+            </NavIcon>
+
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <path d="M5 7h14M5 12h14M5 17h8" />
+              </svg>
+            </NavIcon>
+          </div>
+
+          <div className="mt-4">
+            <NavIcon>
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
+                <path d="M12 17h.01" />
+              </svg>
+            </NavIcon>
+          </div>
+        </aside>
+
+        <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-slate-200 px-5 py-5">
+              <div>
+                <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                  Approval Timeline
+                </h2>
+                <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                  Automated checks are validating this block before final internal review.
+                </p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Role: {currentUser.role}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
+              <section>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Governance Overview
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="text-slate-400 transition hover:text-slate-600"
+                    >
+                      •••
+                    </button>
+                  </div>
+
+                  <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-[13px] font-semibold text-slate-900">
+                          Progress
+                        </p>
+                        <p className="mt-0.5 text-[12px] text-slate-500">
+                          {approvedCount} of {totalCount} checks completed
+                        </p>
+                      </div>
+
+                      <p className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {progressPercent}%
+                      </p>
+                    </div>
+
+                    <div className="mt-3 h-1.5 rounded-full bg-slate-200">
+                      <div
+                        className="h-1.5 rounded-full bg-[#5b7cff] transition-all duration-500"
+                        style={{ width: `${progressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    {checks.map((item, index) => (
+                      <TimelineCheckRow
+                        key={item.id}
+                        item={item}
+                        isLast={index === checks.length - 1}
+                      />
+                    ))}
+                  </div>
+
+                  {userCanReviewByRole && (
+                    <div className="mt-4 flex gap-2.5">
+                      {userCanApprove && (
+                        <button
+                          type="button"
+                          onClick={handleApprove}
+                          disabled={!manualReviewReady || isApproving}
+                          className="inline-flex h-10 items-center justify-center rounded-2xl bg-emerald-600 px-4 text-[13px] font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isApproving ? "Approving..." : "Approve"}
+                        </button>
+                      )}
+
+                      {userCanReject && (
+                        <button
+                          type="button"
+                          onClick={handleReject}
+                          disabled={!manualReviewReady || isRejecting}
+                          className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-100 px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isRejecting ? "Rejecting..." : "Reject"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {!userCanReviewByRole && (
+                    <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+                      Your role can view this approval workflow, but cannot approve or reject this block.
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+        </aside>
+
+        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
+          <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm hover:text-slate-600"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  >
+                    <path d="M5 7h14M5 12h14M5 17h14" />
+                  </svg>
+                </button>
+
+                <div>
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Block Submitted for Approval
+                  </h1>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Visionir is now running automated compliance and governance
+                    checks before final internal sign-off.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewport("mobile")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "mobile"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Mobile
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewport("tablet")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "tablet"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Tablet
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setViewport("desktop")}
+                  className={cx(
+                    "rounded-2xl border px-3 py-2 text-sm transition",
+                    viewport === "desktop"
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                  )}
+                >
+                  Desktop
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="min-h-0 overflow-hidden px-8 py-5">
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="flex h-full items-center justify-center">
+                  <div
+                    className={cx(
+                      "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      shellWidthClass
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "rounded-[28px] bg-white",
+                        viewport === "desktop"
+                          ? "overflow-hidden"
+                          : "overflow-y-auto overflow-x-hidden"
+                      )}
+                      style={{
+                        height:
+                          viewport === "desktop"
+                            ? "min(560px, calc(100dvh - 356px))"
+                            : "min(620px, calc(100dvh - 336px))",
+                      }}
+                    >
+                      <div
+                        className={cx(
+                          "flex min-h-full justify-center",
+                          viewport === "tablet"
+                            ? "items-start py-0"
+                            : "items-start"
+                        )}
+                      >
+                        <iframe
+                          title="Block Approval Preview"
+                          srcDoc={previewDoc}
+                          className="block border-0 bg-white align-top"
+                          style={{
+                            width: `${previewViewportWidth}px`,
+                            minWidth: `${previewViewportWidth}px`,
+                            height: `${previewHeight}px`,
+                            display: "block",
+                          }}
+                          scrolling="no"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>Version 1.0</span>
+                <span>
+                  Status:{" "}
+                  <span className={cx("font-medium", statusColorClass)}>
+                    {statusLabel}
+                  </span>
+                </span>
+                <span>
+                  Governance checks completed: {approvedCount}/{totalCount}
+                </span>
+              </div>
+
+              {userCanReviewByRole && (
+                <div className="flex items-center gap-3">
+                  {userCanReject && (
+                    <button
+                      type="button"
+                      onClick={handleReject}
+                      disabled={!manualReviewReady || isRejecting}
+                      className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isRejecting ? "Rejecting..." : "Reject"}
+                    </button>
+                  )}
+
+                  {userCanApprove && (
+                    <button
+                      type="button"
+                      onClick={handleApprove}
+                      disabled={!manualReviewReady || isApproving}
+                      className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isApproving ? "Approving..." : "Approve"}
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>Brand Compliance: 100% ✓</span>
+                <span>Accessibility: WCAG AA ✓</span>
+                <span>Design Tokens: Locked ✓</span>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
   );
 }

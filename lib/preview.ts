@@ -1,4 +1,4 @@
-import type { Accent, ValuePoint, BlockData } from "@/lib/types";
+import type { Accent, BlockData } from "@/lib/types";
 
 const ACCENT_BORDER: Record<Accent, string> = {
   blue: "#2f6df6",
@@ -7,6 +7,8 @@ const ACCENT_BORDER: Record<Accent, string> = {
   purple: "#7c3aed",
 };
 
+const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -14,6 +16,20 @@ function escapeHtml(value: string) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function resolvePreviewImageUrl(imageUrl?: string) {
+  const raw =
+    typeof imageUrl === "string" && imageUrl.trim()
+      ? imageUrl.trim()
+      : DEFAULT_BLOCK_IMAGE;
+
+  if (/^https?:\/\//i.test(raw)) {
+    return raw;
+  }
+
+  const cleanPath = raw.startsWith("/") ? raw : `/${raw}`;
+  return cleanPath;
 }
 
 export function makePreviewHtml(data: BlockData) {
@@ -32,18 +48,22 @@ export function makePreviewHtml(data: BlockData) {
     })
     .join("");
 
-  const imageHtml = data.imageUrl
-    ? `<img src="${escapeHtml(data.imageUrl)}" alt="" />`
+  const resolvedImageUrl = resolvePreviewImageUrl(data.imageUrl);
+  const safeImageUrl = escapeHtml(resolvedImageUrl);
+  const safeFallbackUrl = escapeHtml(DEFAULT_BLOCK_IMAGE);
+
+  const imageHtml = resolvedImageUrl
+    ? `<img src="${safeImageUrl}" alt="" onerror="if(this.dataset.fallbackApplied==='true'){this.style.display='none';}else{this.dataset.fallbackApplied='true';this.src='${safeFallbackUrl}';}" />`
     : `<div class="image-placeholder"></div>`;
 
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<base href="/" />
+  <base href="/" />
   <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" /> 
- <title>Preview</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview</title>
   <style>
     * {
       box-sizing: border-box;
@@ -66,10 +86,6 @@ export function makePreviewHtml(data: BlockData) {
       justify-content: stretch;
     }
 
-    /* IMPORTANT:
-       This is ONLY the block itself.
-       No grey stage, no extra outer wrapper, no second framed preview shell.
-    */
     .block-shell {
       width: 100%;
       height: 100%;

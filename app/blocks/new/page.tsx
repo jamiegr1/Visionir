@@ -1,10 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Generating from "./_components/Generating";
 import type { BlockData } from "@/lib/types";
+import { hasPermission, type Role } from "@/lib/permissions";
 
 type Step = "context" | "instructions" | "generating";
 type ImageSourceMode = "none" | "upload" | "gallery";
@@ -38,9 +39,14 @@ const governanceChecks = [
 ];
 
 const contentLengthOptions = ["Short", "Standard", "Detailed"];
+const MIN_GENERATION_TIME_MS = 5000;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function isRole(value: string | null): value is Role {
+  return value === "creator" || value === "approver" || value === "admin";
 }
 
 function NavIcon({
@@ -535,6 +541,22 @@ function ImageSourceSelector({
 
 export default function NewBlockPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const role = useMemo<Role>(() => {
+    const value = searchParams.get("role");
+    return isRole(value) ? value : "admin";
+  }, [searchParams]);
+
+  const currentUser = useMemo(
+    () => ({
+      id: "user-1",
+      role,
+    }),
+    [role]
+  );
+
+  const canCreate = hasPermission(currentUser.role, "block.create");
 
   const [step, setStep] = useState<Step>("context");
 
@@ -552,28 +574,44 @@ export default function NewBlockPage() {
   );
 
   const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState(progressLabels[0]);
   const [error, setError] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const progressLabel = useMemo(() => {
-    if (progress < 15) return progressLabels[0];
-    if (progress < 30) return progressLabels[1];
-    if (progress < 45) return progressLabels[2];
-    if (progress < 65) return progressLabels[3];
-    if (progress < 85) return progressLabels[4];
-    return progressLabels[5];
-  }, [progress]);
-
   useEffect(() => {
     if (step !== "generating") return;
-    if (progress >= 92) return;
 
-    const timer = window.setInterval(() => {
-      setProgress((p) => Math.min(p + Math.floor(Math.random() * 8) + 4, 92));
-    }, 220);
+    const start = performance.now();
 
-    return () => window.clearInterval(timer);
-  }, [step, progress]);
+    setProgress(0);
+    setProgressLabel(progressLabels[0]);
+
+    const interval = window.setInterval(() => {
+      const elapsed = performance.now() - start;
+      const rawProgress = Math.min(
+        (elapsed / MIN_GENERATION_TIME_MS) * 100,
+        99
+      );
+
+      setProgress(rawProgress);
+
+      if (rawProgress < 15) {
+        setProgressLabel(progressLabels[0]);
+      } else if (rawProgress < 32) {
+        setProgressLabel(progressLabels[1]);
+      } else if (rawProgress < 50) {
+        setProgressLabel(progressLabels[2]);
+      } else if (rawProgress < 70) {
+        setProgressLabel(progressLabels[3]);
+      } else if (rawProgress < 88) {
+        setProgressLabel(progressLabels[4]);
+      } else {
+        setProgressLabel(progressLabels[5]);
+      }
+    }, 100);
+
+    return () => window.clearInterval(interval);
+  }, [step]);
 
   function handleContinue() {
     setError(null);
@@ -586,10 +624,20 @@ export default function NewBlockPage() {
   }
 
   async function handleGenerate() {
+    if (!canCreate) {
+      setError("You do not have permission to create blocks.");
+      return;
+    }
+
     setError(null);
     setIsGenerating(true);
     setStep("generating");
-    setProgress(8);
+    setProgress(0);
+    setProgressLabel(progressLabels[0]);
+
+    const minimumDelayPromise = new Promise((resolve) =>
+      window.setTimeout(resolve, MIN_GENERATION_TIME_MS)
+    );
 
     try {
       const enrichedPrompt = `
@@ -611,61 +659,90 @@ Generation Request:
 ${prompt}
       `.trim();
 
-      const generateRes = await fetch("/api/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          blockName,
-          location,
-          category: blockType,
-          prompt: enrichedPrompt,
-        }),
-      });
+      const generationAndSavePromise = (async () => {
+        const generateRes = await fetch(`/api/generate?role=${role}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            blockName,
+            location,
+            category: blockType,
+            prompt: enrichedPrompt,
+          }),
+        });
 
-      const generateJson =
-        (await generateRes.json().catch(() => ({}))) as GenerateResponse;
+        const generateJson =
+          (await generateRes.json().catch(() => ({}))) as GenerateResponse;
 
-      if (!generateRes.ok || !generateJson?.blockData) {
-        throw new Error("Failed to generate block");
-      }
+        if (!generateRes.ok || !generateJson?.blockData) {
+          throw new Error("Failed to generate block");
+        }
 
-      setProgress(96);
+        const createRes = await fetch(`/api/blocks?role=${role}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            data: generateJson.blockData,
+            status: "pending_approval",
+          }),
+        });
 
-      const createRes = await fetch("/api/blocks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: generateJson.blockData }),
-      });
+        const createJson = await createRes.json().catch(() => ({}));
 
-      const createJson = await createRes.json().catch(() => ({}));
+        if (!createRes.ok || !createJson?.block?.id) {
+          throw new Error(createJson?.error || "Failed to save generated block");
+        }
 
-      if (!createRes.ok || !createJson?.block?.id) {
-        throw new Error(createJson?.error || "Failed to save generated block");
-      }
+        const blockId = createJson.block.id as string;
+
+        return blockId;
+      })();
+
+      const [, blockId] = await Promise.all([
+        minimumDelayPromise,
+        generationAndSavePromise,
+      ]);
 
       setProgress(100);
+      setProgressLabel("Block ready");
 
       window.setTimeout(() => {
-        router.push(`/blocks/${createJson.block.id}`);
-      }, 350);
+        router.push(`/blocks/${blockId}/approval?role=${role}`);
+      }, 250);
     } catch (e: any) {
       setError(e?.message || "Something went wrong");
       setIsGenerating(false);
       setStep("instructions");
       setProgress(0);
+      setProgressLabel(progressLabels[0]);
     }
+  }
+
+  if (!canCreate) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#f6f7fb] px-6">
+        <div className="w-full max-w-[520px] rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
+            Access restricted
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            Your current role does not have permission to create blocks.
+          </p>
+        </div>
+      </div>
+    );
   }
 
   if (step === "generating") {
     return (
-      <div className="h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
-        <div className="flex h-screen">
+      <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f6f7fb] text-slate-900">
+        <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
           <LeftSidebar />
 
           <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f6f7fb]">
             <TopBar title="Generating" stepLabel="Step 2 of 3" />
 
-            <div className="flex flex-1 items-center justify-center px-8 py-8">
+            <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
               <Generating progress={progress} label={progressLabel} />
             </div>
           </main>
@@ -675,8 +752,8 @@ ${prompt}
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f6f7fb] text-slate-900">
-      <div className="flex h-screen">
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f6f7fb] text-slate-900">
+      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
         <LeftSidebar />
 
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f6f7fb]">
@@ -685,8 +762,8 @@ ${prompt}
             stepLabel={step === "context" ? "Step 1 of 3" : "Step 2 of 3"}
           />
 
-          <div className="flex flex-1 items-center justify-center px-8 py-6">
-            <div className="mx-auto w-full max-w-[900px] rounded-[30px] bg-white px-7 pt-6 pb-8 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+          <div className="flex flex-1 items-center justify-center overflow-hidden px-8 pb-3">
+            <div className="mx-auto w-full max-w-[900px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
               {step === "context" ? (
                 <>
                   <ProgressHeader
@@ -744,10 +821,10 @@ ${prompt}
                     </div>
                   ) : null}
 
-                  <div className="mt-6 flex items-center justify-center gap-3">
+                  <div className="mt-5 flex items-center justify-center gap-3">
                     <button
                       type="button"
-                      onClick={() => router.push("/")}
+                      onClick={() => router.push(`/?role=${role}`)}
                       className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
                     >
                       Cancel
@@ -818,7 +895,7 @@ ${prompt}
                     </div>
                   ) : null}
 
-                  <div className="mt-6 flex items-center justify-center gap-3">
+                  <div className="mt-5 flex items-center justify-center gap-3">
                     <button
                       type="button"
                       onClick={handleBack}
