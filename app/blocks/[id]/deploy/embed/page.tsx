@@ -32,72 +32,34 @@ function StatusPill({
   );
 }
 
-function ActionCard({
+function StepCard({
+  number,
   title,
   description,
-  primary,
-  onClick,
 }: {
+  number: number;
   title: string;
   description: string;
-  primary?: boolean;
-  onClick?: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cx(
-        "w-full rounded-[20px] border p-4 text-left transition-all duration-200",
-        primary
-          ? "border-[#dbe5ff] bg-[#f6f8ff] hover:border-[#c7d6ff] hover:bg-[#eef3ff]"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
-      )}
-    >
-      <div className="flex items-start justify-between gap-3">
+    <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[12px] font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+          {number}
+        </div>
+
         <div>
-          <p
-            className={cx(
-              "text-[14px] font-semibold",
-              primary ? "text-[#3158f5]" : "text-slate-900"
-            )}
-          >
-            {title}
-          </p>
-          <p className="mt-1.5 text-[12.5px] leading-5 text-slate-500">
+          <p className="text-[13.5px] font-semibold text-slate-900">{title}</p>
+          <p className="mt-1 text-[12px] leading-5 text-slate-500">
             {description}
           </p>
         </div>
-
-        <span
-          className={cx(
-            "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl ring-1",
-            primary
-              ? "bg-[#eef3ff] text-[#4f6fff] ring-[#dbe5ff]"
-              : "bg-slate-50 text-slate-500 ring-slate-200"
-          )}
-        >
-          <svg
-            className="h-4.5 w-4.5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M8 12h8" strokeLinecap="round" />
-            <path
-              d="m13 7 5 5-5 5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
       </div>
-    </button>
+    </div>
   );
 }
 
-export default function BlockDeployPage() {
+export default function BlockDeployEmbedPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
@@ -105,6 +67,7 @@ export default function BlockDeployPage() {
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadBlock() {
@@ -121,7 +84,7 @@ export default function BlockDeployPage() {
 
         setEditable(json.block.data);
       } catch (error) {
-        console.error("Failed to load deploy page:", error);
+        console.error("Failed to load embed page:", error);
         setEditable(null);
       } finally {
         setLoading(false);
@@ -163,6 +126,37 @@ export default function BlockDeployPage() {
     });
   }, [editable]);
 
+  const embedCode = useMemo(() => {
+    if (!editable) return "";
+
+    const escapedPreview = previewDoc
+      .replace(/\\/g, "\\\\")
+      .replace(/`/g, "\\`")
+      .replace(/\$\{/g, "\\${");
+
+    return `<div id="visionir-block-${id}"></div>
+<script>
+(function () {
+  var container = document.getElementById("visionir-block-${id}");
+  if (!container) return;
+  container.innerHTML = \`${escapedPreview}\`;
+})();
+</script>`;
+  }, [previewDoc, editable, id]);
+
+  async function handleCopyEmbedCode() {
+    try {
+      await navigator.clipboard.writeText(embedCode);
+      setCopied(true);
+
+      window.setTimeout(() => {
+        setCopied(false);
+      }, 2200);
+    } catch (error) {
+      console.error("Failed to copy embed code:", error);
+    }
+  }
+
   const shellWidthClass =
     viewport === "mobile"
       ? "max-w-[410px]"
@@ -200,14 +194,14 @@ export default function BlockDeployPage() {
             <div className="border-b border-slate-200 px-5 py-5">
               <div>
                 <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Deployment
+                  Embed to Optimizely
                 </h2>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                  This block has passed governance and is now ready for deployment
-                  and reuse.
+                  Follow these simple steps to add this approved block into
+                  Optimizely.
                 </p>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Approved Output
+                  Deployment Process
                 </p>
               </div>
             </div>
@@ -218,111 +212,75 @@ export default function BlockDeployPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                        Approval Summary
+                        Deployment Steps
+                      </p>
+                      <p className="mt-2 text-[12px] leading-5 text-slate-500">
+                        This page is designed for marketers and content teams, so
+                        the process stays simple and easy to follow.
                       </p>
                     </div>
 
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-                      <svg
-                        className="h-4.5 w-4.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                      >
-                        <path d="M5 12.5 9.2 16.7 19 7.5" />
-                      </svg>
-                    </span>
-                  </div>
-
-                  <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-[13px] font-semibold text-slate-900">
-                          Status
-                        </p>
-                        <p className="mt-0.5 text-[12px] text-slate-500">
-                          Governance checks completed successfully
-                        </p>
-                      </div>
-
-                      <StatusPill tone="green">Approved</StatusPill>
-                    </div>
-
-                    <div className="mt-3 h-1.5 rounded-full bg-slate-200">
-                      <div
-                        className="h-1.5 rounded-full bg-emerald-500"
-                        style={{ width: "100%" }}
-                      />
-                    </div>
+                    <StatusPill tone="blue">Optimizely</StatusPill>
                   </div>
 
                   <div className="mt-5 space-y-3">
-                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-                        <svg
-                          className="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                        >
-                          <path d="M5 12.5 9.2 16.7 19 7.5" />
-                        </svg>
-                      </span>
-                      <div>
-                        <p className="text-[13.5px] font-semibold text-slate-900">
-                          Brand Compliance Passed
-                        </p>
-                        <p className="mt-1 text-[12px] leading-5 text-slate-500">
-                          Typography, colour system, spacing, and approved patterns
-                          validated successfully.
-                        </p>
-                      </div>
-                    </div>
+                    <StepCard
+                      number={1}
+                      title="Copy Embed Code"
+                      description="Click the button below to copy the production-ready code generated by Visionir."
+                    />
 
-                    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
-                        <svg
-                          className="h-4 w-4"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                        >
-                          <path d="M5 12.5 9.2 16.7 19 7.5" />
-                        </svg>
-                      </span>
-                      <div>
-                        <p className="text-[13.5px] font-semibold text-slate-900">
-                          Accessibility & Governance Passed
-                        </p>
-                        <p className="mt-1 text-[12px] leading-5 text-slate-500">
-                          WCAG checks, token controls, and output governance are
-                          locked and approved.
-                        </p>
-                      </div>
-                    </div>
+                    <StepCard
+                      number={2}
+                      title="Open Optimizely CMS"
+                      description="Navigate to the page in Optimizely where you want this approved block to appear."
+                    />
+
+                    <StepCard
+                      number={3}
+                      title="Add a New Block"
+                      description='Add a new block to the page and choose “JavaScript Block”.'
+                    />
+
+                    <StepCard
+                      number={4}
+                      title="Paste the Embed Code"
+                      description="Paste the copied Visionir embed code into the JavaScript block and save your changes."
+                    />
+
+                    <StepCard
+                      number={5}
+                      title="Position and Publish"
+                      description="Place the block in the correct location on the page, then publish when ready."
+                    />
                   </div>
 
-                  <div className="mt-5 border-t border-slate-200 pt-5">
-                    <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                      Deployment Actions
+                  <div className="mt-5 rounded-[20px] border border-[#dbe5ff] bg-[#f6f8ff] p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#4f6fff]">
+                      Helpful Note
                     </p>
+                    <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                      The generated embed code is already approved and ready to use.
+                      No technical edits should be needed before adding it into
+                      Optimizely.
+                    </p>
+                  </div>
 
-                    <div className="mt-3 space-y-3">
-                      <ActionCard
-                        title="Generate Optimizely Embed Code"
-                        description="Create production-ready embed output for approved CMS implementation."
-                        primary
-                        onClick={() => router.push(`/blocks/${id}/deploy/embed`)}
-                      />
+                  <div className="mt-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleCopyEmbedCode}
+                      className="w-full rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                    >
+                      {copied ? "Embed Code Copied" : "Copy Embed Code"}
+                    </button>
 
-                      <ActionCard
-                        title="Save as Approved Block Template"
-                        description="Store this approved layout as a reusable governed template for future teams."
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+                    >
+                      Live Chat Support
+                    </button>
                   </div>
                 </div>
               </section>
@@ -335,11 +293,11 @@ export default function BlockDeployPage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Block Approved — Ready for Deployment
+                  Deploy to Optimizely - Instructions
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  This output has passed governance and is now ready to embed
-                  into your CMS or save as a reusable template.
+                  This block is production-ready and can now be embedded into
+                  Optimizely using a JavaScript block.
                 </p>
               </div>
 
@@ -441,28 +399,31 @@ export default function BlockDeployPage() {
           <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>This embed remains governed after deployment.</span>
                 <span>Version 1.0</span>
                 <span>
                   Status:{" "}
-                  <span className="font-medium text-emerald-600">Approved</span>
+                  <span className="font-medium text-emerald-600">
+                    Ready For Production
+                  </span>
                 </span>
-                <span>Deployment ready</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
                   type="button"
+                  onClick={handleCopyEmbedCode}
                   className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Save Template
+                  {copied ? "Copied" : "Copy Embed Code"}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/blocks/${id}/deploy/embed`)}
+                  onClick={() => router.push(`/blocks/${id}/deploy`)}
                   className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
                 >
-                  Generate Embed Code
+                  Done
                 </button>
               </div>
             </div>
@@ -474,6 +435,7 @@ export default function BlockDeployPage() {
                 <span>Brand Compliance: 100% ✓</span>
                 <span>Accessibility: WCAG AA ✓</span>
                 <span>Design Tokens: Locked ✓</span>
+                <span>Restricted Scripts: Enabled ✓</span>
               </div>
             </div>
           </div>

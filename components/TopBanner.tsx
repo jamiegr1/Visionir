@@ -10,7 +10,7 @@ export default function TopBanner() {
         {/* Logo */}
         <div className="flex items-center">
           <Image
-            src="/visionirlonglogo.png"
+            src="/visionirlonglogo.svg"
             alt="Visionir"
             width={140}
             height={34}

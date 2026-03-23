@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import Generating from "./_components/Generating";
 import type { BlockData } from "@/lib/types";
 import { hasPermission, type Role } from "@/lib/permissions";
@@ -47,155 +46,6 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
-}
-
-function NavIcon({
-  active = false,
-  children,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="relative flex h-12 w-full items-center justify-center">
-      {active ? (
-        <span className="absolute -right-[14px] top-1/2 h-[45px] w-[3px] -translate-y-1/2 rounded-full bg-[#4f6fff]" />
-      ) : null}
-
-      <button
-        type="button"
-        className={cx(
-          "flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200",
-          active
-            ? "bg-[#f2f5ff] text-[#5b7cff]"
-            : "text-[#8f98b3] hover:bg-[#f6f8fc] hover:text-[#6f7895]"
-        )}
-      >
-        {children}
-      </button>
-    </div>
-  );
-}
-
-function LeftSidebar() {
-  return (
-    <aside className="flex w-[78px] shrink-0 flex-col items-center border-r border-[#e8ebf3] bg-white py-5">
-      <div className="mb-8 flex items-center justify-center">
-        <div className="relative h-10 w-10">
-          <Image
-            src="/visionirlogo.png"
-            alt="Visionir"
-            fill
-            priority
-            className="object-contain"
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col items-center gap-4">
-        <NavIcon active>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <rect x="4" y="4" width="16" height="16" rx="4" />
-            <path d="M8 12h8M12 8v8" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path d="M4 7h16M7 4v16" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <rect x="4" y="5" width="16" height="14" rx="3" />
-            <path d="M8 9h8M8 13h5" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path d="M7 3v4M17 3v4M4 9h16" />
-            <rect x="4" y="5" width="16" height="15" rx="3" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <circle cx="12" cy="8" r="3.5" />
-            <path d="M5 20a7 7 0 0 1 14 0" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path d="M5 7h14M5 12h14M5 17h8" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <rect x="5" y="5" width="14" height="14" rx="3" />
-            <path d="M8 8h8v8H8z" />
-          </svg>
-        </NavIcon>
-
-        <NavIcon>
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-          >
-            <path d="M6 19V5M12 19V9M18 19V12" />
-          </svg>
-        </NavIcon>
-      </div>
-    </aside>
-  );
 }
 
 function TopBar({
@@ -683,7 +533,7 @@ ${prompt}
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             data: generateJson.blockData,
-            status: "pending_approval",
+            status: "draft",
           }),
         });
 
@@ -707,7 +557,7 @@ ${prompt}
       setProgressLabel("Block ready");
 
       window.setTimeout(() => {
-        router.push(`/blocks/${blockId}/approval?role=${role}`);
+        router.push(`/blocks/${blockId}/review?role=${role}`);
       }, 250);
     } catch (e: any) {
       setError(e?.message || "Something went wrong");
@@ -720,7 +570,7 @@ ${prompt}
 
   if (!canCreate) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f6f7fb] px-6">
+      <div className="flex h-full min-h-0 items-center justify-center bg-[#f6f7fb] px-6">
         <div className="w-full max-w-[520px] rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
           <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
             Access restricted
@@ -735,189 +585,172 @@ ${prompt}
 
   if (step === "generating") {
     return (
-      <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f6f7fb] text-slate-900">
-        <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-          <LeftSidebar />
+      <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
+        <TopBar title="Generating" stepLabel="Step 2 of 3" />
 
-          <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f6f7fb]">
-            <TopBar title="Generating" stepLabel="Step 2 of 3" />
-
-            <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
-              <Generating progress={progress} label={progressLabel} />
-            </div>
-          </main>
+        <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
+          <Generating progress={progress} label={progressLabel} />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f6f7fb] text-slate-900">
-      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-        <LeftSidebar />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
+      <TopBar
+        title="Create Block"
+        stepLabel={step === "context" ? "Step 1 of 3" : "Step 2 of 3"}
+      />
 
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[#f6f7fb]">
-          <TopBar
-            title="Create Block"
-            stepLabel={step === "context" ? "Step 1 of 3" : "Step 2 of 3"}
-          />
+      <div className="flex flex-1 items-center justify-center overflow-auto px-8 py-6">
+        <div className="mx-auto w-full max-w-[900px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+          {step === "context" ? (
+            <>
+              <ProgressHeader
+                currentStep={1}
+                title="Block Context"
+                subtitle="Define the core block details before moving into generation instructions."
+              />
 
-          <div className="flex flex-1 items-center justify-center overflow-hidden px-8 pb-3">
-            <div className="mx-auto w-full max-w-[900px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
-              {step === "context" ? (
-                <>
-                  <ProgressHeader
-                    currentStep={1}
-                    title="Block Context"
-                    subtitle="Define the core block details before moving into generation instructions."
+              <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
+                <FormRow label="Block Name">
+                  <TextInput
+                    value={blockName}
+                    onChange={setBlockName}
+                    placeholder="Why Choose Kiwa Agri-Food"
                   />
+                </FormRow>
 
-                  <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
-                    <FormRow label="Block Name">
-                      <TextInput
-                        value={blockName}
-                        onChange={setBlockName}
-                        placeholder="Why Choose Kiwa Agri-Food"
-                      />
-                    </FormRow>
-
-                    <FormRow label="Block Type">
-                      <TextInput
-                        value={blockType}
-                        onChange={setBlockType}
-                        placeholder="Why Choose Us"
-                      />
-                    </FormRow>
-
-                    <FormRow label="Where will this block be used">
-                      <TextInput
-                        value={location}
-                        onChange={setLocation}
-                        placeholder="Food, Feed & Agriculture"
-                      />
-                    </FormRow>
-
-                    <FormRow label="Content Length">
-                      <SegmentedOptions
-                        value={contentLength}
-                        onChange={setContentLength}
-                        options={contentLengthOptions}
-                      />
-                    </FormRow>
-
-                    <FormRow label="Image Source" multiline>
-                      <ImageSourceSelector
-                        mode={imageSourceMode}
-                        setMode={setImageSourceMode}
-                        uploadedFileName={uploadedImageFile?.name || ""}
-                        onFileChange={setUploadedImageFile}
-                      />
-                    </FormRow>
-                  </div>
-
-                  {error ? (
-                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                      {error}
-                    </div>
-                  ) : null}
-
-                  <div className="mt-5 flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => router.push(`/?role=${role}`)}
-                      className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
-                    >
-                      Cancel
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleContinue}
-                      disabled={
-                        !blockName.trim() ||
-                        !blockType.trim() ||
-                        !location.trim()
-                      }
-                      className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      Continue
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <ProgressHeader
-                    currentStep={2}
-                    title="AI Instructions"
-                    subtitle="Provide the generation prompt and review the governance controls applied to the output."
+                <FormRow label="Block Type">
+                  <TextInput
+                    value={blockType}
+                    onChange={setBlockType}
+                    placeholder="Why Choose Us"
                   />
+                </FormRow>
 
-                  <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
-                    <FormRow label="AI Prompt" multiline helper="Required">
-                      <textarea
-                        value={prompt}
-                        onChange={(e) => setPrompt(e.target.value)}
-                        placeholder="Describe the content block you want to create..."
-                        className="min-h-[140px] w-full rounded-xl border border-[#e3e7f2] bg-[#fafbff] px-4 py-3 text-[14px] leading-[1.7] text-[#2c3348] outline-none transition placeholder:text-[#b6bdd2] hover:border-[#d2d8ea] focus:border-[#5b7cff] focus:bg-white focus:shadow-[0_0_0_4px_rgba(91,124,255,0.08)]"
-                      />
-                    </FormRow>
-                  </div>
+                <FormRow label="Where will this block be used">
+                  <TextInput
+                    value={location}
+                    onChange={setLocation}
+                    placeholder="Food, Feed & Agriculture"
+                  />
+                </FormRow>
 
-                  <div className="mt-5 rounded-[22px] bg-[#f8f9fc] px-6 py-5 ring-1 ring-[#eceff5]">
-                    <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-[#111827]">
-                      Governance & Output Controls
-                    </h3>
-                    <p className="mt-2 text-[13px] text-[#7d859d]">
-                      All generated blocks are validated against organisational
-                      design, accessibility, performance, and content standards.
-                    </p>
+                <FormRow label="Content Length">
+                  <SegmentedOptions
+                    value={contentLength}
+                    onChange={setContentLength}
+                    options={contentLengthOptions}
+                  />
+                </FormRow>
 
-                    <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-4">
-                      {governanceChecks.map((item) => (
-                        <div
-                          key={item}
-                          className="flex min-w-0 items-center gap-3"
-                        >
-                          <span className="relative h-[18px] w-[18px] shrink-0 rounded-full bg-[#5b7cff]">
-                            <span className="absolute left-1/2 top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
-                          </span>
-                          <span className="text-[13px] font-medium leading-[1.35] text-[#2c3348]">
-                            {item}
-                          </span>
-                        </div>
-                      ))}
+                <FormRow label="Image Source" multiline>
+                  <ImageSourceSelector
+                    mode={imageSourceMode}
+                    setMode={setImageSourceMode}
+                    uploadedFileName={uploadedImageFile?.name || ""}
+                    onFileChange={setUploadedImageFile}
+                  />
+                </FormRow>
+              </div>
+
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
+
+              <div className="mt-5 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/?role=${role}`)}
+                  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={
+                    !blockName.trim() || !blockType.trim() || !location.trim()
+                  }
+                  className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Continue
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <ProgressHeader
+                currentStep={2}
+                title="AI Instructions"
+                subtitle="Provide the generation prompt and review the governance controls applied to the output."
+              />
+
+              <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
+                <FormRow label="AI Prompt" multiline helper="Required">
+                  <textarea
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder="Describe the content block you want to create..."
+                    className="min-h-[140px] w-full rounded-xl border border-[#e3e7f2] bg-[#fafbff] px-4 py-3 text-[14px] leading-[1.7] text-[#2c3348] outline-none transition placeholder:text-[#b6bdd2] hover:border-[#d2d8ea] focus:border-[#5b7cff] focus:bg-white focus:shadow-[0_0_0_4px_rgba(91,124,255,0.08)]"
+                  />
+                </FormRow>
+              </div>
+
+              <div className="mt-5 rounded-[22px] bg-[#f8f9fc] px-6 py-5 ring-1 ring-[#eceff5]">
+                <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-[#111827]">
+                  Governance & Output Controls
+                </h3>
+                <p className="mt-2 text-[13px] text-[#7d859d]">
+                  All generated blocks are validated against organisational
+                  design, accessibility, performance, and content standards.
+                </p>
+
+                <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-4">
+                  {governanceChecks.map((item) => (
+                    <div key={item} className="flex min-w-0 items-center gap-3">
+                      <span className="relative h-[18px] w-[18px] shrink-0 rounded-full bg-[#5b7cff]">
+                        <span className="absolute left-1/2 top-1/2 h-[7px] w-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white" />
+                      </span>
+                      <span className="text-[13px] font-medium leading-[1.35] text-[#2c3348]">
+                        {item}
+                      </span>
                     </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  {error ? (
-                    <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                      {error}
-                    </div>
-                  ) : null}
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
-                  <div className="mt-5 flex items-center justify-center gap-3">
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
-                    >
-                      Back
-                    </button>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
+                >
+                  Back
+                </button>
 
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={isGenerating || !prompt.trim()}
-                      className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isGenerating ? "Generating..." : "Generate Block"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </main>
+                <button
+                  type="button"
+                  onClick={handleGenerate}
+                  disabled={isGenerating || !prompt.trim()}
+                  className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isGenerating ? "Generating..." : "Generate Block"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

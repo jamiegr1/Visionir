@@ -313,5 +313,1706 @@
     "publishedAt": null,
     "createdAt": "2026-03-16T16:39:16.612Z",
     "updatedAt": "2026-03-16T16:39:29.587Z"
+  },
+  {
+    "id": "12c29345-cd71-4222-809d-792547bdbb59",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T07:30:27.064Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T07:30:27.064Z",
+    "updatedAt": "2026-03-17T07:30:41.807Z"
+  },
+  {
+    "id": "d4acac2c-5469-4de3-92fc-f6a8d95d32b1",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T07:56:30.751Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T07:56:30.751Z",
+    "updatedAt": "2026-03-17T07:56:43.802Z"
+  },
+  {
+    "id": "73c1deef-6fb5-4b48-898d-1cdca73e2ad0",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T07:56:56.093Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T07:56:56.093Z",
+    "updatedAt": "2026-03-17T07:57:09.076Z"
+  },
+  {
+    "id": "cc72d1fe-9726-4ccd-a863-d4dc344a2498",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "pending_approval",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:23:51.977Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:23:51.977Z",
+    "updatedAt": "2026-03-17T08:23:51.977Z"
+  },
+  {
+    "id": "cafde310-9940-48bd-abf4-ffb1467c0fdc",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:25:39.311Z",
+    "approvedAt": "2026-03-17T08:25:52.270Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:25:39.311Z",
+    "updatedAt": "2026-03-17T08:25:52.270Z"
+  },
+  {
+    "id": "aa3da0ef-9f85-44b2-9d51-33fe39e02200",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:51:08.206Z",
+    "approvedAt": "2026-03-17T08:51:21.472Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:51:08.206Z",
+    "updatedAt": "2026-03-17T08:51:21.472Z"
+  },
+  {
+    "id": "ae43ab6b-a929-46ca-8b8d-a49a028c3a86",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:51:27.349Z",
+    "approvedAt": "2026-03-17T08:51:40.337Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:51:27.349Z",
+    "updatedAt": "2026-03-17T08:51:40.337Z"
+  },
+  {
+    "id": "47730483-6374-49ee-a375-65e8ffb432cf",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:53:31.764Z",
+    "approvedAt": "2026-03-17T08:53:44.729Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:53:31.764Z",
+    "updatedAt": "2026-03-17T08:53:44.729Z"
+  },
+  {
+    "id": "1e14bf7c-65d4-4734-936a-16a9cf6491d8",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "pending_approval",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:57:03.808Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:57:03.808Z",
+    "updatedAt": "2026-03-17T08:57:03.808Z"
+  },
+  {
+    "id": "c4dbb905-46b6-448f-846a-7ef3a2b7f8e3",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "pending_approval",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T08:58:04.015Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T08:58:04.015Z",
+    "updatedAt": "2026-03-17T08:58:04.015Z"
+  },
+  {
+    "id": "73801cec-bec1-4c47-a370-7b069f842e64",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "pending_approval",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": "2026-03-17T09:00:04.728Z",
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:00:04.728Z",
+    "updatedAt": "2026-03-17T09:00:04.728Z"
+  },
+  {
+    "id": "2feaf48c-4335-4d6c-933a-3a15bb06927a",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:07:12.199Z",
+    "updatedAt": "2026-03-17T09:07:12.199Z"
+  },
+  {
+    "id": "3a0f2f16-8b8a-4b82-a513-bfa21a9e56a8",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:12:14.349Z",
+    "updatedAt": "2026-03-17T09:12:14.349Z"
+  },
+  {
+    "id": "67021534-5ef3-4d88-8c0a-4380526c6090",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:20:40.284Z",
+    "updatedAt": "2026-03-17T09:20:40.284Z"
+  },
+  {
+    "id": "e82e790a-293b-4a84-892d-4f088eb44a0d",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "pending_approval",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:23:08.160Z",
+    "updatedAt": "2026-03-17T09:23:33.626Z"
+  },
+  {
+    "id": "1672c35a-dd9b-4eb2-8abb-f86b0f739236",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:25:44.495Z",
+    "updatedAt": "2026-03-17T09:25:44.495Z"
+  },
+  {
+    "id": "6308bbd7-096e-4ee6-bc3c-66956811557f",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "blue"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "purple"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise & consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-17T10:32:23.818Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T09:47:46.138Z",
+    "updatedAt": "2026-03-17T10:32:23.818Z"
+  },
+  {
+    "id": "2c454bec-71a0-44fd-a7d5-107cbbc74ccc",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent & UKAS-accredited",
+          "text": "Across food safety, feed & organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "purple"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "purple"
+        },
+        {
+          "title": "Local Optimisation",
+          "text": "Support that fits the realities of your operation, with clear guidance & responsive coordination.",
+          "accent": "blue"
+        },
+        {
+          "title": "Scalable Optimisation",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise & consistent governance.",
+          "accent": "blue"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-17T15:59:22.190Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T15:57:48.926Z",
+    "updatedAt": "2026-03-17T15:59:22.190Z"
+  },
+  {
+    "id": "99fc4e56-8b17-438e-84ee-2ac357441c40",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T16:28:34.093Z",
+    "updatedAt": "2026-03-17T16:28:34.093Z"
+  },
+  {
+    "id": "fc856998-5721-4896-b3b7-7c48556c1f3a",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-17T16:45:56.396Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-17T16:45:15.993Z",
+    "updatedAt": "2026-03-17T16:45:56.396Z"
+  },
+  {
+    "id": "d70ac342-287a-4fd8-b5f4-03a91fc38e91",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-18T15:42:56.331Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-18T14:59:55.981Z",
+    "updatedAt": "2026-03-18T15:42:56.331Z"
+  },
+  {
+    "id": "0c2079ad-0b44-4073-a476-59fee0121d87",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent & UKAS-accredited",
+          "text": "Across food safety, feed & organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "purple"
+        },
+        {
+          "title": "Holistic Optimisation",
+          "text": "From certification to training — tailored to your operations & supported by in-house technical experts.",
+          "accent": "purple"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "blue"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "blue"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-18T15:58:39.122Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-18T15:57:18.996Z",
+    "updatedAt": "2026-03-18T15:58:39.122Z"
+  },
+  {
+    "id": "8ab72834-6633-4c93-b019-d15054840938",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent & UKAS-accredited",
+          "text": "Across food safety, feed & organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-19T13:17:45.218Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-19T12:46:59.425Z",
+    "updatedAt": "2026-03-19T13:17:45.218Z"
+  },
+  {
+    "id": "ac448017-4770-412d-abaf-e8b0ab4a4280",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent & UKAS-accredited",
+          "text": "Across food safety, feed & organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-20T11:02:14.005Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-20T11:01:52.868Z",
+    "updatedAt": "2026-03-20T11:02:14.005Z"
+  },
+  {
+    "id": "7b7cfada-b95b-4385-9aca-9fc5f7007075",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility & business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent & UKAS-accredited",
+          "text": "Across food safety, feed & organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "purple"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations & supported by in-house technical experts.",
+          "accent": "purple"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance & responsive coordination.",
+          "accent": "blue"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "blue"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-23T11:21:13.492Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-23T11:20:43.211Z",
+    "updatedAt": "2026-03-23T11:21:13.492Z"
+  },
+  {
+    "id": "9e595784-800c-4f1b-bfcf-e92c11235f0d",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-23T11:28:05.793Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-23T11:21:58.373Z",
+    "updatedAt": "2026-03-23T11:28:05.793Z"
+  },
+  {
+    "id": "be32709a-2a20-403b-aec4-daef89944097",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Kiwa Agri-Food",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-03-23T13:23:55.282Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-03-23T12:06:46.238Z",
+    "updatedAt": "2026-03-23T13:23:55.282Z"
   }
 ]

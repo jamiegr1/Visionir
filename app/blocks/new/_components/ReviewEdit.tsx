@@ -1,19 +1,14 @@
 "use client";
 
+import type { GovernanceResult } from "@/lib/brand-governance";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Accent, ValuePoint, BlockData } from "@/lib/types";
 import Image from "next/image";
 
-type Governance =
-  | {
-      score: number;
-      checks: Array<{ id: string; label: string; ok: boolean }>;
-      bannedHit?: string | null;
-    }
-  | null;
+type Governance = GovernanceResult | null;
 
-type ChangeLogItem = {
+export type ChangeLogItem = {
   id: string;
   label: string;
   from: string;
@@ -21,7 +16,7 @@ type ChangeLogItem = {
   time: string;
 };
 
-type ReviewEditProps = {
+export type ReviewEditProps = {
   editable: BlockData;
   setEditable: Dispatch<SetStateAction<BlockData | null>>;
   previewDoc: string;
@@ -38,13 +33,18 @@ type ReviewEditProps = {
   onSaveDraft?: () => void;
   onSubmitApproval?: () => void;
   onPublish?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  aiImprovedFields?: Record<string, boolean>;
+  onResetAiImproved?: (key: string) => void;
   submitLabel?: string;
   publishLabel?: string;
   changeLog?: ChangeLogItem[];
   canEdit?: boolean;
   canSubmit?: boolean;
   canPublish?: boolean;
-  currentUserRoleLabel?: string;
 };
 
 const ACCENT_STYLES: Record<
@@ -113,6 +113,112 @@ function NavIcon({
   );
 }
 
+function ImproveButton({
+  busy,
+  improved,
+  disabled,
+  onClick,
+}: {
+  busy: boolean;
+  improved: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cx(
+        "group relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full px-3.5 py-2 text-[12px] font-medium tracking-[-0.01em] transition-all duration-300 disabled:cursor-not-allowed disabled:opacity-50",
+        busy
+          ? "border border-[#dbe5ff] bg-[#f5f8ff] text-[#3f5ed7] shadow-[0_6px_20px_rgba(79,108,255,0.10)]"
+          : improved
+            ? "border border-emerald-200 bg-emerald-50 text-emerald-700 shadow-[0_6px_18px_rgba(16,185,129,0.10)]"
+            : "border border-slate-200 bg-white text-slate-700 hover:border-[#cfd8f6] hover:bg-[#f8faff] hover:text-[#3554d1] hover:shadow-[0_8px_22px_rgba(79,108,255,0.08)]"
+      )}
+    >
+      {busy && (
+        <span className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.55),transparent)]" />
+      )}
+
+      <span className="relative z-[1] flex items-center gap-2">
+        {busy ? (
+          <>
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#c8d6ff] border-t-[#4f6fff]" />
+            Improving
+          </>
+        ) : improved ? (
+          <>
+            <svg
+              className="h-3.5 w-3.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+            >
+              <path d="M5 12.5 9.2 16.7 19 7.5" />
+            </svg>
+            AI Improved
+          </>
+        ) : (
+          <>
+            <svg
+              className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+            >
+              <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" />
+            </svg>
+            Improve with AI
+          </>
+        )}
+      </span>
+    </button>
+  );
+}
+
+function HistoryButton({
+  label,
+  disabled,
+  onClick,
+  children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      disabled={disabled}
+      onClick={onClick}
+      className={cx(
+        "group flex h-9 w-9 items-center justify-center rounded-xl border transition-all duration-200",
+        disabled
+          ? "cursor-not-allowed border-[#e7ebf3] bg-[#f7f9fc] text-[#b6beca]"
+          : "border-[#e2e8f5] bg-white text-[#64748b] shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:-translate-y-[1px] hover:border-[#d3dcf5] hover:text-[#1e293b] hover:shadow-[0_6px_16px_rgba(79,111,255,0.10)] active:translate-y-0 active:scale-[0.96]"
+      )}
+    >
+      <span
+        className={cx(
+          "flex items-center justify-center transition-all duration-200",
+          disabled
+            ? "opacity-60"
+            : "group-hover:scale-105 group-hover:text-[#4f6fff]"
+        )}
+      >
+        {children}
+      </span>
+    </button>
+  );
+}
+
 export default function ReviewEdit({
   editable,
   setEditable,
@@ -126,28 +232,48 @@ export default function ReviewEdit({
   onSaveDraft,
   onSubmitApproval,
   onPublish,
+  onUndo,
+  onRedo,
+  canUndo = false,
+  canRedo = false,
+  aiImprovedFields = {},
+  onResetAiImproved,
   submitLabel = "Submit for Approval",
   publishLabel = "Publish to CMS",
   changeLog = [],
   canEdit = true,
   canSubmit = true,
   canPublish = false,
-  currentUserRoleLabel = "User",
 }: ReviewEditProps) {
   const [loadingField, setLoadingField] = useState<string | null>(null);
   const [describeBusy, setDescribeBusy] = useState(false);
   const [viewport, setViewport] = useState<"mobile" | "tablet" | "desktop">(
     "desktop"
   );
+  const [flashFields, setFlashFields] = useState<Record<string, boolean>>({});
 
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const measureTimeoutsRef = useRef<number[]>([]);
+  const flashTimeoutsRef = useRef<Record<string, number>>({});
   const [iframeContentHeight, setIframeContentHeight] = useState(560);
 
   const complianceLabel = useMemo(() => {
     if (!governance) return "Brand Compliance: Pending";
     return `Brand Compliance: ${governance.score}% ✓`;
   }, [governance]);
+
+  function markFieldImproved(key: string) {
+    setFlashFields((prev) => ({ ...prev, [key]: true }));
+
+    const existingTimeout = flashTimeoutsRef.current[key];
+    if (existingTimeout) {
+      window.clearTimeout(existingTimeout);
+    }
+
+    flashTimeoutsRef.current[key] = window.setTimeout(() => {
+      setFlashFields((prev) => ({ ...prev, [key]: false }));
+    }, 850);
+  }
 
   async function runImprove(
     key: string,
@@ -156,10 +282,14 @@ export default function ReviewEdit({
     apply: (improved: string) => void
   ) {
     if (!canEdit) return;
+    if (!text.trim()) return;
 
     try {
       setLoadingField(key);
-      await improveField(field, text, apply);
+      await improveField(field, text, (improved) => {
+        apply(improved);
+        markFieldImproved(key);
+      });
     } finally {
       setLoadingField(null);
     }
@@ -176,8 +306,25 @@ export default function ReviewEdit({
     }
   }
 
-  function updateValuePoint(index: number, updates: Partial<ValuePoint>) {
+  function updateRootField<K extends keyof BlockData>(key: K, value: BlockData[K]) {
     if (!canEdit) return;
+
+    onResetAiImproved?.(String(key));
+
+    setEditable((prev) => {
+      if (!prev) return prev;
+      return { ...prev, [key]: value };
+    });
+  }
+
+  function updateValuePoint(
+    index: number,
+    updates: Partial<ValuePoint>,
+    improvedKeysToReset: string[] = []
+  ) {
+    if (!canEdit) return;
+
+    improvedKeysToReset.forEach((key) => onResetAiImproved?.(key));
 
     setEditable((prev) => {
       if (!prev) return prev;
@@ -244,7 +391,7 @@ export default function ReviewEdit({
         setIframeContentHeight(height);
       }
     } catch {
-      // ignore measurement issues
+      //
     }
   }
 
@@ -279,135 +426,31 @@ export default function ReviewEdit({
     };
   }, [previewDoc, viewport]);
 
+  useEffect(() => {
+    return () => {
+      Object.values(flashTimeoutsRef.current).forEach((timeoutId) =>
+        window.clearTimeout(timeoutId)
+      );
+    };
+  }, []);
+
   const previewCanvasHeight =
     viewport === "desktop"
       ? "min(560px, calc(100dvh - 356px))"
-      : viewport === "tablet"
-        ? "min(620px, calc(100dvh - 336px))"
-        : "min(620px, calc(100dvh - 336px))";
+      : "min(620px, calc(100dvh - 336px))";
 
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
       <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-        <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
-          <div className="mb-8 flex items-center justify-center">
-            <div className="relative h-10 w-10">
-              <Image
-                src="/visionirlogo.png"
-                alt="Visionir"
-                fill
-                priority
-                className="object-contain"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col items-center gap-3">
-            <NavIcon active>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-                <path d="M8 12h8M12 8v8" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M4 7h16M7 4v16" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="5" width="16" height="14" rx="3" />
-                <path d="M8 9h8M8 13h5" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M7 3v4M17 3v4M4 9h16" />
-                <rect x="4" y="5" width="16" height="15" rx="3" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M5 20a7 7 0 0 1 14 0" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M5 7h14M5 12h14M5 17h8" />
-              </svg>
-            </NavIcon>
-          </div>
-
-          <div className="mt-4">
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
-                <path d="M12 17h.01" />
-              </svg>
-            </NavIcon>
-          </div>
-        </aside>
 
         <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-slate-200 px-6 py-6">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
                     Refine with AI
                   </h2>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
-                    Role: {currentUserRoleLabel}
-                  </p>
                 </div>
 
                 <button
@@ -449,13 +492,22 @@ export default function ReviewEdit({
                 </h3>
 
                 <div className="space-y-4">
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                  <div
+                    className={cx(
+                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
+                      flashFields["eyebrow"]
+                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
+                        : "border-slate-200"
+                    )}
+                  >
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <label className="text-sm font-medium text-slate-800">
                         Eyebrow
                       </label>
-                      <button
-                        type="button"
+                      <ImproveButton
+                        busy={loadingField === "eyebrow"}
+                        improved={!!aiImprovedFields["eyebrow"]}
+                        disabled={!canEdit || loadingField === "eyebrow"}
                         onClick={() =>
                           runImprove(
                             "eyebrow",
@@ -467,34 +519,33 @@ export default function ReviewEdit({
                               )
                           )
                         }
-                        disabled={!canEdit || loadingField === "eyebrow"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {loadingField === "eyebrow"
-                          ? "Improving..."
-                          : "✦ Improve with AI"}
-                      </button>
+                      />
                     </div>
 
                     <input
                       value={editable.eyebrow ?? ""}
                       disabled={!canEdit}
-                      onChange={(e) =>
-                        setEditable((prev) =>
-                          prev ? { ...prev, eyebrow: e.target.value } : prev
-                        )
-                      }
+                      onChange={(e) => updateRootField("eyebrow", e.target.value)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                  <div
+                    className={cx(
+                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
+                      flashFields["headline"]
+                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
+                        : "border-slate-200"
+                    )}
+                  >
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <label className="text-sm font-medium text-slate-800">
                         Primary Headline
                       </label>
-                      <button
-                        type="button"
+                      <ImproveButton
+                        busy={loadingField === "headline"}
+                        improved={!!aiImprovedFields["headline"]}
+                        disabled={!canEdit || loadingField === "headline"}
                         onClick={() =>
                           runImprove(
                             "headline",
@@ -506,34 +557,33 @@ export default function ReviewEdit({
                               )
                           )
                         }
-                        disabled={!canEdit || loadingField === "headline"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {loadingField === "headline"
-                          ? "Improving..."
-                          : "✦ Improve with AI"}
-                      </button>
+                      />
                     </div>
 
                     <input
                       value={editable.headline ?? ""}
                       disabled={!canEdit}
-                      onChange={(e) =>
-                        setEditable((prev) =>
-                          prev ? { ...prev, headline: e.target.value } : prev
-                        )
-                      }
+                      onChange={(e) => updateRootField("headline", e.target.value)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
 
-                  <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                  <div
+                    className={cx(
+                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
+                      flashFields["subheading"]
+                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
+                        : "border-slate-200"
+                    )}
+                  >
                     <div className="mb-2 flex items-center justify-between gap-3">
                       <label className="text-sm font-medium text-slate-800">
                         Subheading
                       </label>
-                      <button
-                        type="button"
+                      <ImproveButton
+                        busy={loadingField === "subheading"}
+                        improved={!!aiImprovedFields["subheading"]}
+                        disabled={!canEdit || loadingField === "subheading"}
                         onClick={() =>
                           runImprove(
                             "subheading",
@@ -545,23 +595,13 @@ export default function ReviewEdit({
                               )
                           )
                         }
-                        disabled={!canEdit || loadingField === "subheading"}
-                        className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {loadingField === "subheading"
-                          ? "Improving..."
-                          : "✦ Improve with AI"}
-                      </button>
+                      />
                     </div>
 
                     <textarea
                       value={editable.subheading ?? ""}
                       disabled={!canEdit}
-                      onChange={(e) =>
-                        setEditable((prev) =>
-                          prev ? { ...prev, subheading: e.target.value } : prev
-                        )
-                      }
+                      onChange={(e) => updateRootField("subheading", e.target.value)}
                       className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                     />
                   </div>
@@ -592,94 +632,86 @@ export default function ReviewEdit({
                       return (
                         <div
                           key={index}
-                          className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]"
+                          className={cx(
+                            "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
+                            flashFields[improveKeyTitle] || flashFields[improveKeyText]
+                              ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
+                              : "border-slate-200"
+                          )}
                         >
                           <div className="mb-4 flex items-center gap-2">
-                            <span
-                              className={cx(
-                                "h-2.5 w-2.5 rounded-full",
-                                accent.dot
-                              )}
-                            />
+                            <span className={cx("h-2.5 w-2.5 rounded-full", accent.dot)} />
                             <span className="text-sm font-medium text-slate-800">
                               Value Point {index + 1}
                             </span>
                           </div>
 
                           <div className="space-y-3">
-                            <div>
+                            <div className="rounded-2xl transition-all duration-300">
                               <div className="mb-2 flex items-center justify-between gap-3">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                                   Title
                                 </label>
-                                <button
-                                  type="button"
+                                <ImproveButton
+                                  busy={loadingField === improveKeyTitle}
+                                  improved={!!aiImprovedFields[improveKeyTitle]}
+                                  disabled={!canEdit || loadingField === improveKeyTitle}
                                   onClick={() =>
                                     runImprove(
                                       improveKeyTitle,
                                       `valuePointTitle:${index}`,
                                       point.title ?? "",
                                       (improved) =>
-                                        updateValuePoint(index, {
-                                          title: improved,
-                                        })
+                                        updateValuePoint(index, { title: improved })
                                     )
                                   }
-                                  disabled={!canEdit || loadingField === improveKeyTitle}
-                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {loadingField === improveKeyTitle
-                                    ? "Improving..."
-                                    : "✦ Improve with AI"}
-                                </button>
+                                />
                               </div>
 
                               <input
                                 value={point.title ?? ""}
                                 disabled={!canEdit}
                                 onChange={(e) =>
-                                  updateValuePoint(index, {
-                                    title: e.target.value,
-                                  })
+                                  updateValuePoint(
+                                    index,
+                                    { title: e.target.value },
+                                    [improveKeyTitle]
+                                  )
                                 }
                                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                               />
                             </div>
 
-                            <div>
+                            <div className="rounded-2xl transition-all duration-300">
                               <div className="mb-2 flex items-center justify-between gap-3">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
                                   Copy
                                 </label>
-                                <button
-                                  type="button"
+                                <ImproveButton
+                                  busy={loadingField === improveKeyText}
+                                  improved={!!aiImprovedFields[improveKeyText]}
+                                  disabled={!canEdit || loadingField === improveKeyText}
                                   onClick={() =>
                                     runImprove(
                                       improveKeyText,
                                       `valuePointText:${index}`,
                                       point.text ?? "",
                                       (improved) =>
-                                        updateValuePoint(index, {
-                                          text: improved,
-                                        })
+                                        updateValuePoint(index, { text: improved })
                                     )
                                   }
-                                  disabled={!canEdit || loadingField === improveKeyText}
-                                  className="shrink-0 text-xs font-medium text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                  {loadingField === improveKeyText
-                                    ? "Improving..."
-                                    : "✦ Improve with AI"}
-                                </button>
+                                />
                               </div>
 
                               <textarea
                                 value={point.text ?? ""}
                                 disabled={!canEdit}
                                 onChange={(e) =>
-                                  updateValuePoint(index, {
-                                    text: e.target.value,
-                                  })
+                                  updateValuePoint(
+                                    index,
+                                    { text: e.target.value },
+                                    [improveKeyText]
+                                  )
                                 }
                                 className="min-h-[86px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                               />
@@ -690,34 +722,33 @@ export default function ReviewEdit({
                                 Accent
                               </label>
                               <div className="grid grid-cols-4 gap-2">
-                                {(
-                                  ["blue", "green", "orange", "purple"] as Accent[]
-                                ).map((accentOption) => {
-                                  const accentStyle =
-                                    ACCENT_STYLES[accentOption];
-                                  const active = safeAccent === accentOption;
+                                {(["blue", "green", "orange", "purple"] as Accent[]).map(
+                                  (accentOption) => {
+                                    const accentStyle = ACCENT_STYLES[accentOption];
+                                    const active = safeAccent === accentOption;
 
-                                  return (
-                                    <button
-                                      key={accentOption}
-                                      type="button"
-                                      disabled={!canEdit}
-                                      onClick={() =>
-                                        updateValuePoint(index, {
-                                          accent: accentOption,
-                                        })
-                                      }
-                                      className={cx(
-                                        "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60",
-                                        active
-                                          ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
-                                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                      )}
-                                    >
-                                      {accentOption}
-                                    </button>
-                                  );
-                                })}
+                                    return (
+                                      <button
+                                        key={accentOption}
+                                        type="button"
+                                        disabled={!canEdit}
+                                        onClick={() =>
+                                          updateValuePoint(index, {
+                                            accent: accentOption,
+                                          })
+                                        }
+                                        className={cx(
+                                          "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60",
+                                          active
+                                            ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
+                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                        )}
+                                      >
+                                        {accentOption}
+                                      </button>
+                                    );
+                                  }
+                                )}
                               </div>
                             </div>
                           </div>
@@ -739,8 +770,7 @@ export default function ReviewEdit({
                       Recent Changes
                     </p>
                     <span className="text-xs text-slate-400">
-                      {changeLog.length}{" "}
-                      {changeLog.length === 1 ? "update" : "updates"}
+                      {changeLog.length} {changeLog.length === 1 ? "update" : "updates"}
                     </span>
                   </div>
 
@@ -796,26 +826,53 @@ export default function ReviewEdit({
         <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm hover:text-slate-600"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M5 7h14M5 12h14M5 17h14" />
-                  </svg>
-                </button>
+            <div className="flex items-center gap-4">
+  <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
+  <HistoryButton
+  label="Undo"
+  disabled={!canUndo}
+  onClick={onUndo}
+>
+  <svg
+    className="h-[15px] w-[15px]"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.9"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M8 5 3.5 10 8 15" />
+    <path d="M4 10h7.25c3.18 0 5.75 2.57 5.75 5.75" />
+  </svg>
+</HistoryButton>
 
-                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Create Block • Step 3 of 3 - Review & Edit
-                </h1>
-              </div>
+<div className="h-6 w-px bg-[#e7edf6]" />
+
+<HistoryButton
+  label="Redo"
+  disabled={!canRedo}
+  onClick={onRedo}
+>
+  <svg
+    className="h-[15px] w-[15px]"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.9"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M12 5 16.5 10 12 15" />
+    <path d="M16 10H8.75A5.75 5.75 0 0 0 3 15.75" />
+  </svg>
+</HistoryButton>
+  </div>
+
+  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+    Create Block • Step 3 of 3 - Review & Edit
+  </h1>
+</div>
 
               <div className="flex items-center gap-2">
                 <button
@@ -887,9 +944,7 @@ export default function ReviewEdit({
                           ? "overflow-hidden"
                           : "overflow-y-auto overflow-x-hidden"
                       )}
-                      style={{
-                        height: previewCanvasHeight,
-                      }}
+                      style={{ height: previewCanvasHeight }}
                     >
                       <div
                         className={cx(

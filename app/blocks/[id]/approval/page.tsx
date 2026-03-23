@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import Image from "next/image";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
-import { getMockCurrentUser } from "@/lib/current-user";
 import {
   canApproveBlock,
   canRejectBlock,
   type BlockStatus,
+  type Role,
+  type UserLike,
 } from "@/lib/permissions";
 import {
   GOVERNANCE_CHECKS,
@@ -17,7 +17,6 @@ import {
 } from "@/lib/approval";
 
 type ViewportMode = "mobile" | "tablet" | "desktop";
-
 type CheckState = "pending" | "running" | "approved" | "waiting" | "rejected";
 
 type GovernanceCheck = {
@@ -31,26 +30,11 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function NavIcon({
-  active = false,
-  children,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={cx(
-        "flex h-11 w-11 items-center justify-center rounded-xl transition",
-        active
-          ? "bg-[#eef3ff] text-[#5b7cff] shadow-sm"
-          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-      )}
-    >
-      {children}
-    </button>
-  );
+function getRoleFromSearchParams(value: string | null): Role | null {
+  if (value === "creator" || value === "approver" || value === "admin") {
+    return value;
+  }
+  return null;
 }
 
 function StatusPill({
@@ -246,36 +230,60 @@ function buildChecks(includeInternalReview: boolean): GovernanceCheck[] {
 export default function BlockApprovalPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const currentUser = getMockCurrentUser();
+  const searchParams = useSearchParams();
   const id = params.id;
 
-  const showInternalReview = shouldShowInternalTeamReview(currentUser.role);
+  const resolvedRole = useMemo(
+    () => getRoleFromSearchParams(searchParams.get("role")),
+    [searchParams]
+  );
+
+  const currentUser = useMemo<UserLike | null>(() => {
+    if (!resolvedRole) return null;
+
+    return {
+      id: "user-1",
+      role: resolvedRole,
+    };
+  }, [resolvedRole]);
+
+  const showInternalReview = currentUser
+    ? shouldShowInternalTeamReview(currentUser.role)
+    : false;
 
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [status, setStatus] = useState<BlockStatus>("draft");
-  const [createdByUserId, setCreatedByUserId] = useState("user_1");
+  const [createdByUserId, setCreatedByUserId] = useState("user-1");
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [pipelineStarted, setPipelineStarted] = useState(false);
-  const [checks, setChecks] = useState<GovernanceCheck[]>(() =>
-    buildChecks(showInternalReview)
-  );
+  const [checks, setChecks] = useState<GovernanceCheck[]>([]);
 
   const runTimeoutsRef = useRef<number[]>([]);
   const redirectedRef = useRef(false);
 
   useEffect(() => {
+    if (!currentUser) return;
+
     setChecks(buildChecks(showInternalReview));
-  }, [showInternalReview]);
+    setPipelineStarted(false);
+    redirectedRef.current = false;
+    runTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    runTimeoutsRef.current = [];
+  }, [showInternalReview, id, currentUser]);
 
   useEffect(() => {
+    if (!id || !currentUser) return;
+
     async function loadBlock() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/blocks/${id}?role=${currentUser?.role}`, {
+          cache: "no-store",
+        });
         const json = await res.json().catch(() => ({}));
 
         if (!res.ok || !json?.block?.data) {
@@ -285,7 +293,7 @@ export default function BlockApprovalPage() {
 
         setEditable(json.block.data);
         setStatus(mapApiStatusToBlockStatus(json.block.status));
-        setCreatedByUserId(json.block.createdByUserId ?? "user_1");
+        setCreatedByUserId(json.block.createdByUserId ?? "user-1");
       } catch (error) {
         console.error("Failed to load approval page:", error);
         setEditable(null);
@@ -294,10 +302,8 @@ export default function BlockApprovalPage() {
       }
     }
 
-    if (id) {
-      void loadBlock();
-    }
-  }, [id]);
+    void loadBlock();
+  }, [id, currentUser]);
 
   useEffect(() => {
     return () => {
@@ -307,18 +313,19 @@ export default function BlockApprovalPage() {
   }, []);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id || !currentUser) return;
     if (loading) return;
     if (redirectedRef.current) return;
 
     if (status === "approved" || status === "published") {
       redirectedRef.current = true;
-      router.replace(`/blocks/${id}/deploy`);
+      router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
     }
-  }, [id, loading, router, status]);
+  }, [id, loading, router, status, currentUser]);
 
   useEffect(() => {
-    if (loading || !editable || pipelineStarted) return;
+    if (!currentUser) return;
+    if (loading || !editable || pipelineStarted || checks.length === 0) return;
 
     if (status === "approved" || status === "published") {
       setChecks((prev) => prev.map((item) => ({ ...item, state: "approved" })));
@@ -401,7 +408,7 @@ export default function BlockApprovalPage() {
 
           if (!redirectedRef.current) {
             redirectedRef.current = true;
-            router.replace(`/blocks/${id}/deploy`);
+            router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
           }
         } catch (error) {
           console.error("Auto-approve failed:", error);
@@ -410,7 +417,7 @@ export default function BlockApprovalPage() {
 
       runTimeoutsRef.current.push(finalTimer);
     }
-  }, [checks.length, editable, id, loading, pipelineStarted, router, showInternalReview, status]);
+  }, [checks.length, editable, id, loading, pipelineStarted, router, showInternalReview, status, currentUser]);
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
@@ -443,7 +450,9 @@ export default function BlockApprovalPage() {
   }, [editable]);
 
   async function updateStatus(nextStatus: BlockStatus) {
-    const res = await fetch(`/api/blocks/${id}`, {
+    if (!currentUser) return;
+
+    const res = await fetch(`/api/blocks/${id}?role=${currentUser.role}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus }),
@@ -459,6 +468,8 @@ export default function BlockApprovalPage() {
   }
 
   async function handleApprove() {
+    if (!currentUser) return;
+
     try {
       setIsApproving(true);
       await updateStatus("approved");
@@ -467,7 +478,7 @@ export default function BlockApprovalPage() {
 
       if (!redirectedRef.current) {
         redirectedRef.current = true;
-        router.replace(`/blocks/${id}/deploy`);
+        router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
       }
     } catch (error) {
       console.error("Approve failed:", error);
@@ -478,6 +489,8 @@ export default function BlockApprovalPage() {
   }
 
   async function handleReject() {
+    if (!currentUser) return;
+
     try {
       setIsRejecting(true);
       await updateStatus("rejected");
@@ -497,7 +510,7 @@ export default function BlockApprovalPage() {
   }
 
   const approvedCount = checks.filter((item) => item.state === "approved").length;
-  const totalCount = checks.length;
+  const totalCount = checks.length || 1;
   const progressPercent = Math.round((approvedCount / totalCount) * 100);
 
   const internalReviewIndex = checks.findIndex((item) => item.id === "internal-review");
@@ -538,6 +551,7 @@ export default function BlockApprovalPage() {
     viewport === "mobile" ? 1180 : viewport === "tablet" ? 1220 : 560;
 
   const manualReviewReady =
+    !!currentUser &&
     showInternalReview &&
     internalReviewIndex >= 0 &&
     checks[internalReviewIndex]?.state === "waiting" &&
@@ -549,11 +563,16 @@ export default function BlockApprovalPage() {
   };
 
   const userCanApprove =
-    showInternalReview && canApproveBlock(currentUser, permissionBlock);
-  const userCanReject =
-    showInternalReview && canRejectBlock(currentUser, permissionBlock);
+    !!currentUser &&
+    showInternalReview &&
+    canApproveBlock(currentUser, permissionBlock);
 
-  if (loading) {
+  const userCanReject =
+    !!currentUser &&
+    showInternalReview &&
+    canRejectBlock(currentUser, permissionBlock);
+
+  if (!currentUser || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
         Loading…
@@ -572,114 +591,6 @@ export default function BlockApprovalPage() {
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
       <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-        <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
-          <div className="mb-8 flex items-center justify-center">
-            <div className="relative h-10 w-10">
-              <Image
-                src="/visionirlogo.png"
-                alt="Visionir"
-                fill
-                priority
-                className="object-contain"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col items-center gap-3">
-            <NavIcon active>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-                <path d="M8 12h8M12 8v8" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M4 7h16M7 4v16" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="5" width="16" height="14" rx="3" />
-                <path d="M8 9h8M8 13h5" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M7 3v4M17 3v4M4 9h16" />
-                <rect x="4" y="5" width="16" height="15" rx="3" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M5 20a7 7 0 0 1 14 0" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M5 7h14M5 12h14M5 17h8" />
-              </svg>
-            </NavIcon>
-          </div>
-
-          <div className="mt-4">
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
-                <path d="M12 17h.01" />
-              </svg>
-            </NavIcon>
-          </div>
-        </aside>
-
         <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-slate-200 px-5 py-5">
@@ -708,10 +619,7 @@ export default function BlockApprovalPage() {
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      className="text-slate-400 transition hover:text-slate-600"
-                    >
+                    <button type="button" className="text-slate-400 transition hover:text-slate-600">
                       •••
                     </button>
                   </div>
@@ -719,11 +627,9 @@ export default function BlockApprovalPage() {
                   <div className="mt-4 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
                     <div className="flex items-center justify-between gap-3">
                       <div>
-                        <p className="text-[13px] font-semibold text-slate-900">
-                          Progress
-                        </p>
+                        <p className="text-[13px] font-semibold text-slate-900">Progress</p>
                         <p className="mt-0.5 text-[12px] text-slate-500">
-                          {approvedCount} of {totalCount} checks completed
+                          {approvedCount} of {checks.length} checks completed
                         </p>
                       </div>
 
@@ -785,8 +691,7 @@ export default function BlockApprovalPage() {
 
                   {showInternalReview && !userCanApprove && !userCanReject && (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      Your role can view this approval workflow, but cannot approve or
-                      reject this block.
+                      Your role can view this approval workflow, but cannot approve or reject this block.
                     </div>
                   )}
                 </div>
@@ -795,37 +700,18 @@ export default function BlockApprovalPage() {
           </div>
         </aside>
 
-        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
+        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] overflow-hidden bg-[#f5f7fb]">
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm hover:text-slate-600"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M5 7h14M5 12h14M5 17h14" />
-                  </svg>
-                </button>
-
-                <div>
-                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                    {showInternalReview
-                      ? "Block Submitted for Approval"
-                      : "Running Governance Checks"}
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {showInternalReview
-                      ? "Visionir is now running automated compliance and governance checks before final internal sign-off."
-                      : "Visionir is running the 5 automated governance checks. Internal team review is skipped for your role."}
-                  </p>
-                </div>
+              <div>
+                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                  {showInternalReview ? "Block Submitted for Approval" : "Running Governance Checks"}
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  {showInternalReview
+                    ? "Visionir is now running automated compliance and governance checks before final internal sign-off."
+                    : "Visionir is running the 5 automated governance checks. Internal team review is skipped for your role."}
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -898,9 +784,7 @@ export default function BlockApprovalPage() {
                       <div
                         className={cx(
                           "flex min-h-full justify-center",
-                          viewport === "tablet"
-                            ? "items-start py-0"
-                            : "items-start"
+                          viewport === "tablet" ? "items-start py-0" : "items-start"
                         )}
                       >
                         <iframe
@@ -928,14 +812,9 @@ export default function BlockApprovalPage() {
               <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
                 <span>Version 1.0</span>
                 <span>
-                  Status:{" "}
-                  <span className={cx("font-medium", statusColorClass)}>
-                    {statusLabel}
-                  </span>
+                  Status: <span className={cx("font-medium", statusColorClass)}>{statusLabel}</span>
                 </span>
-                <span>
-                  Governance checks completed: {approvedCount}/{totalCount}
-                </span>
+                <span>Governance checks completed: {approvedCount}/{checks.length}</span>
               </div>
 
               {(userCanReject || userCanApprove) && (
