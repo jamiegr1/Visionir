@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useParams, useRouter } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
 import {
@@ -30,18 +30,11 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function getRoleFromSearchParams(value: string | null): Role | null {
-  if (value === "creator" || value === "approver" || value === "admin") {
-    return value;
-  }
-  return null;
-}
-
 function StatusPill({
   children,
   tone,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tone: "blue" | "green" | "orange" | "red" | "slate";
 }) {
   return (
@@ -227,30 +220,17 @@ function buildChecks(includeInternalReview: boolean): GovernanceCheck[] {
   return baseChecks;
 }
 
+function isValidRole(value: unknown): value is Role {
+  return value === "creator" || value === "approver" || value === "admin";
+}
+
 export default function BlockApprovalPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const id = params.id;
 
-  const resolvedRole = useMemo(
-    () => getRoleFromSearchParams(searchParams.get("role")),
-    [searchParams]
-  );
-
-  const currentUser = useMemo<UserLike | null>(() => {
-    if (!resolvedRole) return null;
-
-    return {
-      id: "user-1",
-      role: resolvedRole,
-    };
-  }, [resolvedRole]);
-
-  const showInternalReview = currentUser
-    ? shouldShowInternalTeamReview(currentUser.role)
-    : false;
-
+  const [currentUser, setCurrentUser] = useState<UserLike | null>(null);
+  const [sessionLoading, setSessionLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [status, setStatus] = useState<BlockStatus>("draft");
@@ -264,12 +244,45 @@ export default function BlockApprovalPage() {
   const runTimeoutsRef = useRef<number[]>([]);
   const redirectedRef = useRef(false);
 
+  const showInternalReview = currentUser
+    ? shouldShowInternalTeamReview(currentUser.role)
+    : false;
+
+  useEffect(() => {
+    async function loadSession() {
+      try {
+        setSessionLoading(true);
+
+        const res = await fetch("/api/session", { cache: "no-store" });
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || !isValidRole(json?.user?.role)) {
+          setCurrentUser(null);
+          return;
+        }
+
+        setCurrentUser({
+          id: typeof json.user.id === "string" ? json.user.id : "user-1",
+          role: json.user.role,
+        });
+      } catch (error) {
+        console.error("Failed to load session:", error);
+        setCurrentUser(null);
+      } finally {
+        setSessionLoading(false);
+      }
+    }
+
+    void loadSession();
+  }, []);
+
   useEffect(() => {
     if (!currentUser) return;
 
     setChecks(buildChecks(showInternalReview));
     setPipelineStarted(false);
     redirectedRef.current = false;
+
     runTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     runTimeoutsRef.current = [];
   }, [showInternalReview, id, currentUser]);
@@ -281,7 +294,7 @@ export default function BlockApprovalPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${currentUser?.role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${currentUser.role}`, {
           cache: "no-store",
         });
         const json = await res.json().catch(() => ({}));
@@ -319,20 +332,22 @@ export default function BlockApprovalPage() {
 
     if (status === "approved" || status === "published") {
       redirectedRef.current = true;
-      router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
+      router.replace(`/blocks/${id}/deploy`);
     }
   }, [id, loading, router, status, currentUser]);
 
   useEffect(() => {
     if (!currentUser) return;
     if (loading || !editable || pipelineStarted || checks.length === 0) return;
-
+  
+    const currentRole = currentUser.role;
+  
     if (status === "approved" || status === "published") {
       setChecks((prev) => prev.map((item) => ({ ...item, state: "approved" })));
       setPipelineStarted(true);
       return;
     }
-
+  
     if (status === "rejected") {
       setChecks((prev) =>
         prev.map((item, index) => ({
@@ -343,17 +358,17 @@ export default function BlockApprovalPage() {
       setPipelineStarted(true);
       return;
     }
-
+  
     setPipelineStarted(true);
-
+  
     const autoCheckCount = Math.min(GOVERNANCE_CHECKS.length, checks.length);
     const runningDuration = 1200;
     const gapDuration = 260;
-
+  
     for (let i = 0; i < autoCheckCount; i += 1) {
       const startAt = i * (runningDuration + gapDuration);
       const finishAt = startAt + runningDuration;
-
+  
       const startTimer = window.setTimeout(() => {
         setChecks((prev) =>
           prev.map((item, index) =>
@@ -365,7 +380,7 @@ export default function BlockApprovalPage() {
           )
         );
       }, startAt);
-
+  
       const finishTimer = window.setTimeout(() => {
         setChecks((prev) =>
           prev.map((item, index) =>
@@ -377,12 +392,12 @@ export default function BlockApprovalPage() {
           )
         );
       }, finishAt);
-
+  
       runTimeoutsRef.current.push(startTimer, finishTimer);
     }
-
+  
     const afterAutomatedChecksAt = autoCheckCount * (runningDuration + gapDuration);
-
+  
     if (showInternalReview) {
       const finalTimer = window.setTimeout(() => {
         setChecks((prev) =>
@@ -393,7 +408,7 @@ export default function BlockApprovalPage() {
           })
         );
       }, afterAutomatedChecksAt);
-
+  
       runTimeoutsRef.current.push(finalTimer);
     } else {
       const finalTimer = window.setTimeout(async () => {
@@ -403,21 +418,31 @@ export default function BlockApprovalPage() {
               index < autoCheckCount ? { ...item, state: "approved" } : item
             )
           );
-
+  
           await updateStatus("approved");
-
+  
           if (!redirectedRef.current) {
             redirectedRef.current = true;
-            router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
+            router.replace(`/blocks/${id}/deploy?role=${currentRole}`);
           }
         } catch (error) {
           console.error("Auto-approve failed:", error);
         }
       }, afterAutomatedChecksAt + 250);
-
+  
       runTimeoutsRef.current.push(finalTimer);
     }
-  }, [checks.length, editable, id, loading, pipelineStarted, router, showInternalReview, status, currentUser]);
+  }, [
+    checks.length,
+    editable,
+    id,
+    loading,
+    pipelineStarted,
+    router,
+    showInternalReview,
+    status,
+    currentUser,
+  ]);
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
@@ -461,6 +486,7 @@ export default function BlockApprovalPage() {
     const json = await res.json().catch(() => ({}));
 
     if (!res.ok) {
+      console.error("Status update failed:", json);
       throw new Error(json?.error || "Failed to update status");
     }
 
@@ -478,7 +504,7 @@ export default function BlockApprovalPage() {
 
       if (!redirectedRef.current) {
         redirectedRef.current = true;
-        router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
+        router.replace(`/blocks/${id}/deploy`);
       }
     } catch (error) {
       console.error("Approve failed:", error);
@@ -572,7 +598,7 @@ export default function BlockApprovalPage() {
     showInternalReview &&
     canRejectBlock(currentUser, permissionBlock);
 
-  if (!currentUser || loading) {
+  if (sessionLoading || !currentUser || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
         Loading…
@@ -619,7 +645,10 @@ export default function BlockApprovalPage() {
                       </p>
                     </div>
 
-                    <button type="button" className="text-slate-400 transition hover:text-slate-600">
+                    <button
+                      type="button"
+                      className="text-slate-400 transition hover:text-slate-600"
+                    >
                       •••
                     </button>
                   </div>

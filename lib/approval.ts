@@ -10,7 +10,11 @@ export type ApprovalTimelineStep =
   | "internal_review"
   | "approved";
 
-export type GovernanceCheckState = "pending" | "running" | "approved" | "rejected";
+export type GovernanceCheckState =
+  | "pending"
+  | "running"
+  | "approved"
+  | "rejected";
 
 export type GovernanceCheck = {
   id: Exclude<ApprovalTimelineStep, "internal_review" | "approved">;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
@@ -15,7 +15,7 @@ function StatusPill({
   children,
   tone,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   tone: "blue" | "green" | "slate";
 }) {
   return (
@@ -419,12 +419,12 @@ export default function BlockDeployEmbedPage() {
                 </button>
 
                 <button
-                  type="button"
-                  onClick={() => router.push(`/blocks/${id}/deploy`)}
-                  className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
-                >
-                  Done
-                </button>
+  type="button"
+  onClick={() => router.push("/dashboard?role=admin")}
+  className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+>
+  Done
+</button>
               </div>
             </div>
           </div>

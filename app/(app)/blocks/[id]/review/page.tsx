@@ -8,7 +8,7 @@ import { makePreviewHtml } from "@/lib/preview";
 import { evaluateBlockGovernance } from "@/lib/brand-governance";
 import ReviewEdit, {
   type ChangeLogItem,
-} from "@/app/blocks/new/_components/ReviewEdit";
+} from "../../new/_components/ReviewEdit";
 
 function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";

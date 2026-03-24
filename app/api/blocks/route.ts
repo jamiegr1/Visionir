@@ -7,19 +7,18 @@ export async function GET(req: Request) {
   try {
     const currentUser = getMockCurrentUser(req);
 
-    if (!hasPermission(currentUser.role, "block.read")) {
+    if (!hasPermission(currentUser.role, "block.view.own")) {
       return NextResponse.json(
         { error: "You do not have permission to view blocks." },
         { status: 403 }
       );
     }
 
-    const blocks = listBlocks();
+    const blocks = await listBlocks();
 
     return NextResponse.json({ blocks });
   } catch (error) {
     console.error("GET /api/blocks failed:", error);
-
     return NextResponse.json(
       { error: "Failed to load blocks." },
       { status: 500 }
@@ -49,17 +48,27 @@ export async function POST(req: Request) {
       );
     }
 
-    const block = createBlock({
-      data,
+    const now = new Date().toISOString();
+
+    const block = await createBlock(data, {
       status,
-      createdBy: currentUser.id,
-      createdByName: "Jamie",
+      createdByUserId: currentUser.id,
+      updatedByUserId: currentUser.id,
+      submittedByUserId: null,
+      approvedByUserId: null,
+      rejectedByUserId: null,
+      publishedByUserId: null,
+      submittedAt: null,
+      approvedAt: null,
+      rejectedAt: null,
+      publishedAt: null,
+      createdAt: now,
+      updatedAt: now,
     });
 
-    return NextResponse.json({ block });
+    return NextResponse.json({ block }, { status: 201 });
   } catch (error) {
     console.error("POST /api/blocks failed:", error);
-
     return NextResponse.json(
       { error: "Failed to create block." },
       { status: 500 }
