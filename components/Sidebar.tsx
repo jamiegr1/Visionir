@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -99,10 +100,9 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="relative flex h-full w-[88px] shrink-0 flex-col items-center border-r border-white/10 bg-[#0a0c14] px-3 py-4 text-white">
+    <aside className="relative flex h-[calc(100dvh-72px)] min-h-[calc(100dvh-72px)] w-[88px] shrink-0 flex-col items-center border-r border-white/10 bg-[#0a0c14] px-3 py-4 text-white">
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
-      {/* Logo (smaller + cleaner) */}
       <Link
         href="/dashboard"
         className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
