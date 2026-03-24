@@ -1,8 +1,6 @@
 "use client";
 
-import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -28,6 +26,7 @@ function NavItem({ href, label, icon, active = false }: NavItemProps) {
   return (
     <Link
       href={href}
+      prefetch={false}
       className={cx(
         "group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-200",
         active
@@ -105,16 +104,14 @@ export default function Sidebar() {
 
       <Link
         href="/dashboard"
+        prefetch={false}
         className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
         aria-label="Visionir dashboard"
       >
-        <Image
+        <img
           src="/kiwalogo.png"
           alt="Kiwa"
-          width={40}
-          height={40}
-          className="h-[60%] w-[60%] object-contain"
-          priority
+          className="h-7 w-7 object-contain"
         />
       </Link>
 
