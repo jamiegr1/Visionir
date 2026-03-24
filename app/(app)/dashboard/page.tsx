@@ -1,8 +1,7 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   ArrowRight,
@@ -26,7 +25,7 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function isRole(value: string | null | undefined): value is Role {
+function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
@@ -155,20 +154,20 @@ function getStatusPillClass(status: string) {
   }
 }
 
-function getActionHref(block: DashboardBlock) {
+function getActionHref(block: DashboardBlock, role: Role) {
   switch (block.status) {
     case "pending_approval":
-      return `/blocks/${block.id}/approval`;
+      return `/blocks/${block.id}/approval?role=${role}`;
     case "approved":
     case "deployed":
     case "completed":
-      return `/blocks/${block.id}/deploy`;
+      return `/blocks/${block.id}/deploy?role=${role}`;
     case "rejected":
     case "draft":
     case "in_review":
     case "generating":
     default:
-      return `/blocks/${block.id}/review`;
+      return `/blocks/${block.id}/review?role=${role}`;
   }
 }
 
@@ -217,7 +216,7 @@ function SectionHeader({
 }: {
   title: string;
   subtitle?: string;
-  right?: ReactNode;
+  right?: React.ReactNode;
 }) {
   return (
     <div className="mb-5 flex items-start justify-between gap-4">
@@ -277,7 +276,7 @@ function MetricCard({
   label: string;
   value: string | number;
   tone?: "blue" | "emerald" | "slate";
-  icon: ReactNode;
+  icon: React.ReactNode;
 }) {
   const accent =
     tone === "emerald"
@@ -317,12 +316,18 @@ function MetricCard({
   );
 }
 
-function RecentBlockRow({ block }: { block: DashboardBlock }) {
+function RecentBlockRow({
+  block,
+  role,
+}: {
+  block: DashboardBlock;
+  role: Role;
+}) {
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(getActionHref(block))}
+      onClick={() => router.push(getActionHref(block, role))}
       className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_140px_140px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#102746] text-[10px] font-semibold text-white shadow-sm">
@@ -354,12 +359,18 @@ function RecentBlockRow({ block }: { block: DashboardBlock }) {
   );
 }
 
-function PendingApprovalRow({ block }: { block: DashboardBlock }) {
+function PendingApprovalRow({
+  block,
+  role,
+}: {
+  block: DashboardBlock;
+  role: Role;
+}) {
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/blocks/${block.id}/approval`)}
+      onClick={() => router.push(`/blocks/${block.id}/approval?role=${role}`)}
       className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_130px_150px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#143861] text-[10px] font-semibold text-white shadow-sm">
@@ -388,48 +399,23 @@ function PendingApprovalRow({ block }: { block: DashboardBlock }) {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [role, setRole] = useState<Role | null>(null);
+  const role = useMemo<Role>(() => {
+    const value = searchParams.get("role");
+    return isRole(value) ? value : "admin";
+  }, [searchParams]);
+
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<DashboardBlock[]>([]);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    async function loadSession() {
-      try {
-        const res = await fetch("/api/session", {
-          cache: "no-store",
-        });
-
-        const json = await res.json().catch(() => ({}));
-        const value = json?.user?.role;
-
-        if (isRole(value)) {
-          setRole(value);
-        } else {
-          setRole("creator");
-        }
-      } catch (error) {
-        console.error("Failed to load session:", error);
-        setRole("creator");
-      }
-    }
-
-    void loadSession();
-  }, []);
-
-  useEffect(() => {
     async function loadBlocks() {
-      if (!role) {
-        setBlocks([]);
-        setLoading(false);
-        return;
-      }
-
       try {
         setLoading(true);
 
-        const res = await fetch("/api/blocks", {
+        const res = await fetch(`/api/blocks?role=${role}`, {
           cache: "no-store",
         });
 
@@ -524,19 +510,368 @@ export default function DashboardPage() {
     };
   }, [blocks]);
 
-  if (role === null) {
-    return (
-      <div className="flex h-[calc(100dvh-72px)] items-center justify-center bg-[#f4f7fb] text-slate-900">
-        <div className="rounded-[24px] border border-slate-200 bg-white px-6 py-5 text-sm text-slate-500 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-          Loading dashboard…
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f4f7fb] text-slate-900">
-      {/* keep the rest of your JSX exactly as it already is */}
+      <div className="flex h-full min-h-0">
+        <aside className="hidden h-full w-[325px] shrink-0 border-r border-slate-200/90 bg-white xl:flex xl:flex-col">
+          <div className="border-b border-slate-200/90 px-7 pb-5 pt-6">
+            <div className="rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f9fd_100%)] px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[13px] text-slate-500">Welcome back</p>
+                  <h1 className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.05em] text-slate-900">
+                    Kiwa UK
+                  </h1>
+                </div>
+
+                <div className="shrink-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                  <Image
+                    src="/kiwalogo.png"
+                    alt="Kiwa"
+                    width={56}
+                    height={18}
+                    className="h-auto w-auto object-contain"
+                    priority
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                  <BadgeCheck className="mr-1 h-3.5 w-3.5" />
+                  Enterprise Ready
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#eef3ff] px-2.5 py-1 text-[11px] font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                  Role: {role}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 flex-col px-7 py-5">
+            <div>
+              <div className="mb-4 flex items-center justify-between gap-3">
+                <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">
+                  UK Activity
+                </h2>
+                <span className="text-xs font-medium text-slate-400">Today</span>
+              </div>
+
+              <div className="space-y-3">
+                <ActivityItem
+                  time="09:03AM"
+                  title="Jamie"
+                  subtitle="Edited CTA Banner 3h ago"
+                  dotClass="bg-[#5b7cff]"
+                />
+                <ActivityItem
+                  time="10:28AM"
+                  title="Jamie"
+                  subtitle="Submitted Core Services for review"
+                  dotClass="bg-amber-400"
+                />
+                <ActivityItem
+                  time="04:24PM"
+                  title="Jamie"
+                  subtitle="Approved Case Study"
+                  dotClass="bg-emerald-400"
+                />
+              </div>
+            </div>
+
+            <div className="mt-auto pt-6">
+              <div className="rounded-[28px] border border-slate-200 bg-[#f8fafe] px-5 py-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">
+                      Governance Snapshot
+                    </h3>
+                    <p className="mt-0.5 text-xs text-slate-400">Month to date</p>
+                  </div>
+
+                  <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500">
+                    <Shield className="h-4 w-4" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-[minmax(0,1fr)_96px] items-end gap-4">
+                  <div className="space-y-2 text-[13px] text-slate-500">
+                    <div className="flex items-center justify-between">
+                      <span>Brand Compliance</span>
+                      <span className="font-semibold text-slate-900">
+                        {totals.averageScore}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Accessibility</span>
+                      <span className="font-semibold text-slate-900">AA</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Blocked</span>
+                      <span className="font-semibold text-slate-900">
+                        {totals.blocked}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Pending</span>
+                      <span className="font-semibold text-slate-900">
+                        {totals.pending}
+                      </span>
+                    </div>
+                  </div>
+
+                  <GovernanceMiniBars />
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <main className="min-w-0 flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-[1650px] px-6 py-6 lg:px-8">
+            <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="relative max-w-[340px] flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search blocks"
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push(`/blocks/new?role=${role}`)}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+              >
+                Create Block
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <MetricCard
+                label="Total Blocks"
+                value={totals.total}
+                tone="blue"
+                icon={<LayoutGrid className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Live Blocks"
+                value={totals.live}
+                tone="emerald"
+                icon={<BadgeCheck className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Pending Approvals"
+                value={totals.pending}
+                tone="slate"
+                icon={<CircleDashed className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Compliance Score"
+                value={`${totals.averageScore}%`}
+                tone="blue"
+                icon={<Shield className="h-5 w-5" />}
+              />
+            </div>
+
+            <div className="grid gap-6 2xl:grid-cols-[1.4fr_1fr]">
+              <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Recent Block Activity"
+                  subtitle="Latest block updates across the workspace."
+                  right={
+                    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 text-xs">
+                      <button className="rounded-xl px-3 py-2 text-slate-500">
+                        Day
+                      </button>
+                      <button className="rounded-xl px-3 py-2 text-slate-500">
+                        Week
+                      </button>
+                      <button className="rounded-xl bg-white px-3 py-2 font-medium text-slate-800 shadow-sm">
+                        Month
+                      </button>
+                    </div>
+                  }
+                />
+
+                <div className="mb-3 grid grid-cols-[56px_minmax(0,1fr)_140px_140px] gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <div />
+                  <div>Blocks</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                </div>
+
+                <div className="space-y-1">
+                  {loading ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      Loading recent activity…
+                    </div>
+                  ) : recentBlocks.length === 0 ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      No recent blocks yet.
+                    </div>
+                  ) : (
+                    recentBlocks.map((block) => (
+                      <RecentBlockRow key={block.id} block={block} role={role} />
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/blocks?role=${role}`)}
+                    className="rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                  >
+                    View All Blocks
+                  </button>
+                  <span className="text-sm text-slate-400">
+                    {blocks.length.toLocaleString()} Total Blocks
+                  </span>
+                </div>
+              </section>
+
+              <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Pending Approvals"
+                  subtitle="Blocks waiting for review and sign-off."
+                  right={
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {pendingApprovals.length} awaiting review
+                    </div>
+                  }
+                />
+
+                <div className="mb-3 grid grid-cols-[56px_minmax(0,1fr)_130px_150px] gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <div />
+                  <div>Block</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                </div>
+
+                <div className="space-y-1">
+                  {loading ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      Loading approvals…
+                    </div>
+                  ) : pendingApprovals.length === 0 ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      No blocks are currently awaiting approval.
+                    </div>
+                  ) : (
+                    pendingApprovals.map((block) => (
+                      <PendingApprovalRow
+                        key={block.id}
+                        block={block}
+                        role={role}
+                      />
+                    ))
+                  )}
+                </div>
+
+                <div className="mt-5 flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/blocks?role=${role}`)}
+                    className="rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                  >
+                    View All Approvals
+                  </button>
+                  <span className="text-sm text-slate-400">
+                    {pendingApprovals.length} Awaiting Review
+                  </span>
+                </div>
+              </section>
+            </div>
+
+            <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <section className="rounded-[30px] border border-slate-200/90 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Workflow Summary"
+                  subtitle="Full governed route from creation to deployment."
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 ring-1 ring-slate-200">
+                      <ClipboardCheck className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.drafts}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Drafts</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-500 ring-1 ring-slate-200">
+                      <Clock3 className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.pending}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">In Review</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-emerald-500 ring-1 ring-slate-200">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.approved}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Approved</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#5b7cff] ring-1 ring-slate-200">
+                      <Sparkles className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.live}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Live</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="rounded-[30px] border border-slate-200/90 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Next Action"
+                  subtitle="Continue the governed workflow."
+                />
+
+                <div className="rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(135deg,#f8faff_0%,#eef3ff_100%)] p-5">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#4f6fff] shadow-sm ring-1 ring-[#dbe5ff]">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+
+                  <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Launch a new governed block
+                  </h3>
+                  <p className="mt-2 max-w-[420px] text-sm leading-6 text-slate-600">
+                    Start a new workflow with AI-assisted generation,
+                    governance checks, approval routing and deployment-ready
+                    output.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/blocks/new?role=${role}`)}
+                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                  >
+                    Continue Workflow
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </section>
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
