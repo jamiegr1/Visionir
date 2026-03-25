@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
@@ -20,21 +20,16 @@ function StatusPill({
   children,
   tone,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
   tone: "blue" | "green" | "slate";
 }) {
-  const styles =
-    tone === "green"
-      ? "bg-emerald-50 text-emerald-700 ring-emerald-100"
-      : tone === "slate"
-      ? "bg-slate-100 text-slate-600 ring-slate-200"
-      : "bg-[#eef3ff] text-[#4f6fff] ring-[#dbe5ff]";
-
   return (
     <span
       className={cx(
-        "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1",
-        styles
+        "inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none",
+        tone === "blue" && "bg-[#eef3ff] text-[#4f6fff]",
+        tone === "green" && "bg-emerald-50 text-emerald-700",
+        tone === "slate" && "bg-slate-100 text-slate-600"
       )}
     >
       {children}
@@ -52,12 +47,19 @@ function StepCard({
   description: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eef3ff] text-sm font-semibold text-[#4f6fff]">
-        {number}
+    <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+      <div className="flex items-start gap-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[12px] font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+          {number}
+        </div>
+
+        <div>
+          <p className="text-[13.5px] font-semibold text-slate-900">{title}</p>
+          <p className="mt-1 text-[12px] leading-5 text-slate-500">
+            {description}
+          </p>
+        </div>
       </div>
-      <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-slate-500">{description}</p>
     </div>
   );
 }
@@ -66,7 +68,6 @@ export default function BlockDeployEmbedPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const id = params.id;
 
   const role = useMemo<Role>(() => {
@@ -88,7 +89,6 @@ export default function BlockDeployEmbedPage() {
         const res = await fetch(`/api/blocks/${id}?role=${role}`, {
           cache: "no-store",
         });
-
         const json = await res.json().catch(() => ({}));
 
         if (!res.ok || !json?.block?.data) {
@@ -96,7 +96,7 @@ export default function BlockDeployEmbedPage() {
           return;
         }
 
-        setEditable(json.block.data as BlockData);
+        setEditable(json.block.data);
       } catch (error) {
         console.error("Failed to load embed page:", error);
         setEditable(null);
@@ -113,7 +113,7 @@ export default function BlockDeployEmbedPage() {
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
   const previewDoc = useMemo(() => {
-    if (!editable) return "";
+    if (!editable) return "<html><body></body></html>";
 
     const rawImageUrl =
       typeof editable.imageUrl === "string" && editable.imageUrl.trim()
@@ -129,6 +129,7 @@ export default function BlockDeployEmbedPage() {
         const cleanPath = resolvedImageUrl.startsWith("/")
           ? resolvedImageUrl
           : `/${resolvedImageUrl}`;
+
         resolvedImageUrl = `${window.location.origin}${cleanPath}`;
       }
     }
@@ -150,9 +151,9 @@ export default function BlockDeployEmbedPage() {
     return `<div id="visionir-block-${id}"></div>
 <script>
 (function () {
-  var target = document.getElementById("visionir-block-${id}");
-  if (!target) return;
-  target.innerHTML = \`${escapedPreview}\`;
+  var container = document.getElementById("visionir-block-${id}");
+  if (!container) return;
+  container.innerHTML = \`${escapedPreview}\`;
 })();
 </script>`;
   }, [previewDoc, editable, id]);
@@ -173,7 +174,7 @@ export default function BlockDeployEmbedPage() {
   async function handleDone() {
     try {
       setIsFinishing(true);
-
+  
       const res = await fetch(`/api/blocks/${id}?role=${role}`, {
         method: "PATCH",
         headers: {
@@ -183,18 +184,21 @@ export default function BlockDeployEmbedPage() {
           status: "published",
         }),
       });
-
+  
       const json = await res.json().catch(() => ({}));
-
+      console.log("PUBLISH RESPONSE:", { ok: res.ok, status: res.status, json });
+  
       if (!res.ok) {
         throw new Error(json?.error || "Failed to finalise block");
       }
-
+  
       router.push(`/dashboard?role=${role}`);
       router.refresh();
     } catch (error) {
-      console.error("Failed to finish deployment:", error);
-      alert("Failed to complete deployment");
+      console.error("Failed to complete deployment:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to complete deployment"
+      );
     } finally {
       setIsFinishing(false);
     }
@@ -204,8 +208,8 @@ export default function BlockDeployEmbedPage() {
     viewport === "mobile"
       ? "max-w-[410px]"
       : viewport === "tablet"
-      ? "max-w-[760px]"
-      : "max-w-[1240px]";
+        ? "max-w-[760px]"
+        : "max-w-[1240px]";
 
   const previewViewportWidth =
     viewport === "mobile" ? 360 : viewport === "tablet" ? 680 : 1180;
@@ -215,79 +219,136 @@ export default function BlockDeployEmbedPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-500 shadow-sm">
-          Loading…
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Loading…
       </div>
     );
   }
 
   if (!editable) {
     return (
-      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white px-6 py-4 text-sm text-slate-500 shadow-sm">
-          Block not found.
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Block not found.
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100dvh-72px)] bg-[#f5f7fb] text-slate-900">
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-8 px-6 py-8 xl:px-8">
-        <div className="flex flex-col gap-5 rounded-[32px] border border-slate-200 bg-white p-7 shadow-[0_16px_50px_rgba(15,23,42,0.05)]">
-          <div className="flex flex-wrap items-center gap-3">
-            <StatusPill tone="blue">Optimizely</StatusPill>
-            <StatusPill tone="green">Ready For Production</StatusPill>
-            <StatusPill tone="slate">Role: {role}</StatusPill>
-          </div>
-
-          <div className="max-w-3xl">
-            <h1 className="text-3xl font-semibold tracking-[-0.03em] text-slate-950">
-              Embed to Optimizely
-            </h1>
-            <p className="mt-3 text-[15px] leading-7 text-slate-500">
-              Follow these simple steps to add this approved block into
-              Optimizely. The generated embed code is already approved and ready
-              to use, so no technical edits should be needed before adding it
-              into a JavaScript block.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid gap-5 lg:grid-cols-3">
-          <StepCard
-            number={1}
-            title="Copy the approved embed code"
-            description="Use the button below to copy the production-ready code for this block."
-          />
-          <StepCard
-            number={2}
-            title="Paste into an Optimizely JavaScript block"
-            description="Add a JavaScript block inside Optimizely, paste the code, position it on the page, then publish."
-          />
-          <StepCard
-            number={3}
-            title="Mark deployment as complete"
-            description="Once the block has been added, click Done so Visionir records the block as published."
-          />
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.04)]">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
+    <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
+      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
+        <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-slate-200 px-5 py-5">
               <div>
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Deploy to Optimizely - Instructions
+                <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                  Embed to Optimizely
                 </h2>
+                <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                  Follow these simple steps to add this approved block into
+                  Optimizely.
+                </p>
+                <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  Deployment Process
+                </p>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
+              <section>
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Deployment Steps
+                      </p>
+                      <p className="mt-2 text-[12px] leading-5 text-slate-500">
+                        This page is designed for marketers and content teams, so
+                        the process stays simple and easy to follow.
+                      </p>
+                    </div>
+
+                    <StatusPill tone="blue">Optimizely</StatusPill>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <StepCard
+                      number={1}
+                      title="Copy Embed Code"
+                      description="Click the button below to copy the production-ready code generated by Visionir."
+                    />
+
+                    <StepCard
+                      number={2}
+                      title="Open Optimizely CMS"
+                      description="Navigate to the page in Optimizely where you want this approved block to appear."
+                    />
+
+                    <StepCard
+                      number={3}
+                      title="Add a New Block"
+                      description='Add a new block to the page and choose “JavaScript Block”.'
+                    />
+
+                    <StepCard
+                      number={4}
+                      title="Paste the Embed Code"
+                      description="Paste the copied Visionir embed code into the JavaScript block and save your changes."
+                    />
+
+                    <StepCard
+                      number={5}
+                      title="Position and Publish"
+                      description="Place the block in the correct location on the page, then publish when ready."
+                    />
+                  </div>
+
+                  <div className="mt-5 rounded-[20px] border border-[#dbe5ff] bg-[#f6f8ff] p-4">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#4f6fff]">
+                      Helpful Note
+                    </p>
+                    <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                      The generated embed code is already approved and ready to use.
+                      No technical edits should be needed before adding it into
+                      Optimizely.
+                    </p>
+                  </div>
+
+                  <div className="mt-5 space-y-3">
+                    <button
+                      type="button"
+                      onClick={handleCopyEmbedCode}
+                      className="w-full rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                    >
+                      {copied ? "Embed Code Copied" : "Copy Embed Code"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+                    >
+                      Live Chat Support
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>
+          </div>
+        </aside>
+
+        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto_auto] overflow-hidden bg-[#f5f7fb]">
+          <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                  Deploy to Optimizely - Instructions
+                </h1>
                 <p className="mt-1 text-sm text-slate-500">
                   This block is production-ready and can now be embedded into
                   Optimizely using a JavaScript block.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setViewport("mobile")}
@@ -300,6 +361,7 @@ export default function BlockDeployEmbedPage() {
                 >
                   Mobile
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setViewport("tablet")}
@@ -312,6 +374,7 @@ export default function BlockDeployEmbedPage() {
                 >
                   Tablet
                 </button>
+
                 <button
                   type="button"
                   onClick={() => setViewport("desktop")}
@@ -326,98 +389,105 @@ export default function BlockDeployEmbedPage() {
                 </button>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-[28px] border border-slate-200 bg-[#f7f8fb] p-5">
-              <div
-                className={cx(
-                  "mx-auto overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.08)] transition-all duration-300",
-                  shellWidthClass
-                )}
-              >
-                <iframe
-                  title="Visionir block preview"
-                  srcDoc={previewDoc}
-                  style={{
-                    width: `${previewViewportWidth}px`,
-                    height: `${previewHeight}px`,
-                    border: "0",
-                    display: "block",
-                    background: "white",
-                  }}
-                />
+          <div className="min-h-0 overflow-hidden px-8 py-5">
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <div className="flex h-full items-center justify-center">
+                  <div
+                    className={cx(
+                      "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      shellWidthClass
+                    )}
+                  >
+                    <div
+                      className={cx(
+                        "rounded-[28px] bg-white",
+                        viewport === "desktop"
+                          ? "overflow-hidden"
+                          : "overflow-y-auto overflow-x-hidden"
+                      )}
+                      style={{
+                        height:
+                          viewport === "desktop"
+                            ? "min(560px, calc(100dvh - 356px))"
+                            : "min(620px, calc(100dvh - 336px))",
+                      }}
+                    >
+                      <div
+                        className={cx(
+                          "flex min-h-full justify-center",
+                          viewport === "tablet"
+                            ? "items-start py-0"
+                            : "items-start"
+                        )}
+                      >
+                        <iframe
+                          title="Block Deployment Preview"
+                          srcDoc={previewDoc}
+                          className="block border-0 bg-white align-top"
+                          style={{
+                            width: `${previewViewportWidth}px`,
+                            minWidth: `${previewViewportWidth}px`,
+                            height: `${previewHeight}px`,
+                            display: "block",
+                          }}
+                          scrolling="no"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleCopyEmbedCode}
-                className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                {copied ? "Copied" : "Copy Embed Code"}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDone}
-                disabled={isFinishing}
-                className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {isFinishing ? "Finishing..." : "Done"}
-              </button>
             </div>
           </div>
 
-          <aside className="space-y-6">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.04)]">
-              <h3 className="text-base font-semibold text-slate-950">
-                Helpful Note
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-slate-500">
-                This embed remains governed after deployment. Teams can still
-                track state, approvals, and rollout status from the Visionir
-                dashboard.
-              </p>
-            </div>
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>This embed remains governed after deployment.</span>
+                <span>Version 1.0</span>
+                <span>
+                  Status:{" "}
+                  <span className="font-medium text-emerald-600">
+                    Ready For Production
+                  </span>
+                </span>
+              </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.04)]">
-              <h3 className="text-base font-semibold text-slate-950">
-                Governance Snapshot
-              </h3>
-              <div className="mt-4 space-y-3 text-sm text-slate-600">
-                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                  <span>Brand Compliance</span>
-                  <span className="font-semibold text-emerald-700">100% ✓</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                  <span>Accessibility</span>
-                  <span className="font-semibold text-emerald-700">
-                    WCAG AA ✓
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                  <span>Design Tokens</span>
-                  <span className="font-semibold text-emerald-700">Locked ✓</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
-                  <span>Restricted Scripts</span>
-                  <span className="font-semibold text-emerald-700">
-                    Enabled ✓
-                  </span>
-                </div>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleCopyEmbedCode}
+                  className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  {copied ? "Copied" : "Copy Embed Code"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDone}
+                  disabled={isFinishing}
+                  className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isFinishing ? "Finishing..." : "Done"}
+                </button>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_12px_40px_rgba(15,23,42,0.04)]">
-              <h3 className="text-base font-semibold text-slate-950">
-                Embed Code
-              </h3>
-              <pre className="mt-4 max-h-[360px] overflow-auto rounded-[24px] bg-slate-950 p-4 text-xs leading-6 text-slate-200">
-                <code>{embedCode}</code>
-              </pre>
+          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+                <span>Brand Compliance: 100% ✓</span>
+                <span>Accessibility: WCAG AA ✓</span>
+                <span>Design Tokens: Locked ✓</span>
+                <span>Restricted Scripts: Enabled ✓</span>
+              </div>
             </div>
-          </aside>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );

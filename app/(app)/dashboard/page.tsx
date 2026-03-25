@@ -125,6 +125,8 @@ function getStatusLabel(status: string) {
       return "Pending Review";
     case "approved":
       return "Approved";
+    case "published":
+      return "Published";
     case "rejected":
       return "Changes Requested";
     case "deploying":
@@ -141,6 +143,7 @@ function getStatusLabel(status: string) {
 function getStatusPillClass(status: string) {
   switch (status) {
     case "approved":
+    case "published":
     case "completed":
     case "deployed":
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
@@ -159,9 +162,11 @@ function getActionHref(block: DashboardBlock, role: Role) {
     case "pending_approval":
       return `/blocks/${block.id}/approval?role=${role}`;
     case "approved":
+      return `/blocks/${block.id}/deploy?role=${role}`;
+    case "published":
     case "deployed":
     case "completed":
-      return `/blocks/${block.id}/deploy?role=${role}`;
+      return `/blocks/${block.id}/deploy/embed?role=${role}`;
     case "rejected":
     case "draft":
     case "in_review":
@@ -462,7 +467,8 @@ export default function DashboardPage() {
       return (
         block.name.toLowerCase().includes(q) ||
         block.owner.toLowerCase().includes(q) ||
-        block.component.toLowerCase().includes(q)
+        block.component.toLowerCase().includes(q) ||
+        getStatusLabel(block.status).toLowerCase().includes(q)
       );
     });
   }, [blocks, query]);
@@ -481,7 +487,7 @@ export default function DashboardPage() {
 
   const totals = useMemo(() => {
     const liveBlocks = blocks.filter((b) =>
-      ["deployed", "completed"].includes(b.status)
+      ["published", "deployed", "completed"].includes(b.status)
     ).length;
 
     const pending = blocks.filter((b) =>
