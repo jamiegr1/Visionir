@@ -27,7 +27,8 @@ async function readBlocks(): Promise<BlockRecord[]> {
     }
 
     return parsed as BlockRecord[];
-  } catch {
+  } catch (error) {
+    console.error("readBlocks failed:", error);
     return [];
   }
 }
@@ -35,6 +36,12 @@ async function readBlocks(): Promise<BlockRecord[]> {
 async function writeBlocks(blocks: BlockRecord[]) {
   await ensureStorageFile();
   await fs.writeFile(BLOCKS_FILE, JSON.stringify(blocks, null, 2), "utf8");
+}
+
+function getSortableTime(value: string | null | undefined) {
+  if (!value) return 0;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) ? 0 : time;
 }
 
 export async function createBlock(
@@ -58,7 +65,12 @@ export async function createBlock(
 
 export async function listBlocks(): Promise<BlockRecord[]> {
   const blocks = await readBlocks();
-  return [...blocks].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+
+  return [...blocks].sort((a, b) => {
+    const aTime = getSortableTime(a.updatedAt);
+    const bTime = getSortableTime(b.updatedAt);
+    return bTime - aTime;
+  });
 }
 
 export async function getBlockById(id: string): Promise<BlockRecord | null> {

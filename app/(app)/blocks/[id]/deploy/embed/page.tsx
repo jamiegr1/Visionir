@@ -180,8 +180,10 @@ export default function BlockDeployEmbedPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        cache: "no-store",
         body: JSON.stringify({
           status: "published",
+          publishedAt: new Date().toISOString(),
         }),
       });
   
@@ -192,7 +194,7 @@ export default function BlockDeployEmbedPage() {
         throw new Error(json?.error || "Failed to finalise block");
       }
   
-      router.push(`/dashboard?role=${role}`);
+      router.push(`/dashboard?role=${role}&refresh=${Date.now()}`);
       router.refresh();
     } catch (error) {
       console.error("Failed to complete deployment:", error);

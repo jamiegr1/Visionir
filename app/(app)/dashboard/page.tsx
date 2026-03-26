@@ -36,6 +36,7 @@ type ApiBlockRecord = {
   updatedAt?: string;
   createdBy?: string;
   createdByName?: string;
+  createdByUserId?: string;
   data?: BlockData | null;
 };
 
@@ -104,7 +105,12 @@ function getComponentName(data: BlockData | null): string {
 }
 
 function getOwnerName(block: ApiBlockRecord) {
-  return block.createdByName || block.createdBy || "Jamie";
+  return (
+    block.createdByName ||
+    block.createdBy ||
+    block.createdByUserId ||
+    "Jamie"
+  );
 }
 
 function getGovernanceScore(data: BlockData | null) {
@@ -158,22 +164,7 @@ function getStatusPillClass(status: string) {
 }
 
 function getActionHref(block: DashboardBlock, role: Role) {
-  switch (block.status) {
-    case "pending_approval":
-      return `/blocks/${block.id}/approval?role=${role}`;
-    case "approved":
-      return `/blocks/${block.id}/deploy?role=${role}`;
-    case "published":
-    case "deployed":
-    case "completed":
-      return `/blocks/${block.id}/deploy/embed?role=${role}`;
-    case "rejected":
-    case "draft":
-    case "in_review":
-    case "generating":
-    default:
-      return `/blocks/${block.id}/review?role=${role}`;
-  }
+  return `/blocks/${block.id}/details?role=${role}`;
 }
 
 function MiniTrend() {
@@ -411,6 +402,8 @@ export default function DashboardPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const refreshKey = searchParams.get("refresh") ?? "";
+
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<DashboardBlock[]>([]);
   const [query, setQuery] = useState("");
@@ -419,16 +412,24 @@ export default function DashboardPage() {
     async function loadBlocks() {
       try {
         setLoading(true);
-
-        const res = await fetch(`/api/blocks?role=${role}`, {
+  
+        const res = await fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
           cache: "no-store",
         });
-
+  
         const json = await res.json().catch(() => ({}));
+  
+        console.log("DASHBOARD FETCH STATUS:", res.status);
+        console.log("DASHBOARD FETCH JSON:", json);
+  
+        if (!res.ok) {
+          throw new Error(json?.error || `Failed to load blocks (${res.status})`);
+        }
+  
         const rawBlocks = Array.isArray(json?.blocks)
           ? (json.blocks as ApiBlockRecord[])
           : [];
-
+  
         const mapped: DashboardBlock[] = rawBlocks.map((block) => ({
           id: block.id,
           name: getBlockName(block.data ?? null, block.id),
@@ -440,13 +441,14 @@ export default function DashboardPage() {
           owner: getOwnerName(block),
           data: block.data ?? null,
         }));
-
+  
         mapped.sort((a, b) => {
           const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
           const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           return bTime - aTime;
         });
-
+  
+        console.log("MAPPED DASHBOARD BLOCKS:", mapped);
         setBlocks(mapped);
       } catch (error) {
         console.error("Failed to load dashboard blocks:", error);
@@ -455,9 +457,9 @@ export default function DashboardPage() {
         setLoading(false);
       }
     }
-
+  
     void loadBlocks();
-  }, [role]);
+  }, [role, refreshKey]);
 
   const visibleBlocks = useMemo(() => {
     return blocks.filter((block) => {
@@ -473,7 +475,15 @@ export default function DashboardPage() {
     });
   }, [blocks, query]);
 
-  const recentBlocks = useMemo(() => visibleBlocks.slice(0, 7), [visibleBlocks]);
+  const recentBlocks = useMemo(() => {
+    return [...visibleBlocks]
+      .sort((a, b) => {
+        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+        return bTime - aTime;
+      })
+      .slice(0, 7);
+  }, [visibleBlocks]);
 
   const pendingApprovals = useMemo(
     () =>

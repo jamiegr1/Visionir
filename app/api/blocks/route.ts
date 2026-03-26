@@ -20,7 +20,10 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error("GET /api/blocks failed:", error);
     return NextResponse.json(
-      { error: "Failed to load blocks." },
+      {
+        error: "Failed to load blocks.",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
