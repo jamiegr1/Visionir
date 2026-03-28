@@ -176,23 +176,26 @@ function getPreviewDimensions(viewport: ViewportMode) {
       return {
         width: 390,
         height: 844,
-        shellMaxWidth: 430,
-        shellPadding: 14,
+        shellPadding: 12,
+        minHeight: 520,
+        maxHeight: 760,
       };
     case "tablet":
       return {
         width: 820,
         height: 1024,
-        shellMaxWidth: 980,
-        shellPadding: 18,
+        shellPadding: 14,
+        minHeight: 560,
+        maxHeight: 760,
       };
     case "desktop":
     default:
       return {
         width: 1440,
-        height: 980,
-        shellMaxWidth: 9999,
-        shellPadding: 20,
+        height: 860,
+        shellPadding: 10,
+        minHeight: 300,
+        maxHeight: 540,
       };
   }
 }
@@ -400,46 +403,40 @@ function PreviewCanvas({
   const targetHeight =
     contentHeight && contentHeight > 0 ? contentHeight : dimensions.height;
 
-  const outerPadding = dimensions.shellPadding;
-  const maxInnerWidth = Math.max(availableWidth - outerPadding * 2, 280);
+  const outerWidth = Math.max(availableWidth - dimensions.shellPadding * 2, 260);
+  const innerPadding = viewport === "desktop" ? 8 : 10;
+  const usableWidth = Math.max(outerWidth - innerPadding * 2, 240);
 
-  const scale = Math.min(maxInnerWidth / targetWidth, 1);
-  const scaledHeight = Math.max(Math.round(targetHeight * scale), 240);
+  const scale = Math.min(usableWidth / targetWidth, 1);
+  const scaledWidth = Math.round(targetWidth * scale);
+  const rawScaledHeight = Math.round(targetHeight * scale);
+
+  const fittedHeight = Math.min(
+    Math.max(rawScaledHeight, dimensions.minHeight),
+    dimensions.maxHeight
+  );
 
   return (
     <div
       ref={shellRef}
       className={cx(
-        "w-full rounded-[30px] border border-slate-200 bg-[#f5f7fb]",
-        viewport === "desktop" ? "p-3 lg:p-4" : "p-4"
+        "w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc]",
+        viewport === "desktop" ? "p-2.5 lg:p-3" : "p-3"
       )}
     >
       <div
-        className={cx(
-          "mx-auto rounded-[26px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]",
-          viewport === "mobile"
-            ? "max-w-[430px] p-3"
-            : viewport === "tablet"
-              ? "max-w-[980px] p-3 sm:p-4"
-              : "w-full p-3 sm:p-4"
-        )}
+        className="w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
+        style={{
+          padding: `${innerPadding}px`,
+        }}
       >
         <div
-          className={cx(
-            "mx-auto overflow-hidden rounded-[20px] bg-white",
-            viewport === "mobile"
-              ? "border border-slate-200"
-              : viewport === "tablet"
-                ? "border border-slate-200"
-                : "border border-slate-100"
-          )}
+          className="mx-auto overflow-hidden rounded-[18px] bg-white"
           style={{
-            width:
-              viewport === "desktop"
-                ? "100%"
-                : `${Math.round(targetWidth * scale)}px`,
+            width: `${scaledWidth}px`,
             maxWidth: "100%",
-            height: `${scaledHeight}px`,
+            height: `${fittedHeight}px`,
+            border: "1px solid rgba(226, 232, 240, 0.9)",
           }}
         >
           <div
