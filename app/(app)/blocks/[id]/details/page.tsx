@@ -177,25 +177,25 @@ function getPreviewDimensions(viewport: ViewportMode) {
         width: 390,
         height: 844,
         shellPadding: 12,
-        minHeight: 520,
-        maxHeight: 760,
+        minHeight: 340,
+        maxHeight: 620,
       };
     case "tablet":
       return {
         width: 820,
         height: 1024,
-        shellPadding: 14,
-        minHeight: 560,
-        maxHeight: 760,
+        shellPadding: 12,
+        minHeight: 340,
+        maxHeight: 620,
       };
     case "desktop":
     default:
       return {
         width: 1440,
         height: 860,
-        shellPadding: 10,
-        minHeight: 300,
-        maxHeight: 540,
+        shellPadding: 6,
+        minHeight: 340,
+        maxHeight: 620,
       };
   }
 }
@@ -403,31 +403,105 @@ function PreviewCanvas({
   const targetHeight =
     contentHeight && contentHeight > 0 ? contentHeight : dimensions.height;
 
-  const outerWidth = Math.max(availableWidth - dimensions.shellPadding * 2, 260);
-  const innerPadding = viewport === "desktop" ? 8 : 10;
-  const usableWidth = Math.max(outerWidth - innerPadding * 2, 240);
+  const isDesktop = viewport === "desktop";
+  const isTablet = viewport === "tablet";
 
-  const scale = Math.min(usableWidth / targetWidth, 1);
+  const outerWidth = Math.max(availableWidth - dimensions.shellPadding * 2, 260);
+  const innerPadding = isDesktop ? 6 : 8;
+
+  if (!isDesktop) {
+    const frameWidth = isTablet ? 820 : 390;
+    const containerWidthFactor = isTablet ? 0.76 : 0.44;
+    const usableWidth = Math.max(
+      outerWidth * containerWidthFactor - innerPadding * 2,
+      220
+    );
+
+    const scale = Math.min(usableWidth / frameWidth, 1);
+    const scaledWidth = Math.round(frameWidth * scale);
+
+    const scrollHeightBuffer = isTablet ? 520 : 360;
+    const scrollTopOffset = isTablet ? 120 : 90;
+
+    const scaledContentHeight = Math.round(
+      (targetHeight + scrollHeightBuffer + scrollTopOffset) * scale
+    );
+
+    const fixedViewportHeight = 620;
+
+    return (
+      <div
+        ref={shellRef}
+        className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
+      >
+        <div
+          className="mx-auto overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
+          style={{
+            padding: `${innerPadding}px`,
+            width: "100%",
+          }}
+        >
+          <div
+            className="mx-auto overflow-auto rounded-[18px] bg-white"
+            style={{
+              width: `${scaledWidth}px`,
+              maxWidth: "100%",
+              height: `${fixedViewportHeight}px`,
+              border: "1px solid rgba(226, 232, 240, 0.9)",
+            }}
+          >
+            <div
+              style={{
+                width: `${scaledWidth}px`,
+                height: `${scaledContentHeight}px`,
+                position: "relative",
+              }}
+            >
+              <iframe
+                ref={iframeRef}
+                title="Block Detail Preview"
+                srcDoc={previewDoc}
+                className="block border-0 bg-white"
+                style={{
+                  width: `${frameWidth}px`,
+                  height: `${targetHeight + scrollHeightBuffer}px`,
+                  transform: `translateY(${scrollTopOffset}px) scale(${scale})`,
+                  transformOrigin: "top left",
+                  display: "block",
+                }}
+                scrolling="no"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const usableWidth = Math.max(outerWidth - innerPadding * 2 - 32, 240);
+  const widthBoost = 1.06;
+  const scale = Math.min((usableWidth / targetWidth) * widthBoost, 1);
+
   const scaledWidth = Math.round(targetWidth * scale);
   const rawScaledHeight = Math.round(targetHeight * scale);
 
+  const previewNudgeY = -104;
+
   const fittedHeight = Math.min(
-    Math.max(rawScaledHeight, dimensions.minHeight),
+    Math.max(rawScaledHeight - 18, dimensions.minHeight),
     dimensions.maxHeight
   );
 
   return (
     <div
       ref={shellRef}
-      className={cx(
-        "w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc]",
-        viewport === "desktop" ? "p-2.5 lg:p-3" : "p-3"
-      )}
+      className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
     >
       <div
-        className="w-full overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
+        className="mx-auto overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
         style={{
           padding: `${innerPadding}px`,
+          width: "100%",
         }}
       >
         <div
@@ -443,7 +517,7 @@ function PreviewCanvas({
             style={{
               width: `${targetWidth}px`,
               height: `${targetHeight}px`,
-              transform: `scale(${scale})`,
+              transform: `translateY(${previewNudgeY}px) scale(${scale})`,
               transformOrigin: "top left",
             }}
           >
