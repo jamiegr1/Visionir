@@ -318,12 +318,28 @@ function PreviewCanvas({
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
 
   const [availableWidth, setAvailableWidth] = useState(0);
   const [contentHeight, setContentHeight] = useState<number | null>(null);
   const [contentWidth, setContentWidth] = useState<number | null>(null);
 
   const dimensions = useMemo(() => getPreviewDimensions(viewport), [viewport]);
+
+  useEffect(() => {
+    setContentHeight(null);
+    setContentWidth(null);
+
+    if (shellRef.current) {
+      shellRef.current.scrollTop = 0;
+      shellRef.current.scrollLeft = 0;
+    }
+
+    if (scrollViewportRef.current) {
+      scrollViewportRef.current.scrollTop = 0;
+      scrollViewportRef.current.scrollLeft = 0;
+    }
+  }, [viewport]);
 
   useEffect(() => {
     const element = shellRef.current;
@@ -407,15 +423,11 @@ function PreviewCanvas({
   const isTablet = viewport === "tablet";
 
   const outerWidth = Math.max(availableWidth - dimensions.shellPadding * 2, 260);
-  const innerPadding = isDesktop ? 6 : 8;
 
   if (!isDesktop) {
     const frameWidth = isTablet ? 820 : 390;
     const containerWidthFactor = isTablet ? 0.76 : 0.44;
-    const usableWidth = Math.max(
-      outerWidth * containerWidthFactor - innerPadding * 2,
-      220
-    );
+    const usableWidth = Math.max(outerWidth * containerWidthFactor, 220);
 
     const scale = Math.min(usableWidth / frameWidth, 1);
     const scaledWidth = Math.round(frameWidth * scale);
@@ -434,14 +446,9 @@ function PreviewCanvas({
         ref={shellRef}
         className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
       >
-        <div
-          className="mx-auto overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
-          style={{
-            padding: `${innerPadding}px`,
-            width: "100%",
-          }}
-        >
+        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
           <div
+            ref={scrollViewportRef}
             className="mx-auto overflow-auto rounded-[18px] bg-white"
             style={{
               width: `${scaledWidth}px`,
@@ -478,18 +485,13 @@ function PreviewCanvas({
     );
   }
 
-  const usableWidth = Math.max(outerWidth - innerPadding * 2 - 32, 240);
-  const widthBoost = 1.06;
-  const scale = Math.min((usableWidth / targetWidth) * widthBoost, 1);
+  const desktopNudgeY = 110;
+  const usableWidth = Math.max(outerWidth - 2, 240);
+  const scale = Math.min(usableWidth / targetWidth, 1);
 
-  const scaledWidth = Math.round(targetWidth * scale);
-  const rawScaledHeight = Math.round(targetHeight * scale);
-
-  const previewNudgeY = -104;
-
-  const fittedHeight = Math.min(
-    Math.max(rawScaledHeight - 18, dimensions.minHeight),
-    dimensions.maxHeight
+  const visibleHeight = Math.max(
+    Math.round((targetHeight - desktopNudgeY) * scale),
+    220
   );
 
   return (
@@ -497,19 +499,12 @@ function PreviewCanvas({
       ref={shellRef}
       className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
     >
-      <div
-        className="mx-auto overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
-        style={{
-          padding: `${innerPadding}px`,
-          width: "100%",
-        }}
-      >
+      <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
         <div
-          className="mx-auto overflow-hidden rounded-[18px] bg-white"
+          className="overflow-hidden rounded-[18px] bg-white"
           style={{
-            width: `${scaledWidth}px`,
-            maxWidth: "100%",
-            height: `${fittedHeight}px`,
+            width: "100%",
+            height: `${visibleHeight}px`,
             border: "1px solid rgba(226, 232, 240, 0.9)",
           }}
         >
@@ -517,7 +512,7 @@ function PreviewCanvas({
             style={{
               width: `${targetWidth}px`,
               height: `${targetHeight}px`,
-              transform: `translateY(${previewNudgeY}px) scale(${scale})`,
+              transform: `translateY(-${desktopNudgeY}px) scale(${scale})`,
               transformOrigin: "top left",
             }}
           >
@@ -1087,7 +1082,11 @@ export default function BlockDetailPage() {
                 </div>
               </div>
 
-              <PreviewCanvas previewDoc={previewDoc} viewport={viewport} />
+              <PreviewCanvas
+                key={viewport}
+                previewDoc={previewDoc}
+                viewport={viewport}
+              />
             </Panel>
 
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
