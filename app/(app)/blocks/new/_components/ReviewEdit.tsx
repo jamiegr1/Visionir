@@ -480,7 +480,7 @@ export default function ReviewEdit({
                     value={describe}
                     onChange={(e) => setDescribe(e.target.value)}
                     disabled={!canEdit}
-                    placeholder="Use Kiwa blue for all four cards, make the heading more strategic, tighten the copy and make the design more corporate."
+                    placeholder="Use our blue for all four cards, make the heading more strategic, tighten the copy and make the design more corporate."
                     className="min-h-[122px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   />
                 </div>

@@ -18,7 +18,7 @@ type GenerateResponse = {
 
 const progressLabels = [
   "Analysing prompt...",
-  "Applying Kiwa governance...",
+  "Applying governance...",
   "Validating accessibility...",
   "Generating layout structure...",
   "Rendering preview...",
@@ -31,7 +31,7 @@ const governanceChecks = [
   "Enforce Spacing Guidelines",
   "Enforce WCAG AA Accessibility",
   "Optimise for Core Web Vitals",
-  "Kiwa Language & Tone",
+  "Language & Tone",
   "Validate Semantic HTML Structure",
   "Ensure Mobile Responsiveness",
   "Asset Performance Optimisation",
@@ -410,7 +410,7 @@ export default function NewBlockPage() {
 
   const [step, setStep] = useState<Step>("context");
 
-  const [blockName, setBlockName] = useState("Why Choose Kiwa Agri-Food");
+  const [blockName, setBlockName] = useState("Why Choose Us");
   const [blockType, setBlockType] = useState("Why Choose Us");
   const [location, setLocation] = useState("Food, Feed & Agriculture");
   const [contentLength, setContentLength] = useState("Standard");
@@ -420,7 +420,7 @@ export default function NewBlockPage() {
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
 
   const [prompt, setPrompt] = useState(
-    'Create a "Why Choose Kiwa Agri-Food" content block. Include a strong headline, short introduction paragraph, and four value points. Each value point should use a different Kiwa brand colour accent. Include the supplied farmer image as a supporting visual. Maintain a professional, compliance-focused tone.'
+    'Create a "Why Choose Us" content block. Include a strong headline, short introduction paragraph, and four value points. Each value point should use a different brand colour accent. Include the supplied farmer image as a supporting visual. Maintain a professional, compliance-focused tone.'
   );
 
   const [progress, setProgress] = useState(0);
@@ -617,7 +617,7 @@ ${prompt}
                   <TextInput
                     value={blockName}
                     onChange={setBlockName}
-                    placeholder="Why Choose Kiwa Agri-Food"
+                    placeholder="Why Choose Us"
                   />
                 </FormRow>
 

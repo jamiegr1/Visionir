@@ -33,7 +33,7 @@ export default function Generating({ progress, label }: Props) {
 
             <div className="mt-5 grid gap-y-3 gap-x-10 text-sm text-slate-700 md:grid-cols-2">
               <Item done={progress >= 8} text="Analysing prompt intent" />
-              <Item done={progress >= 22} text="Applying Kiwa typography system" />
+              <Item done={progress >= 22} text="Applying typography system" />
               <Item done={progress >= 34} text="Enforcing colour tokens" />
               <Item done={progress >= 48} text="Checking governance constraints" />
               <Item done={progress >= 62} text="Validating WCAG AA accessibility" />
