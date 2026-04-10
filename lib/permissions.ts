@@ -12,6 +12,22 @@ export type Permission =
   | "block.reject"
   | "block.request_changes"
   | "block.publish"
+  | "template.create"
+  | "template.edit"
+  | "template.view"
+  | "template.publish"
+  | "template.archive"
+  | "template.delete"
+  | "page.create"
+  | "page.edit.own"
+  | "page.edit.any"
+  | "page.view.own"
+  | "page.view.team"
+  | "page.view.all"
+  | "page.submit"
+  | "page.approve"
+  | "page.reject"
+  | "page.publish"
   | "user.manage"
   | "role.manage"
   | "settings.manage";
@@ -23,6 +39,11 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.view.own",
     "block.submit",
     "block.publish",
+    "template.view",
+    "page.create",
+    "page.edit.own",
+    "page.view.own",
+    "page.submit",
   ],
   approver: [
     "block.create",
@@ -35,6 +56,16 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.reject",
     "block.request_changes",
     "block.publish",
+    "template.view",
+    "page.create",
+    "page.edit.own",
+    "page.edit.any",
+    "page.view.own",
+    "page.view.team",
+    "page.submit",
+    "page.approve",
+    "page.reject",
+    "page.publish",
   ],
   admin: [
     "block.create",
@@ -48,6 +79,22 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.reject",
     "block.request_changes",
     "block.publish",
+    "template.create",
+    "template.edit",
+    "template.view",
+    "template.publish",
+    "template.archive",
+    "template.delete",
+    "page.create",
+    "page.edit.own",
+    "page.edit.any",
+    "page.view.own",
+    "page.view.team",
+    "page.view.all",
+    "page.submit",
+    "page.approve",
+    "page.reject",
+    "page.publish",
     "user.manage",
     "role.manage",
     "settings.manage",
@@ -68,6 +115,17 @@ export type BlockStatus =
   | "rejected"
   | "archived";
 
+export type TemplateStatus = "draft" | "published" | "archived";
+
+export type PageStatus =
+  | "draft"
+  | "in_progress"
+  | "pending_approval"
+  | "approved"
+  | "published"
+  | "rejected"
+  | "archived";
+
 export type UserLike = {
   id: string;
   role: Role;
@@ -76,6 +134,16 @@ export type UserLike = {
 export type BlockLike = {
   createdByUserId: string;
   status: BlockStatus;
+};
+
+export type TemplateLike = {
+  createdByUserId: string;
+  status: TemplateStatus;
+};
+
+export type PageLike = {
+  createdByUserId: string;
+  status: PageStatus;
 };
 
 export function canEditBlock(user: UserLike, block: BlockLike) {
@@ -121,5 +189,83 @@ export function canPublishBlock(user: UserLike, block: BlockLike) {
   return (
     hasPermission(user.role, "block.publish") &&
     block.status === "approved"
+  );
+}
+
+export function canViewTemplate(user: UserLike) {
+  return hasPermission(user.role, "template.view");
+}
+
+export function canCreateTemplate(user: UserLike) {
+  return hasPermission(user.role, "template.create");
+}
+
+export function canEditTemplate(user: UserLike, template: TemplateLike) {
+  if (!hasPermission(user.role, "template.edit")) return false;
+  if (user.role === "admin") return true;
+
+  return (
+    template.createdByUserId === user.id &&
+    template.status === "draft"
+  );
+}
+
+export function canPublishTemplate(user: UserLike, template: TemplateLike) {
+  return (
+    hasPermission(user.role, "template.publish") &&
+    template.status === "draft"
+  );
+}
+
+export function canArchiveTemplate(user: UserLike, template: TemplateLike) {
+  return (
+    hasPermission(user.role, "template.archive") &&
+    (template.status === "draft" || template.status === "published")
+  );
+}
+
+export function canDeleteTemplate(user: UserLike, template: TemplateLike) {
+  return (
+    hasPermission(user.role, "template.delete") &&
+    template.status === "draft"
+  );
+}
+
+export function canEditPage(user: UserLike, page: PageLike) {
+  if (hasPermission(user.role, "page.edit.any")) return true;
+
+  return (
+    hasPermission(user.role, "page.edit.own") &&
+    page.createdByUserId === user.id &&
+    ["draft", "in_progress", "rejected"].includes(page.status)
+  );
+}
+
+export function canSubmitPage(user: UserLike, page: PageLike) {
+  return (
+    hasPermission(user.role, "page.submit") &&
+    page.createdByUserId === user.id &&
+    ["draft", "in_progress", "rejected"].includes(page.status)
+  );
+}
+
+export function canApprovePage(user: UserLike, page: PageLike) {
+  return (
+    hasPermission(user.role, "page.approve") &&
+    page.status === "pending_approval"
+  );
+}
+
+export function canRejectPage(user: UserLike, page: PageLike) {
+  return (
+    hasPermission(user.role, "page.reject") &&
+    page.status === "pending_approval"
+  );
+}
+
+export function canPublishPage(user: UserLike, page: PageLike) {
+  return (
+    hasPermission(user.role, "page.publish") &&
+    page.status === "approved"
   );
 }
