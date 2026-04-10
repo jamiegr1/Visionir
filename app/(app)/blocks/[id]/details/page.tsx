@@ -170,36 +170,6 @@ function getUserLabel(userId?: string | null) {
   return userId;
 }
 
-function getPreviewDimensions(viewport: ViewportMode) {
-  switch (viewport) {
-    case "mobile":
-      return {
-        width: 390,
-        height: 844,
-        shellPadding: 12,
-        minHeight: 340,
-        maxHeight: 620,
-      };
-    case "tablet":
-      return {
-        width: 820,
-        height: 1024,
-        shellPadding: 12,
-        minHeight: 340,
-        maxHeight: 620,
-      };
-    case "desktop":
-    default:
-      return {
-        width: 1440,
-        height: 860,
-        shellPadding: 6,
-        minHeight: 340,
-        maxHeight: 620,
-      };
-  }
-}
-
 function Panel({
   title,
   subtitle,
@@ -230,7 +200,9 @@ function Panel({
             {title}
           </h2>
           {subtitle ? (
-            <p className="mt-1.5 text-sm leading-6 text-slate-500">{subtitle}</p>
+            <p className="mt-1.5 text-sm leading-6 text-slate-500">
+              {subtitle}
+            </p>
           ) : null}
         </div>
       </div>
@@ -265,7 +237,7 @@ function MetaRow({
   value: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 last:pb-0 first:pt-0">
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 first:pt-0 last:border-b-0 last:pb-0">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
         {label}
       </p>
@@ -318,35 +290,33 @@ function PreviewCanvas({
 }) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const scrollViewportRef = useRef<HTMLDivElement | null>(null);
+  const deviceViewportRef = useRef<HTMLDivElement | null>(null);
 
-  const [availableWidth, setAvailableWidth] = useState(0);
-  const [contentHeight, setContentHeight] = useState<number | null>(null);
-  const [contentWidth, setContentWidth] = useState<number | null>(null);
+  const [shellWidth, setShellWidth] = useState(0);
+  const [iframeContentHeight, setIframeContentHeight] = useState(720);
+  const [previewScale, setPreviewScale] = useState(1);
 
-  const dimensions = useMemo(() => getPreviewDimensions(viewport), [viewport]);
+  const isDesktop = viewport === "desktop";
+  const isTablet = viewport === "tablet";
+  const isMobile = viewport === "mobile";
 
-  useEffect(() => {
-    setContentHeight(null);
-    setContentWidth(null);
+  const shellWidthClass = "max-w-[1320px]";
+  const outerPreviewFixedHeight = 620;
 
-    if (shellRef.current) {
-      shellRef.current.scrollTop = 0;
-      shellRef.current.scrollLeft = 0;
-    }
+  const previewViewportWidth =
+    viewport === "mobile" ? 390 : viewport === "tablet" ? 768 : 1280;
 
-    if (scrollViewportRef.current) {
-      scrollViewportRef.current.scrollTop = 0;
-      scrollViewportRef.current.scrollLeft = 0;
-    }
-  }, [viewport]);
+  const deviceViewportHeight =
+    viewport === "mobile" ? 600 : viewport === "tablet" ? 620 : 560;
+
+  const topPreviewPadding = 56;
 
   useEffect(() => {
     const element = shellRef.current;
     if (!element) return;
 
     const update = () => {
-      setAvailableWidth(element.clientWidth);
+      setShellWidth(element.clientWidth);
     };
 
     update();
@@ -358,126 +328,142 @@ function PreviewCanvas({
   }, []);
 
   useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe) return;
+    if (deviceViewportRef.current) {
+      deviceViewportRef.current.scrollTop = 0;
+      deviceViewportRef.current.scrollLeft = 0;
+    }
+  }, [viewport, previewDoc]);
 
-    let frame: number | null = null;
-    let timeout: number | null = null;
+  useEffect(() => {
+    function syncIframeSize() {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
 
-    const measure = () => {
-      try {
-        const doc = iframe.contentDocument;
-        if (!doc) return;
+      const doc = iframe.contentDocument;
+      if (!doc) return;
 
-        const body = doc.body;
-        const html = doc.documentElement;
+      const body = doc.body;
+      const html = doc.documentElement;
 
-        if (!body || !html) return;
+      const contentHeight = Math.max(
+        body?.scrollHeight ?? 0,
+        body?.offsetHeight ?? 0,
+        body?.clientHeight ?? 0,
+        html?.scrollHeight ?? 0,
+        html?.offsetHeight ?? 0,
+        html?.clientHeight ?? 0
+      );
 
-        const measuredHeight = Math.max(
-          body.scrollHeight,
-          body.offsetHeight,
-          body.clientHeight,
-          html.scrollHeight,
-          html.offsetHeight,
-          html.clientHeight
-        );
-
-        const measuredWidth = Math.max(
-          body.scrollWidth,
-          body.offsetWidth,
-          body.clientWidth,
-          html.scrollWidth,
-          html.offsetWidth,
-          html.clientWidth
-        );
-
-        if (measuredHeight > 0) setContentHeight(measuredHeight);
-        if (measuredWidth > 0) setContentWidth(measuredWidth);
-      } catch (error) {
-        console.error("Failed to measure preview iframe:", error);
+      if (contentHeight > 0) {
+        setIframeContentHeight(contentHeight);
       }
-    };
 
-    const handleLoad = () => {
-      measure();
-      frame = window.requestAnimationFrame(measure);
-      timeout = window.setTimeout(measure, 120);
-    };
+      if (isDesktop) {
+        const availableWidth = Math.max(shellWidth - 32, 220);
+        const nextScale = Math.min(1, availableWidth / previewViewportWidth);
+        setPreviewScale(nextScale);
+        return;
+      }
 
-    iframe.addEventListener("load", handleLoad);
+      const maxDeviceWidth = isTablet ? 620 : 360;
+      const nextScale = Math.min(1, maxDeviceWidth / previewViewportWidth);
+      setPreviewScale(nextScale);
+    }
+
+    syncIframeSize();
+
+    const timeout1 = window.setTimeout(syncIframeSize, 60);
+    const timeout2 = window.setTimeout(syncIframeSize, 180);
+    const timeout3 = window.setTimeout(syncIframeSize, 360);
+
+    window.addEventListener("resize", syncIframeSize);
 
     return () => {
-      iframe.removeEventListener("load", handleLoad);
-      if (frame) window.cancelAnimationFrame(frame);
-      if (timeout) window.clearTimeout(timeout);
+      window.clearTimeout(timeout1);
+      window.clearTimeout(timeout2);
+      window.clearTimeout(timeout3);
+      window.removeEventListener("resize", syncIframeSize);
     };
-  }, [previewDoc, viewport]);
+  }, [previewDoc, previewViewportWidth, shellWidth, viewport, isDesktop, isTablet]);
 
-  const targetWidth =
-    contentWidth && contentWidth > 0 ? contentWidth : dimensions.width;
-  const targetHeight =
-    contentHeight && contentHeight > 0 ? contentHeight : dimensions.height;
-
-  const isDesktop = viewport === "desktop";
-  const isTablet = viewport === "tablet";
-
-  const outerWidth = Math.max(availableWidth - dimensions.shellPadding * 2, 260);
-
-  if (!isDesktop) {
-    const frameWidth = isTablet ? 820 : 390;
-    const containerWidthFactor = isTablet ? 0.76 : 0.44;
-    const usableWidth = Math.max(outerWidth * containerWidthFactor, 220);
-
-    const scale = Math.min(usableWidth / frameWidth, 1);
-    const scaledWidth = Math.round(frameWidth * scale);
-
-    const scrollHeightBuffer = isTablet ? 520 : 360;
-    const scrollTopOffset = isTablet ? 120 : 90;
-
-    const scaledContentHeight = Math.round(
-      (targetHeight + scrollHeightBuffer + scrollTopOffset) * scale
+  if (isDesktop) {
+    const scaledHeight = Math.max(
+      Math.round(iframeContentHeight * previewScale),
+      220
     );
-
-    const fixedViewportHeight = 620;
 
     return (
       <div
-        ref={shellRef}
-        className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
+        className={cx(
+          "mx-auto w-full transition-all duration-300",
+          shellWidthClass
+        )}
       >
-        <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
+        <div
+          ref={shellRef}
+          className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
+        >
           <div
-            ref={scrollViewportRef}
-            className="mx-auto overflow-auto rounded-[18px] bg-white"
-            style={{
-              width: `${scaledWidth}px`,
-              maxWidth: "100%",
-              height: `${fixedViewportHeight}px`,
-              border: "1px solid rgba(226, 232, 240, 0.9)",
-            }}
+            className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
+            style={{ height: `${outerPreviewFixedHeight}px` }}
           >
-            <div
-              style={{
-                width: `${scaledWidth}px`,
-                height: `${scaledContentHeight}px`,
-                position: "relative",
-              }}
-            >
-              <iframe
-                ref={iframeRef}
-                title="Block Detail Preview"
-                srcDoc={previewDoc}
-                className="block border-0 bg-white"
+            <div className="flex h-full items-center justify-center">
+              <div
+                className="mx-auto origin-top overflow-hidden rounded-[18px] bg-white"
                 style={{
-                  width: `${frameWidth}px`,
-                  height: `${targetHeight + scrollHeightBuffer}px`,
-                  transform: `translateY(${scrollTopOffset}px) scale(${scale})`,
-                  transformOrigin: "top left",
-                  display: "block",
+                  width: `${previewViewportWidth * previewScale}px`,
+                  maxWidth: "100%",
+                  height: `${scaledHeight}px`,
+                  border: "1px solid rgba(226, 232, 240, 0.9)",
                 }}
-                scrolling="no"
-              />
+              >
+                <iframe
+                  key={viewport}
+                  ref={iframeRef}
+                  title="Block Detail Preview"
+                  srcDoc={previewDoc}
+                  className="block border-0 bg-white"
+                  onLoad={() => {
+                    const iframe = iframeRef.current;
+                    if (!iframe) return;
+
+                    const run = () => {
+                      const doc = iframe.contentDocument;
+                      if (!doc) return;
+
+                      const body = doc.body;
+                      const html = doc.documentElement;
+
+                      const contentHeight = Math.max(
+                        body?.scrollHeight ?? 0,
+                        body?.offsetHeight ?? 0,
+                        body?.clientHeight ?? 0,
+                        html?.scrollHeight ?? 0,
+                        html?.offsetHeight ?? 0,
+                        html?.clientHeight ?? 0
+                      );
+
+                      if (contentHeight > 0) {
+                        setIframeContentHeight(contentHeight);
+                      }
+                    };
+
+                    run();
+                    window.setTimeout(run, 60);
+                    window.setTimeout(run, 180);
+                    window.setTimeout(run, 360);
+                  }}
+                  style={{
+                    width: `${previewViewportWidth}px`,
+                    minWidth: `${previewViewportWidth}px`,
+                    height: `${Math.max(iframeContentHeight, 200)}px`,
+                    transform: `scale(${previewScale})`,
+                    transformOrigin: "top left",
+                    display: "block",
+                  }}
+                  scrolling="no"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -485,49 +471,104 @@ function PreviewCanvas({
     );
   }
 
-  const desktopNudgeY = 110;
-  const usableWidth = Math.max(outerWidth - 2, 240);
-  const scale = Math.min(usableWidth / targetWidth, 1);
-
-  const visibleHeight = Math.max(
-    Math.round((targetHeight - desktopNudgeY) * scale),
-    220
-  );
+  const scaledDeviceWidth = Math.round(previewViewportWidth * previewScale);
+  const scaledDeviceHeight = Math.round(deviceViewportHeight * previewScale);
+  const scaledTopPadding = Math.max(Math.round(topPreviewPadding * previewScale), 18);
 
   return (
     <div
-      ref={shellRef}
-      className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
+      className={cx(
+        "mx-auto w-full transition-all duration-300",
+        shellWidthClass
+      )}
     >
-      <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]">
+      <div
+        ref={shellRef}
+        className="w-full rounded-[28px] border border-slate-200 bg-[#f6f8fc] p-2 lg:p-2.5"
+      >
         <div
-          className="overflow-hidden rounded-[18px] bg-white"
-          style={{
-            width: "100%",
-            height: `${visibleHeight}px`,
-            border: "1px solid rgba(226, 232, 240, 0.9)",
-          }}
+          className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.07)]"
+          style={{ height: `${outerPreviewFixedHeight}px` }}
         >
-          <div
-            style={{
-              width: `${targetWidth}px`,
-              height: `${targetHeight}px`,
-              transform: `translateY(-${desktopNudgeY}px) scale(${scale})`,
-              transformOrigin: "top left",
-            }}
-          >
-            <iframe
-              ref={iframeRef}
-              title="Block Detail Preview"
-              srcDoc={previewDoc}
-              className="block border-0 bg-white"
+          <div className="flex h-full items-center justify-center px-6 py-6">
+            <div
+              className={cx(
+                "relative overflow-hidden bg-white shadow-[0_14px_35px_rgba(15,23,42,0.12)]",
+                isMobile ? "rounded-[32px]" : "rounded-[26px]"
+              )}
               style={{
-                width: `${targetWidth}px`,
-                height: `${targetHeight}px`,
-                display: "block",
+                width: `${scaledDeviceWidth}px`,
+                height: `${scaledDeviceHeight}px`,
+                border: "1px solid rgba(226, 232, 240, 0.95)",
               }}
-              scrolling="no"
-            />
+            >
+              {isMobile ? (
+                <div className="pointer-events-none absolute left-1/2 top-2 z-20 h-1.5 w-20 -translate-x-1/2 rounded-full bg-slate-200" />
+              ) : null}
+
+              <div
+                ref={deviceViewportRef}
+                className="h-full w-full overflow-y-auto overflow-x-hidden bg-white"
+              >
+                <div
+                  style={{
+                    width: `${scaledDeviceWidth}px`,
+                    height: `${scaledTopPadding + Math.max(Math.round(iframeContentHeight * previewScale), 1)}px`,
+                    position: "relative",
+                    paddingTop: `${scaledTopPadding}px`,
+                    boxSizing: "border-box",
+                    background: "#ffffff",
+                  }}
+                >
+                  <iframe
+                    key={viewport}
+                    ref={iframeRef}
+                    title="Block Detail Preview"
+                    srcDoc={previewDoc}
+                    className="block border-0 bg-white"
+                    onLoad={() => {
+                      const iframe = iframeRef.current;
+                      if (!iframe) return;
+
+                      const run = () => {
+                        const doc = iframe.contentDocument;
+                        if (!doc) return;
+
+                        const body = doc.body;
+                        const html = doc.documentElement;
+
+                        const contentHeight = Math.max(
+                          body?.scrollHeight ?? 0,
+                          body?.offsetHeight ?? 0,
+                          body?.clientHeight ?? 0,
+                          html?.scrollHeight ?? 0,
+                          html?.offsetHeight ?? 0,
+                          html?.clientHeight ?? 0
+                        );
+
+                        if (contentHeight > 0) {
+                          setIframeContentHeight(contentHeight);
+                        }
+                      };
+
+                      run();
+                      window.setTimeout(run, 60);
+                      window.setTimeout(run, 180);
+                      window.setTimeout(run, 360);
+                    }}
+                    style={{
+                      width: `${previewViewportWidth}px`,
+                      minWidth: `${previewViewportWidth}px`,
+                      height: `${Math.max(iframeContentHeight, 200)}px`,
+                      transform: `scale(${previewScale})`,
+                      transformOrigin: "top left",
+                      display: "block",
+                    }}
+                    scrolling="no"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -721,7 +762,9 @@ export default function BlockDetailPage() {
       );
     } catch (error) {
       console.error("Failed to duplicate block:", error);
-      alert(error instanceof Error ? error.message : "Failed to duplicate block");
+      alert(
+        error instanceof Error ? error.message : "Failed to duplicate block"
+      );
     } finally {
       setIsDuplicating(false);
     }
@@ -936,14 +979,18 @@ export default function BlockDetailPage() {
               <div>
                 <TimelineItem
                   title="Created"
-                  value={`${formatDateTime(block.createdAt)} by ${getOwnerName(block)}`}
+                  value={`${formatDateTime(block.createdAt)} by ${getOwnerName(
+                    block
+                  )}`}
                   active
                 />
                 <TimelineItem
                   title="Submitted"
                   value={
                     block.submittedAt
-                      ? `${formatDateTime(block.submittedAt)} by ${getUserLabel(block.submittedByUserId)}`
+                      ? `${formatDateTime(block.submittedAt)} by ${getUserLabel(
+                          block.submittedByUserId
+                        )}`
                       : "Not yet submitted for approval"
                   }
                   active={Boolean(block.submittedAt)}
@@ -952,7 +999,9 @@ export default function BlockDetailPage() {
                   title="Approved"
                   value={
                     block.approvedAt
-                      ? `${formatDateTime(block.approvedAt)} by ${getUserLabel(block.approvedByUserId)}`
+                      ? `${formatDateTime(block.approvedAt)} by ${getUserLabel(
+                          block.approvedByUserId
+                        )}`
                       : "Not yet approved"
                   }
                   active={Boolean(block.approvedAt)}
@@ -961,7 +1010,9 @@ export default function BlockDetailPage() {
                   title="Published"
                   value={
                     block.publishedAt
-                      ? `${formatDateTime(block.publishedAt)} by ${getUserLabel(block.publishedByUserId)}`
+                      ? `${formatDateTime(block.publishedAt)} by ${getUserLabel(
+                          block.publishedByUserId
+                        )}`
                       : "Not yet published"
                   }
                   active={Boolean(block.publishedAt)}
@@ -1051,7 +1102,9 @@ export default function BlockDetailPage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => router.push(`/blocks/${id}/review?role=${role}`)}
+                    onClick={() =>
+                      router.push(`/blocks/${id}/review?role=${role}`)
+                    }
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >
                     <PenSquare className="h-4 w-4" />
@@ -1061,7 +1114,9 @@ export default function BlockDetailPage() {
                   {["pending_approval", "in_review"].includes(status) ? (
                     <button
                       type="button"
-                      onClick={() => router.push(`/blocks/${id}/approval?role=${role}`)}
+                      onClick={() =>
+                        router.push(`/blocks/${id}/approval?role=${role}`)
+                      }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       <CheckCircle2 className="h-4 w-4" />
@@ -1069,10 +1124,14 @@ export default function BlockDetailPage() {
                     </button>
                   ) : null}
 
-                  {["approved", "published", "deployed", "completed"].includes(status) ? (
+                  {["approved", "published", "deployed", "completed"].includes(
+                    status
+                  ) ? (
                     <button
                       type="button"
-                      onClick={() => router.push(`/blocks/${id}/deploy?role=${role}`)}
+                      onClick={() =>
+                        router.push(`/blocks/${id}/deploy?role=${role}`)
+                      }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
                       <Sparkles className="h-4 w-4" />

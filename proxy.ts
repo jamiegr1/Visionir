@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-
-const SESSION_COOKIE = "visionir_mock_session";
+import { MOCK_SESSION_COOKIE } from "@/lib/current-user";
 
 const protectedPrefixes = [
   "/dashboard",
@@ -18,7 +17,7 @@ export function proxy(request: NextRequest) {
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  const session = request.cookies.get(SESSION_COOKIE)?.value;
+  const session = request.cookies.get(MOCK_SESSION_COOKIE)?.value;
 
   if (isProtected && !session) {
     return NextResponse.redirect(new URL("/login", request.url));
