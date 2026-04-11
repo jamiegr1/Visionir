@@ -7,7 +7,7 @@ import {
   Sparkles,
   Blocks,
   Palette,
-  Rocket,
+  LayoutTemplate, // ✅ changed
   Settings,
 } from "lucide-react";
 
@@ -80,9 +80,9 @@ export default function Sidebar() {
       icon: <Palette className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/deployment",
-      label: "Deployment",
-      icon: <Rocket className="h-5 w-5" strokeWidth={1.9} />,
+      href: "/templates", // ✅ changed
+      label: "Templates",
+      icon: <LayoutTemplate className="h-5 w-5" strokeWidth={1.9} />, // ✅ changed
     },
   ];
 
@@ -92,8 +92,9 @@ export default function Sidebar() {
     }
 
     if (href === "/blocks/new") return pathname === "/blocks/new";
-    if (href === "/blocks") return pathname === "/blocks";
+    if (href === "/blocks") return pathname === "/blocks" || pathname.startsWith("/blocks/");
     if (href === "/brand") return pathname === "/brand";
+    if (href === "/templates") return pathname === "/templates" || pathname.startsWith("/templates/"); // ✅ added
 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
