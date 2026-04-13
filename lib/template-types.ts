@@ -88,6 +88,7 @@ export type PageStatus =
   | "in_progress"
   | "pending_approval"
   | "approved"
+  | "rejected"
   | "published"
   | "archived";
 

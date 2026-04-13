@@ -5,17 +5,20 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   ArrowRight,
+  BadgeCheck,
+  Blocks,
   CheckCircle2,
+  CircleDashed,
+  ClipboardCheck,
   Clock3,
+  FileText,
+  LayoutGrid,
+  LayoutTemplate,
+  Palette,
   Plus,
   Search,
   Shield,
   Sparkles,
-  ClipboardCheck,
-  MoreHorizontal,
-  LayoutGrid,
-  CircleDashed,
-  BadgeCheck,
 } from "lucide-react";
 import type { BlockData } from "@/lib/types";
 import type { Role } from "@/lib/permissions";
@@ -52,7 +55,58 @@ type DashboardBlock = {
   data: BlockData | null;
 };
 
-function formatDate(value: string | null) {
+type TemplateSummary = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  category?: string;
+  status: "draft" | "published" | "archived";
+  version?: number;
+  updatedAt?: string | null;
+  publishedAt?: string | null;
+  sectionCount?: number;
+  requiredSectionCount?: number;
+};
+
+type PageStatus =
+  | "draft"
+  | "in_progress"
+  | "pending_approval"
+  | "approved"
+  | "rejected"
+  | "published"
+  | "archived";
+
+type PageSummary = {
+  id: string;
+  name: string;
+  slug?: string;
+  status: PageStatus;
+  templateId: string;
+  templateName: string;
+  templateVersion: number;
+  createdByUserId: string;
+  updatedByUserId: string;
+  createdAt: string;
+  updatedAt: string;
+  sections: Array<{
+    sectionId: string;
+    key: string;
+    label: string;
+    order: number;
+    required: boolean;
+    canSkip?: boolean;
+    minInstances: number;
+    maxInstances: number;
+    allowedComponentIds: string[];
+    defaultComponentId?: string | null;
+    completed: boolean;
+    blockIds: string[];
+  }>;
+};
+
+function formatDate(value: string | null | undefined) {
   if (!value) return "—";
 
   const date = new Date(value);
@@ -65,7 +119,7 @@ function formatDate(value: string | null) {
   }).format(date);
 }
 
-function relativeUpdatedLabel(value: string | null) {
+function relativeUpdatedLabel(value: string | null | undefined) {
   if (!value) return "Updated recently";
 
   const date = new Date(value);
@@ -119,7 +173,7 @@ function getGovernanceScore(data: BlockData | null) {
   return typeof governance?.score === "number" ? governance.score : null;
 }
 
-function getStatusLabel(status: string) {
+function getBlockStatusLabel(status: string) {
   switch (status) {
     case "draft":
       return "Draft";
@@ -146,7 +200,7 @@ function getStatusLabel(status: string) {
   }
 }
 
-function getStatusPillClass(status: string) {
+function getBlockStatusPillClass(status: string) {
   switch (status) {
     case "approved":
     case "published":
@@ -163,8 +217,56 @@ function getStatusPillClass(status: string) {
   }
 }
 
-function getActionHref(block: DashboardBlock, role: Role) {
-  return `/blocks/${block.id}/details?role=${role}`;
+function getPageStatusLabel(status: PageStatus) {
+  switch (status) {
+    case "in_progress":
+      return "In Progress";
+    case "pending_approval":
+      return "Pending Approval";
+    case "approved":
+      return "Approved";
+    case "rejected":
+      return "Rejected";
+    case "published":
+      return "Published";
+    case "archived":
+      return "Archived";
+    case "draft":
+    default:
+      return "Draft";
+  }
+}
+
+function getPageStatusPillClass(status: PageStatus) {
+  switch (status) {
+    case "in_progress":
+      return "bg-blue-50 text-blue-700 ring-blue-100";
+    case "pending_approval":
+      return "bg-violet-50 text-violet-700 ring-violet-100";
+    case "approved":
+      return "bg-sky-50 text-sky-700 ring-sky-100";
+    case "rejected":
+      return "bg-rose-50 text-rose-700 ring-rose-100";
+    case "published":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+    case "archived":
+      return "bg-slate-100 text-slate-600 ring-slate-200";
+    case "draft":
+    default:
+      return "bg-amber-50 text-amber-700 ring-amber-100";
+  }
+}
+
+function getTemplateStatusPillClass(status: string) {
+  switch (status) {
+    case "published":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+    case "archived":
+      return "bg-slate-100 text-slate-600 ring-slate-200";
+    case "draft":
+    default:
+      return "bg-amber-50 text-amber-700 ring-amber-100";
+  }
 }
 
 function MiniTrend() {
@@ -229,40 +331,6 @@ function SectionHeader({
   );
 }
 
-function ActivityItem({
-  time,
-  title,
-  subtitle,
-  dotClass,
-}: {
-  time: string;
-  title: string;
-  subtitle: string;
-  dotClass: string;
-}) {
-  return (
-    <div className="rounded-[20px] border border-slate-200/80 bg-white px-4 py-3.5 shadow-[0_8px_22px_rgba(15,23,42,0.03)]">
-      <div className="mb-1.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className={cx("h-2 w-2 rounded-full", dotClass)} />
-          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            {time}
-          </span>
-        </div>
-        <button
-          type="button"
-          className="text-slate-300 transition hover:text-slate-500"
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="text-sm font-semibold text-slate-900">{title}</div>
-      <div className="mt-1 text-xs leading-5 text-slate-500">{subtitle}</div>
-    </div>
-  );
-}
-
 function MetricCard({
   label,
   value,
@@ -323,11 +391,11 @@ function RecentBlockRow({
 
   return (
     <div
-      onClick={() => router.push(getActionHref(block, role))}
+      onClick={() => router.push(`/blocks/${block.id}/details?role=${role}`)}
       className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_140px_140px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#102746] text-[10px] font-semibold text-white shadow-sm">
-        VB
+        BL
       </div>
 
       <div className="min-w-0">
@@ -345,48 +413,97 @@ function RecentBlockRow({
         <span
           className={cx(
             "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
-            getStatusPillClass(block.status)
+            getBlockStatusPillClass(block.status)
           )}
         >
-          {getStatusLabel(block.status)}
+          {getBlockStatusLabel(block.status)}
         </span>
       </div>
     </div>
   );
 }
 
-function PendingApprovalRow({
-  block,
+function RecentPageRow({
+  page,
   role,
 }: {
-  block: DashboardBlock;
+  page: PageSummary;
+  role: Role;
+}) {
+  const router = useRouter();
+  const completed = page.sections.filter((section) => section.completed).length;
+
+  return (
+    <div
+      onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+      className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_140px_140px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
+    >
+      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#143861] text-[10px] font-semibold text-white shadow-sm">
+        PG
+      </div>
+
+      <div className="min-w-0">
+        <div className="truncate text-sm font-semibold text-slate-900">
+          {page.name}
+        </div>
+        <div className="mt-1 truncate text-xs text-slate-500">
+          {page.templateName} • {completed}/{page.sections.length} complete
+        </div>
+      </div>
+
+      <div className="text-sm text-slate-700">{formatDate(page.updatedAt)}</div>
+
+      <div>
+        <span
+          className={cx(
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            getPageStatusPillClass(page.status)
+          )}
+        >
+          {getPageStatusLabel(page.status)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function TemplateRow({
+  template,
+  role,
+}: {
+  template: TemplateSummary;
   role: Role;
 }) {
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/blocks/${block.id}/approval?role=${role}`)}
-      className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_130px_150px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
+      onClick={() => router.push(`/templates/${template.id}?role=${role}`)}
+      className="grid cursor-pointer grid-cols-[minmax(0,1fr)_110px_110px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
-      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#143861] text-[10px] font-semibold text-white shadow-sm">
-        AP
-      </div>
-
       <div className="min-w-0">
         <div className="truncate text-sm font-semibold text-slate-900">
-          {block.name}
+          {template.name}
         </div>
         <div className="mt-1 truncate text-xs text-slate-500">
-          Submitted by {block.owner}
+          {template.category || "custom"} • {template.sectionCount ?? 0} sections
         </div>
       </div>
 
-      <div className="text-sm text-slate-700">{formatDate(block.updatedAt)}</div>
+      <div className="text-sm text-slate-700">v{template.version ?? 1}</div>
 
       <div>
-        <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 ring-1 ring-amber-100">
-          Pending Review
+        <span
+          className={cx(
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            getTemplateStatusPillClass(template.status)
+          )}
+        >
+          {template.status === "published"
+            ? "Published"
+            : template.status === "archived"
+              ? "Archived"
+              : "Draft"}
         </span>
       </div>
     </div>
@@ -406,31 +523,40 @@ export default function DashboardPage() {
 
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<DashboardBlock[]>([]);
+  const [pages, setPages] = useState<PageSummary[]>([]);
+  const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [query, setQuery] = useState("");
 
   useEffect(() => {
-    async function loadBlocks() {
+    async function loadDashboardData() {
       try {
         setLoading(true);
-  
-        const res = await fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
-          cache: "no-store",
-        });
-  
-        const json = await res.json().catch(() => ({}));
-  
-        console.log("DASHBOARD FETCH STATUS:", res.status);
-        console.log("DASHBOARD FETCH JSON:", json);
-  
-        if (!res.ok) {
-          throw new Error(json?.error || `Failed to load blocks (${res.status})`);
+
+        const [blocksRes, pagesRes, templatesRes] = await Promise.all([
+          fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/pages?role=${role}&refresh=${refreshKey}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/templates?role=${role}&refresh=${refreshKey}`, {
+            cache: "no-store",
+          }),
+        ]);
+
+        const blocksJson = await blocksRes.json().catch(() => ({}));
+        const pagesJson = await pagesRes.json().catch(() => ({}));
+        const templatesJson = await templatesRes.json().catch(() => ({}));
+
+        if (!blocksRes.ok) {
+          throw new Error(blocksJson?.error || "Failed to load blocks.");
         }
-  
-        const rawBlocks = Array.isArray(json?.blocks)
-          ? (json.blocks as ApiBlockRecord[])
+
+        const rawBlocks = Array.isArray(blocksJson?.blocks)
+          ? (blocksJson.blocks as ApiBlockRecord[])
           : [];
-  
-        const mapped: DashboardBlock[] = rawBlocks.map((block) => ({
+
+        const mappedBlocks: DashboardBlock[] = rawBlocks.map((block) => ({
           id: block.id,
           name: getBlockName(block.data ?? null, block.id),
           component: getComponentName(block.data ?? null),
@@ -441,90 +567,147 @@ export default function DashboardPage() {
           owner: getOwnerName(block),
           data: block.data ?? null,
         }));
-  
-        mapped.sort((a, b) => {
+
+        mappedBlocks.sort((a, b) => {
           const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
           const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
           return bTime - aTime;
         });
-  
-        console.log("MAPPED DASHBOARD BLOCKS:", mapped);
-        setBlocks(mapped);
+
+        const rawPages = Array.isArray(pagesJson?.pages)
+          ? (pagesJson.pages as PageSummary[])
+          : [];
+
+        rawPages.sort((a, b) => {
+          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+
+        const rawTemplates = Array.isArray(templatesJson?.templates)
+          ? (templatesJson.templates as TemplateSummary[])
+          : [];
+
+        rawTemplates.sort((a, b) => {
+          const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+          const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+          return bTime - aTime;
+        });
+
+        setBlocks(mappedBlocks);
+        setPages(rawPages);
+        setTemplates(rawTemplates);
       } catch (error) {
-        console.error("Failed to load dashboard blocks:", error);
+        console.error("Failed to load dashboard data:", error);
         setBlocks([]);
+        setPages([]);
+        setTemplates([]);
       } finally {
         setLoading(false);
       }
     }
-  
-    void loadBlocks();
+
+    void loadDashboardData();
   }, [role, refreshKey]);
 
   const visibleBlocks = useMemo(() => {
     return blocks.filter((block) => {
       if (!query.trim()) return true;
-
       const q = query.toLowerCase();
+
       return (
         block.name.toLowerCase().includes(q) ||
         block.owner.toLowerCase().includes(q) ||
         block.component.toLowerCase().includes(q) ||
-        getStatusLabel(block.status).toLowerCase().includes(q)
+        getBlockStatusLabel(block.status).toLowerCase().includes(q)
       );
     });
   }, [blocks, query]);
 
-  const recentBlocks = useMemo(() => {
-    return [...visibleBlocks]
-      .sort((a, b) => {
-        const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
-        const bTime = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
-        return bTime - aTime;
-      })
-      .slice(0, 7);
-  }, [visibleBlocks]);
+  const visiblePages = useMemo(() => {
+    return pages.filter((page) => {
+      if (!query.trim()) return true;
+      const q = query.toLowerCase();
 
-  const pendingApprovals = useMemo(
-    () =>
-      visibleBlocks
-        .filter((block) =>
-          ["pending_approval", "in_review"].includes(block.status)
-        )
-        .slice(0, 7),
-    [visibleBlocks]
+      return (
+        page.name.toLowerCase().includes(q) ||
+        (page.slug || "").toLowerCase().includes(q) ||
+        page.templateName.toLowerCase().includes(q) ||
+        getPageStatusLabel(page.status).toLowerCase().includes(q)
+      );
+    });
+  }, [pages, query]);
+
+  const visibleTemplates = useMemo(() => {
+    return templates.filter((template) => {
+      if (!query.trim()) return true;
+      const q = query.toLowerCase();
+
+      return (
+        template.name.toLowerCase().includes(q) ||
+        (template.description || "").toLowerCase().includes(q) ||
+        (template.category || "").toLowerCase().includes(q)
+      );
+    });
+  }, [templates, query]);
+
+  const recentBlocks = useMemo(() => visibleBlocks.slice(0, 6), [visibleBlocks]);
+  const recentPages = useMemo(() => visiblePages.slice(0, 6), [visiblePages]);
+  const recentTemplates = useMemo(
+    () => visibleTemplates.slice(0, 6),
+    [visibleTemplates]
   );
+
+  const pendingApprovals = useMemo(() => {
+    const pagePending = visiblePages.filter((page) =>
+      ["pending_approval"].includes(page.status)
+    ).length;
+
+    const blockPending = visibleBlocks.filter((block) =>
+      ["pending_approval", "in_review"].includes(block.status)
+    ).length;
+
+    return {
+      total: pagePending + blockPending,
+      pagePending,
+      blockPending,
+    };
+  }, [visibleBlocks, visiblePages]);
 
   const totals = useMemo(() => {
     const liveBlocks = blocks.filter((b) =>
       ["published", "deployed", "completed"].includes(b.status)
     ).length;
 
-    const pending = blocks.filter((b) =>
-      ["pending_approval", "in_review"].includes(b.status)
-    ).length;
-
-    const scores = blocks
+    const blockScores = blocks
       .map((b) => b.governanceScore)
       .filter((value): value is number => typeof value === "number");
 
     const averageScore =
-      scores.length > 0
+      blockScores.length > 0
         ? Math.round(
-            scores.reduce((sum, score) => sum + score, 0) / scores.length
+            blockScores.reduce((sum, score) => sum + score, 0) / blockScores.length
           )
         : 98;
 
     return {
-      total: blocks.length,
-      live: liveBlocks,
-      pending,
+      templates: templates.length,
+      pages: pages.length,
+      blocks: blocks.length,
+      pending: pendingApprovals.total,
       averageScore,
-      blocked: blocks.filter((b) => b.status === "rejected").length,
-      drafts: blocks.filter((b) => b.status === "draft").length,
-      approved: blocks.filter((b) => b.status === "approved").length,
+      livePages: pages.filter((page) => page.status === "published").length,
+      inProgressPages: pages.filter((page) =>
+        ["draft", "in_progress", "pending_approval", "approved", "rejected"].includes(
+          page.status
+        )
+      ).length,
+      publishedTemplates: templates.filter((t) => t.status === "published").length,
+      draftTemplates: templates.filter((t) => t.status === "draft").length,
+      liveBlocks,
+      blockedBlocks: blocks.filter((b) => b.status === "rejected").length,
     };
-  }, [blocks]);
+  }, [blocks, pages, templates, pendingApprovals]);
 
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f4f7fb] text-slate-900">
@@ -532,21 +715,21 @@ export default function DashboardPage() {
         <aside className="hidden h-full w-[325px] shrink-0 border-r border-slate-200/90 bg-white xl:flex xl:flex-col">
           <div className="border-b border-slate-200/90 px-7 pb-5 pt-6">
             <div className="rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f9fd_100%)] px-5 py-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
                   <p className="text-[13px] text-slate-500">Welcome back</p>
                   <h1 className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.05em] text-slate-900">
-                    Kiwa UK
+                    Mediascout
                   </h1>
                 </div>
 
-                <div className="shrink-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
                   <Image
-                    src="/kiwalogo.png"
-                    alt="Kiwa"
-                    width={56}
-                    height={18}
-                    className="h-auto w-auto object-contain"
+                    src="/mediascout-logo.png"
+                    alt="Mediascout"
+                    width={52}
+                    height={52}
+                    className="h-[46px] w-[46px] rounded-lg object-cover"
                     priority
                   />
                 </div>
@@ -565,35 +748,58 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col px-7 py-5">
-            <div>
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <h2 className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">
-                  UK Activity
-                </h2>
-                <span className="text-xs font-medium text-slate-400">Today</span>
-              </div>
+          <div className="rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f9fd_100%)] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+  <div className="mb-3 flex items-center gap-2">
+    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#4f6fff] ring-1 ring-slate-200">
+      <Sparkles className="h-4 w-4" />
+    </div>
+    <div>
+      <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
+      <p className="text-xs text-slate-500">
+        Start the next governed workflow.
+      </p>
+    </div>
+  </div>
 
-              <div className="space-y-3">
-                <ActivityItem
-                  time="09:03AM"
-                  title="Jamie"
-                  subtitle="Edited CTA Banner 3h ago"
-                  dotClass="bg-[#5b7cff]"
-                />
-                <ActivityItem
-                  time="10:28AM"
-                  title="Jamie"
-                  subtitle="Submitted Core Services for review"
-                  dotClass="bg-amber-400"
-                />
-                <ActivityItem
-                  time="04:24PM"
-                  title="Jamie"
-                  subtitle="Approved Case Study"
-                  dotClass="bg-emerald-400"
-                />
-              </div>
-            </div>
+  <div className="grid gap-3">
+  <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-3">
+  <div className="grid gap-2">
+    <button
+      type="button"
+      onClick={() => router.push(`/templates/new?role=${role}`)}
+      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+        <LayoutTemplate className="h-4 w-4" />
+      </div>
+      <span className="text-sm font-medium text-slate-900">Create Template</span>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => router.push(`/pages/new?role=${role}`)}
+      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+        <FileText className="h-4 w-4" />
+      </div>
+      <span className="text-sm font-medium text-slate-900">Create Page</span>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => router.push(`/blocks/new?role=${role}`)}
+      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+    >
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+        <Blocks className="h-4 w-4" />
+      </div>
+      <span className="text-sm font-medium text-slate-900">Generate Block</span>
+    </button>
+  </div>
+</div>
+  </div>
+</div>
 
             <div className="mt-auto pt-6">
               <div className="rounded-[28px] border border-slate-200 bg-[#f8fafe] px-5 py-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
@@ -602,7 +808,7 @@ export default function DashboardPage() {
                     <h3 className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">
                       Governance Snapshot
                     </h3>
-                    <p className="mt-0.5 text-xs text-slate-400">Month to date</p>
+                    <p className="mt-0.5 text-xs text-slate-400">Platform health</p>
                   </div>
 
                   <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500">
@@ -619,19 +825,21 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Accessibility</span>
-                      <span className="font-semibold text-slate-900">AA</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Blocked</span>
+                      <span>Published Templates</span>
                       <span className="font-semibold text-slate-900">
-                        {totals.blocked}
+                        {totals.publishedTemplates}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Pending</span>
+                      <span>Pending Approvals</span>
                       <span className="font-semibold text-slate-900">
                         {totals.pending}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Rejected Blocks</span>
+                      <span className="font-semibold text-slate-900">
+                        {totals.blockedBlocks}
                       </span>
                     </div>
                   </div>
@@ -644,45 +852,71 @@ export default function DashboardPage() {
         </aside>
 
         <main className="min-w-0 flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-[1650px] px-6 py-6 lg:px-8">
+          <div className="mx-auto max-w-[1680px] px-6 py-6 lg:px-8">
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative max-w-[340px] flex-1">
+              <div className="relative max-w-[360px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search blocks"
+                  placeholder="Search pages, templates or blocks"
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
                 />
               </div>
 
-              <button
-                type="button"
-                onClick={() => router.push(`/blocks/new?role=${role}`)}
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
-              >
-                Create Block
-                <Plus className="h-4 w-4" />
-              </button>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Template
+                  <Plus className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push(`/pages/new?role=${role}`)}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Page
+                  <Plus className="h-4 w-4" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => router.push(`/blocks/new?role=${role}`)}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+                >
+                  Generate Block
+                  <Sparkles className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
               <MetricCard
-                label="Total Blocks"
-                value={totals.total}
+                label="Templates"
+                value={totals.templates}
                 tone="blue"
-                icon={<LayoutGrid className="h-5 w-5" />}
+                icon={<LayoutTemplate className="h-5 w-5" />}
               />
               <MetricCard
-                label="Live Blocks"
-                value={totals.live}
+                label="Pages"
+                value={totals.pages}
                 tone="emerald"
-                icon={<BadgeCheck className="h-5 w-5" />}
+                icon={<FileText className="h-5 w-5" />}
+              />
+              <MetricCard
+                label="Blocks"
+                value={totals.blocks}
+                tone="slate"
+                icon={<LayoutGrid className="h-5 w-5" />}
               />
               <MetricCard
                 label="Pending Approvals"
                 value={totals.pending}
-                tone="slate"
+                tone="blue"
                 icon={<CircleDashed className="h-5 w-5" />}
               />
               <MetricCard
@@ -693,23 +927,118 @@ export default function DashboardPage() {
               />
             </div>
 
-            <div className="grid gap-6 2xl:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-6 2xl:grid-cols-[1.25fr_1fr]">
+              <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Recent Page Activity"
+                  subtitle="Latest governed pages moving through the platform."
+                  right={
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/pages?role=${role}`)}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      View Pages
+                    </button>
+                  }
+                />
+
+                <div className="mb-3 grid grid-cols-[56px_minmax(0,1fr)_140px_140px] gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <div />
+                  <div>Page</div>
+                  <div>Date</div>
+                  <div>Status</div>
+                </div>
+
+                <div className="space-y-1">
+                  {loading ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      Loading page activity…
+                    </div>
+                  ) : recentPages.length === 0 ? (
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
+                      No pages yet.
+                    </div>
+                  ) : (
+                    recentPages.map((page) => (
+                      <RecentPageRow key={page.id} page={page} role={role} />
+                    ))
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+                <SectionHeader
+                  title="Approval Queue"
+                  subtitle="Everything currently waiting for governance review."
+                  right={
+                    <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {pendingApprovals.total} awaiting review
+                    </div>
+                  }
+                />
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-violet-500 ring-1 ring-slate-200">
+                      <FileText className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {pendingApprovals.pagePending}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Pages Pending</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-500 ring-1 ring-slate-200">
+                      <Blocks className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {pendingApprovals.blockPending}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Blocks Pending</p>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(135deg,#f8faff_0%,#eef3ff_100%)] p-5">
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-[#4f6fff] shadow-sm ring-1 ring-[#dbe5ff]">
+                    <ClipboardCheck className="h-5 w-5" />
+                  </div>
+
+                  <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Keep the workflow moving
+                  </h3>
+                  <p className="mt-2 max-w-[420px] text-sm leading-6 text-slate-600">
+                    Review pending work across pages and blocks so teams can keep
+                    building within governance.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/pages?role=${role}`)}
+                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                  >
+                    Open Workspace
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </section>
+            </div>
+
+            <div className="mt-6 grid gap-6 2xl:grid-cols-[1.2fr_1fr]">
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Recent Block Activity"
-                  subtitle="Latest block updates across the workspace."
+                  subtitle="Latest governed blocks across the workspace."
                   right={
-                    <div className="inline-flex items-center gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 text-xs">
-                      <button className="rounded-xl px-3 py-2 text-slate-500">
-                        Day
-                      </button>
-                      <button className="rounded-xl px-3 py-2 text-slate-500">
-                        Week
-                      </button>
-                      <button className="rounded-xl bg-white px-3 py-2 font-medium text-slate-800 shadow-sm">
-                        Month
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/blocks?role=${role}`)}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      View Blocks
+                    </button>
                   }
                 />
 
@@ -735,71 +1064,65 @@ export default function DashboardPage() {
                     ))
                   )}
                 </div>
-
-                <div className="mt-5 flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/blocks?role=${role}`)}
-                    className="rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
-                  >
-                    View All Blocks
-                  </button>
-                  <span className="text-sm text-slate-400">
-                    {blocks.length.toLocaleString()} Total Blocks
-                  </span>
-                </div>
               </section>
 
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
-                  title="Pending Approvals"
-                  subtitle="Blocks waiting for review and sign-off."
+                  title="Template Snapshot"
+                  subtitle="Current governed template blueprints."
                   right={
-                    <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {pendingApprovals.length} awaiting review
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/templates?role=${role}`)}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                    >
+                      View Templates
+                    </button>
                   }
                 />
 
-                <div className="mb-3 grid grid-cols-[56px_minmax(0,1fr)_130px_150px] gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  <div />
-                  <div>Block</div>
-                  <div>Date</div>
+                <div className="mb-3 grid grid-cols-[minmax(0,1fr)_110px_110px] gap-4 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                  <div>Template</div>
+                  <div>Version</div>
                   <div>Status</div>
                 </div>
 
                 <div className="space-y-1">
                   {loading ? (
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
-                      Loading approvals…
+                      Loading templates…
                     </div>
-                  ) : pendingApprovals.length === 0 ? (
+                  ) : recentTemplates.length === 0 ? (
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
-                      No blocks are currently awaiting approval.
+                      No templates yet.
                     </div>
                   ) : (
-                    pendingApprovals.map((block) => (
-                      <PendingApprovalRow
-                        key={block.id}
-                        block={block}
-                        role={role}
-                      />
+                    recentTemplates.map((template) => (
+                      <TemplateRow key={template.id} template={template} role={role} />
                     ))
                   )}
                 </div>
 
-                <div className="mt-5 flex flex-wrap items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/blocks?role=${role}`)}
-                    className="rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
-                  >
-                    View All Approvals
-                  </button>
-                  <span className="text-sm text-slate-400">
-                    {pendingApprovals.length} Awaiting Review
-                  </span>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#4f6fff] ring-1 ring-slate-200">
+                      <LayoutTemplate className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.publishedTemplates}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Published Templates</p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 ring-1 ring-slate-200">
+                      <CircleDashed className="h-4 w-4" />
+                    </div>
+                    <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      {totals.draftTemplates}
+                    </div>
+                    <p className="mt-1 text-sm text-slate-500">Draft Templates</p>
+                  </div>
                 </div>
               </section>
             </div>
@@ -807,49 +1130,49 @@ export default function DashboardPage() {
             <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
               <section className="rounded-[30px] border border-slate-200/90 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
-                  title="Workflow Summary"
-                  subtitle="Full governed route from creation to deployment."
+                  title="Platform Summary"
+                  subtitle="A governed operating view across templates, pages and blocks."
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-slate-500 ring-1 ring-slate-200">
-                      <ClipboardCheck className="h-4 w-4" />
+                      <Palette className="h-4 w-4" />
                     </div>
                     <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
-                      {totals.drafts}
+                      {totals.averageScore}%
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">Drafts</p>
+                    <p className="mt-1 text-sm text-slate-500">Compliance</p>
                   </div>
 
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
-                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-amber-500 ring-1 ring-slate-200">
-                      <Clock3 className="h-4 w-4" />
+                    <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-blue-500 ring-1 ring-slate-200">
+                      <FileText className="h-4 w-4" />
                     </div>
                     <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
-                      {totals.pending}
+                      {totals.inProgressPages}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">In Review</p>
+                    <p className="mt-1 text-sm text-slate-500">Active Pages</p>
                   </div>
 
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-emerald-500 ring-1 ring-slate-200">
-                      <CheckCircle2 className="h-4 w-4" />
+                      <BadgeCheck className="h-4 w-4" />
                     </div>
                     <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
-                      {totals.approved}
+                      {totals.livePages}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">Approved</p>
+                    <p className="mt-1 text-sm text-slate-500">Published Pages</p>
                   </div>
 
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-white text-[#5b7cff] ring-1 ring-slate-200">
-                      <Sparkles className="h-4 w-4" />
+                      <Blocks className="h-4 w-4" />
                     </div>
                     <div className="text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
-                      {totals.live}
+                      {totals.liveBlocks}
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">Live</p>
+                    <p className="mt-1 text-sm text-slate-500">Live Blocks</p>
                   </div>
                 </div>
               </section>
@@ -866,22 +1189,40 @@ export default function DashboardPage() {
                   </div>
 
                   <h3 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                    Launch a new governed block
+                    Build with governance from the start
                   </h3>
                   <p className="mt-2 max-w-[420px] text-sm leading-6 text-slate-600">
-                    Start a new workflow with AI-assisted generation,
-                    governance checks, approval routing and deployment-ready
-                    output.
+                    Create templates, launch pages from approved structures, and
+                    generate governed blocks inside a platform built for controlled
+                    web evolution.
                   </p>
 
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/blocks/new?role=${role}`)}
-                    className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
-                  >
-                    Continue Workflow
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
+                  <div className="mt-5 flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/templates/new?role=${role}`)}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 ring-1 ring-[#dbe5ff] transition hover:bg-slate-50"
+                    >
+                      Create Template
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/pages/new?role=${role}`)}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 ring-1 ring-[#dbe5ff] transition hover:bg-slate-50"
+                    >
+                      Create Page
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/blocks/new?role=${role}`)}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                    >
+                      Generate Block
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </section>
             </div>

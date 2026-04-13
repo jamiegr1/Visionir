@@ -1,17 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
+  CheckCircle2,
+  CopyPlus,
+  FileText,
   GripVertical,
+  LayoutTemplate,
   Plus,
   Save,
   Settings2,
   Sparkles,
   Trash2,
+  Wand2,
 } from "lucide-react";
 import { COMPONENT_OPTIONS } from "@/lib/component-options";
 
@@ -25,7 +30,7 @@ type TemplateCategory =
   | "resource"
   | "custom";
 
-type BuilderStep = "overview" | "structure" | "settings";
+type BuilderStep = "overview" | "structure" | "rules";
 
 type SectionForm = {
   id: string;
@@ -48,6 +53,247 @@ type SectionForm = {
   blockedInstructionsText: string;
 };
 
+type TemplatePreset = {
+  id: string;
+  label: string;
+  description: string;
+  category: TemplateCategory;
+  sections: Array<Partial<SectionForm> & { label: string; key: string }>;
+};
+
+const SECTION_PRESETS: Array<{
+  key: string;
+  label: string;
+  description: string;
+  defaultComponentIds?: string[];
+  defaultComponentId?: string;
+  promptHint?: string;
+  helpText?: string;
+  required?: boolean;
+  minInstances?: number;
+  maxInstances?: number;
+  lockedOrder?: boolean;
+  mustBeFirst?: boolean;
+  mustBeLast?: boolean;
+}> = [
+  {
+    key: "hero",
+    label: "Hero",
+    description: "Primary opening section for the page.",
+    defaultComponentIds: ["hero-standard"],
+    defaultComponentId: "hero-standard",
+    promptHint: "Introduce the page clearly and confidently.",
+    helpText: "Explain the page purpose immediately.",
+    required: true,
+    minInstances: 1,
+    maxInstances: 1,
+    lockedOrder: true,
+    mustBeFirst: true,
+  },
+  {
+    key: "intro",
+    label: "Intro",
+    description: "Short supporting intro or context section.",
+    promptHint: "Add concise supporting context.",
+    helpText: "Use this to frame the rest of the page.",
+    required: false,
+    minInstances: 0,
+    maxInstances: 1,
+  },
+  {
+    key: "content",
+    label: "Content",
+    description: "Main explanatory section.",
+    defaultComponentIds: ["value-points-grid"],
+    defaultComponentId: "value-points-grid",
+    promptHint: "Support the core proposition with structured content.",
+    helpText: "Add benefits, proof, or structured supporting detail.",
+    required: true,
+    minInstances: 1,
+    maxInstances: 3,
+  },
+  {
+    key: "stats",
+    label: "Stats",
+    description: "Numerical proof or measurable outcomes.",
+    promptHint: "Use clear, credible supporting metrics.",
+    helpText: "Keep stat labels short and meaningful.",
+    required: false,
+    minInstances: 0,
+    maxInstances: 1,
+  },
+  {
+    key: "testimonials",
+    label: "Testimonials",
+    description: "Social proof and customer confidence.",
+    promptHint: "Use concise, specific trust-building proof.",
+    helpText: "Only include strong proof with real relevance.",
+    required: false,
+    minInstances: 0,
+    maxInstances: 2,
+  },
+  {
+    key: "faq",
+    label: "FAQ",
+    description: "Common questions and clarifications.",
+    promptHint: "Answer likely objections clearly.",
+    helpText: "Keep answers simple and useful.",
+    required: false,
+    minInstances: 0,
+    maxInstances: 1,
+  },
+  {
+    key: "cta",
+    label: "Call to Action",
+    description: "Closing conversion section.",
+    promptHint: "Drive a clear next step for the user.",
+    helpText: "Use a strong, direct CTA aligned to the page goal.",
+    required: true,
+    minInstances: 1,
+    maxInstances: 1,
+    mustBeLast: true,
+  },
+];
+
+const TEMPLATE_PRESETS: TemplatePreset[] = [
+  {
+    id: "service-page",
+    label: "Service Page",
+    description: "For structured service positioning and conversion.",
+    category: "service",
+    sections: [
+      {
+        key: "hero",
+        label: "Hero",
+        required: true,
+        lockedOrder: true,
+        mustBeFirst: true,
+        allowedComponentIds: ["hero-standard"],
+        defaultComponentId: "hero-standard",
+        description: "Primary opening section for the page.",
+        helpText: "Explain the service clearly and confidently.",
+        promptHint: "Introduce the service clearly and confidently.",
+        minInstances: 1,
+        maxInstances: 1,
+      },
+      {
+        key: "intro",
+        label: "Intro",
+        required: false,
+        description: "Short supporting intro section.",
+        helpText: "Frame the service before deeper content.",
+        minInstances: 0,
+        maxInstances: 1,
+      },
+      {
+        key: "content",
+        label: "Content",
+        required: true,
+        allowedComponentIds: ["value-points-grid"],
+        defaultComponentId: "value-points-grid",
+        description: "Main explanatory section.",
+        helpText: "Add benefits, detail, and proof.",
+        promptHint: "Support the service proposition with structured content.",
+        minInstances: 1,
+        maxInstances: 3,
+      },
+      {
+        key: "cta",
+        label: "Call to Action",
+        required: true,
+        mustBeLast: true,
+        description: "Closing conversion section.",
+        helpText: "Use a strong next-step CTA.",
+        promptHint: "Drive a clear next step for the user.",
+        minInstances: 1,
+        maxInstances: 1,
+      },
+    ],
+  },
+  {
+    id: "landing-page",
+    label: "Landing Page",
+    description: "For campaigns, propositions, and focused journeys.",
+    category: "landing",
+    sections: [
+      {
+        key: "hero",
+        label: "Hero",
+        required: true,
+        lockedOrder: true,
+        mustBeFirst: true,
+        allowedComponentIds: ["hero-standard"],
+        defaultComponentId: "hero-standard",
+        minInstances: 1,
+        maxInstances: 1,
+      },
+      {
+        key: "content",
+        label: "Content",
+        required: true,
+        allowedComponentIds: ["value-points-grid"],
+        defaultComponentId: "value-points-grid",
+        minInstances: 1,
+        maxInstances: 2,
+      },
+      {
+        key: "testimonials",
+        label: "Testimonials",
+        required: false,
+        minInstances: 0,
+        maxInstances: 1,
+      },
+      {
+        key: "cta",
+        label: "Call to Action",
+        required: true,
+        mustBeLast: true,
+        minInstances: 1,
+        maxInstances: 1,
+      },
+    ],
+  },
+  {
+    id: "article-page",
+    label: "Article Page",
+    description: "For editorial and knowledge-led content.",
+    category: "article",
+    sections: [
+      {
+        key: "hero",
+        label: "Hero",
+        required: true,
+        lockedOrder: true,
+        mustBeFirst: true,
+        minInstances: 1,
+        maxInstances: 1,
+      },
+      {
+        key: "content",
+        label: "Article Body",
+        required: true,
+        minInstances: 1,
+        maxInstances: 10,
+      },
+      {
+        key: "faq",
+        label: "Related Questions",
+        required: false,
+        minInstances: 0,
+        maxInstances: 1,
+      },
+      {
+        key: "cta",
+        label: "Call to Action",
+        required: false,
+        mustBeLast: true,
+        minInstances: 0,
+        maxInstances: 1,
+      },
+    ],
+  },
+];
+
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
@@ -59,6 +305,10 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .replace(/-{2,}/g, "-");
+}
+
+function getComponentName(id: string) {
+  return COMPONENT_OPTIONS.find((component) => component.id === id)?.name ?? id;
 }
 
 function createEmptySection(index: number): SectionForm {
@@ -81,6 +331,32 @@ function createEmptySection(index: number): SectionForm {
     imageMax: 0,
     promptHint: "",
     blockedInstructionsText: "",
+  };
+}
+
+function createSectionFromPreset(
+  preset: Partial<SectionForm> & { label: string; key: string },
+  index: number
+): SectionForm {
+  return {
+    ...createEmptySection(index),
+    label: preset.label,
+    key: preset.key,
+    description: preset.description ?? "",
+    helpText: preset.helpText ?? "",
+    required: preset.required ?? true,
+    canSkip: preset.canSkip ?? false,
+    minInstances: preset.minInstances ?? 1,
+    maxInstances: preset.maxInstances ?? 1,
+    allowedComponentIds: preset.allowedComponentIds ?? [],
+    defaultComponentId: preset.defaultComponentId ?? "",
+    lockedOrder: preset.lockedOrder ?? false,
+    mustBeFirst: preset.mustBeFirst ?? index === 0,
+    mustBeLast: preset.mustBeLast ?? false,
+    imageMin: preset.imageMin ?? 0,
+    imageMax: preset.imageMax ?? 0,
+    promptHint: preset.promptHint ?? "",
+    blockedInstructionsText: preset.blockedInstructionsText ?? "",
   };
 }
 
@@ -170,7 +446,7 @@ function StepBarItem({
                 : "bg-white text-slate-500 ring-slate-200"
           )}
         >
-          {index + 1}
+          {complete && !active ? <Check className="h-4 w-4" /> : index + 1}
         </div>
 
         <div className="min-w-0">
@@ -202,8 +478,78 @@ function StepBarItem({
   );
 }
 
-function getComponentName(id: string) {
-  return COMPONENT_OPTIONS.find((component) => component.id === id)?.name ?? id;
+function Panel({
+  title,
+  subtitle,
+  icon,
+  children,
+  className,
+}: {
+  title: string;
+  subtitle?: string;
+  icon: React.ReactNode;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <section
+      className={cx(
+        "rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6",
+        className
+      )}
+    >
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-600">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-[17px] font-semibold tracking-[-0.03em] text-slate-900">
+            {title}
+          </h2>
+          {subtitle ? (
+            <p className="mt-1 text-sm leading-6 text-slate-500">{subtitle}</p>
+          ) : null}
+        </div>
+      </div>
+
+      {children}
+    </section>
+  );
+}
+
+function SectionChip({
+  label,
+  onClick,
+}: {
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+    >
+      {label}
+    </button>
+  );
+}
+
+function MiniStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
+  return (
+    <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </p>
+      <p className="mt-1.5 text-sm font-medium text-slate-900">{value}</p>
+    </div>
+  );
 }
 
 export default function NewTemplatePage() {
@@ -220,6 +566,7 @@ export default function NewTemplatePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [step, setStep] = useState<BuilderStep>("overview");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
+  const [selectedPresetId, setSelectedPresetId] = useState<string>("service-page");
 
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
@@ -229,50 +576,20 @@ export default function NewTemplatePage() {
   const [purpose, setPurpose] = useState("");
   const [defaultAiInstruction, setDefaultAiInstruction] = useState("");
 
-  const [sections, setSections] = useState<SectionForm[]>([
-    {
-      ...createEmptySection(0),
-      label: "Hero",
-      key: "hero",
-      allowedComponentIds: ["hero-standard"],
-      defaultComponentId: "hero-standard",
-      promptHint: "Introduce the page clearly and confidently.",
-      description: "Primary opening section for the page.",
-      helpText: "Explain the main purpose of the page immediately.",
-      required: true,
-      minInstances: 1,
-      maxInstances: 1,
-      lockedOrder: true,
-      mustBeFirst: true,
-    },
-    {
-      ...createEmptySection(1),
-      label: "Content",
-      key: "content",
-      allowedComponentIds: ["value-points-grid"],
-      defaultComponentId: "value-points-grid",
-      promptHint: "Support the core proposition with structured content.",
-      description: "Main explanatory body section.",
-      helpText: "Add benefits, proof, or structured supporting detail.",
-      required: true,
-      minInstances: 1,
-      maxInstances: 3,
-    },
-    {
-      ...createEmptySection(2),
-      label: "Call to Action",
-      key: "cta",
-      allowedComponentIds: [],
-      defaultComponentId: "",
-      promptHint: "Drive a clear next step for the user.",
-      description: "Closing conversion section.",
-      helpText: "Use a strong, direct CTA aligned to the page goal.",
-      required: true,
-      minInstances: 1,
-      maxInstances: 1,
-      mustBeLast: true,
-    },
-  ]);
+  const [sections, setSections] = useState<SectionForm[]>([]);
+
+  useEffect(() => {
+    const preset = TEMPLATE_PRESETS.find((item) => item.id === selectedPresetId);
+    if (!preset || sections.length > 0) return;
+
+    const builtSections = preset.sections.map((section, index) =>
+      createSectionFromPreset(section, index)
+    );
+
+    setCategory(preset.category);
+    setSections(builtSections);
+    setActiveSectionId(builtSections[0]?.id ?? null);
+  }, [selectedPresetId, sections.length]);
 
   const activeSection =
     sections.find((section) => section.id === activeSectionId) ?? sections[0] ?? null;
@@ -280,7 +597,7 @@ export default function NewTemplatePage() {
   const overviewComplete = Boolean(name.trim());
   const structureComplete =
     sections.length > 0 && sections.every((section) => section.label.trim());
-  const settingsComplete =
+  const rulesComplete =
     sections.length > 0 &&
     sections.every((section) => section.allowedComponentIds.length > 0);
 
@@ -292,25 +609,58 @@ export default function NewTemplatePage() {
     );
   }
 
-  function handleAddSection() {
+  function reindexSections(next: SectionForm[]) {
+    return next.map((section, index) => ({
+      ...section,
+      mustBeFirst: section.mustBeFirst ? index === 0 : false,
+      mustBeLast: section.mustBeLast
+        ? index === next.length - 1
+        : false,
+    }));
+  }
+
+  function handleAddEmptySection() {
     const next = createEmptySection(sections.length);
+    setSections((prev) => [...prev, next]);
+    setActiveSectionId(next.id);
+  }
+
+  function handleAddPresetSection(
+    preset: (typeof SECTION_PRESETS)[number]
+  ) {
+    const next = createSectionFromPreset(preset, sections.length);
     setSections((prev) => [...prev, next]);
     setActiveSectionId(next.id);
   }
 
   function handleDeleteSection(id: string) {
     setSections((prev) => {
-      const next = prev.filter((section) => section.id !== id);
-      return next.map((section, index) => ({
-        ...section,
-        mustBeFirst: section.mustBeFirst && index === 0,
-      }));
+      const next = reindexSections(prev.filter((section) => section.id !== id));
+      return next;
     });
 
     if (activeSectionId === id) {
       const remaining = sections.filter((section) => section.id !== id);
       setActiveSectionId(remaining[0]?.id ?? null);
     }
+  }
+
+  function handleDuplicateSection(id: string) {
+    const source = sections.find((section) => section.id === id);
+    if (!source) return;
+
+    const duplicate: SectionForm = {
+      ...source,
+      id: crypto.randomUUID(),
+      key: `${source.key}-copy`,
+      label: `${source.label} Copy`,
+      mustBeFirst: false,
+      mustBeLast: false,
+      lockedOrder: false,
+    };
+
+    setSections((prev) => [...prev, duplicate]);
+    setActiveSectionId(duplicate.id);
   }
 
   function moveSection(id: string, direction: "up" | "down") {
@@ -325,7 +675,7 @@ export default function NewTemplatePage() {
       const [moved] = next.splice(index, 1);
       next.splice(targetIndex, 0, moved);
 
-      return next;
+      return reindexSections(next);
     });
   }
 
@@ -345,18 +695,39 @@ export default function NewTemplatePage() {
     });
   }
 
+  function applyTemplatePreset(presetId: string) {
+    const preset = TEMPLATE_PRESETS.find((item) => item.id === presetId);
+    if (!preset) return;
+
+    const builtSections = preset.sections.map((section, index) =>
+      createSectionFromPreset(section, index)
+    );
+
+    setSelectedPresetId(presetId);
+    setCategory(preset.category);
+    setSections(builtSections);
+    setActiveSectionId(builtSections[0]?.id ?? null);
+
+    if (!name.trim()) {
+      setName(preset.label);
+    }
+    if (!description.trim()) {
+      setDescription(preset.description);
+    }
+  }
+
   function goNext() {
     if (step === "overview") {
       setStep("structure");
       return;
     }
     if (step === "structure") {
-      setStep("settings");
+      setStep("rules");
     }
   }
 
   function goBack() {
-    if (step === "settings") {
+    if (step === "rules") {
       setStep("structure");
       return;
     }
@@ -478,6 +849,11 @@ export default function NewTemplatePage() {
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
                 Create a new governed template
               </h1>
+
+              <p className="mt-2 max-w-[880px] text-sm leading-6 text-slate-500">
+                Start with a page type, shape the structure visually, then refine the
+                rules section by section.
+              </p>
             </div>
 
             <div className="flex w-full max-w-[520px] flex-col gap-2 xl:items-end">
@@ -492,7 +868,7 @@ export default function NewTemplatePage() {
               </button>
 
               <p className="text-sm text-slate-500">
-                Draft first. Publish when the structure is ready.
+                Draft first. Publish once the structure and rules are ready.
               </p>
             </div>
           </div>
@@ -503,244 +879,548 @@ export default function NewTemplatePage() {
             <StepBarItem
               index={0}
               title="Overview"
-              subtitle="Name, purpose and page type"
+              subtitle="Template identity and preset"
               active={step === "overview"}
               complete={overviewComplete}
               onClick={() => setStep("overview")}
             />
             <StepBarItem
               index={1}
-              title="Page Structure"
-              subtitle="Define the page sections"
+              title="Structure"
+              subtitle="Visual page blueprint"
               active={step === "structure"}
               complete={structureComplete}
               onClick={() => setStep("structure")}
             />
             <StepBarItem
               index={2}
-              title="Section Settings"
-              subtitle="Control each section in detail"
-              active={step === "settings"}
-              complete={settingsComplete}
-              onClick={() => setStep("settings")}
+              title="Rules"
+              subtitle="Allowed blocks and section logic"
+              active={step === "rules"}
+              complete={rulesComplete}
+              onClick={() => setStep("rules")}
             />
           </div>
         </div>
 
-        {step === "overview" && (
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
-            <div className="mb-8 max-w-[760px]">
-              <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                Template overview
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                Start with the essentials. Give this template a clear identity so teams
-                understand when to use it and what kind of page it is meant to produce.
-              </p>
-            </div>
-
-            <div className="grid gap-5 lg:grid-cols-2">
-              <div>
-                <FieldLabel>Template Name</FieldLabel>
-                <TextInput
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Service Page"
-                />
-              </div>
-
-              <div>
-                <FieldLabel hint="Optional. Leave blank to generate from the name.">
-                  Slug
-                </FieldLabel>
-                <TextInput
-                  value={slug}
-                  onChange={(e) => setSlug(e.target.value)}
-                  placeholder="service-page"
-                />
-              </div>
-
-              <div>
-                <FieldLabel>Category</FieldLabel>
-                <Select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value as TemplateCategory)}
-                >
-                  <option value="service">Service</option>
-                  <option value="landing">Landing</option>
-                  <option value="article">Article</option>
-                  <option value="contact">Contact</option>
-                  <option value="resource">Resource</option>
-                  <option value="custom">Custom</option>
-                </Select>
-              </div>
-
-              <div>
-                <FieldLabel>Audience</FieldLabel>
-                <TextInput
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  placeholder="Enterprise buyers"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <FieldLabel>Description</FieldLabel>
-                <TextArea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={4}
-                  placeholder="A governed template for core service pages."
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <FieldLabel>Purpose</FieldLabel>
-                <TextInput
-                  value={purpose}
-                  onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="Explain services and drive conversion"
-                />
-              </div>
-
-              <div className="lg:col-span-2">
-                <FieldLabel hint="Applies across the full template unless section rules override it.">
-                  Default AI Instruction
-                </FieldLabel>
-                <TextArea
-                  value={defaultAiInstruction}
-                  onChange={(e) => setDefaultAiInstruction(e.target.value)}
-                  rows={4}
-                  placeholder="Maintain a clear, authoritative, enterprise tone."
-                />
-              </div>
-            </div>
-          </section>
-        )}
-
-        {step === "structure" && (
-          <section className="mt-5 rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
-            <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
-              <div className="max-w-[760px]">
+        {step === "overview" ? (
+          <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_380px]">
+            <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
+              <div className="mb-8 max-w-[760px]">
                 <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Page structure
+                  Template overview
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  This is the core of the template. Define the sections marketers will
-                  move through and set the page structure in the right order.
+                  Give the template a clear identity, then choose the closest starting
+                  point so admins are not building from scratch.
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={handleAddSection}
-                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-              >
-                <Plus className="h-4 w-4" />
-                Add Section
-              </button>
-            </div>
+              <div className="mb-8">
+                <FieldLabel hint="Start from a sensible structure, then refine it.">
+                  Template Preset
+                </FieldLabel>
 
-            <div className="space-y-4">
-              {sections.map((section, index) => (
-                <div
-                  key={section.id}
-                  className="rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafcff_100%)] px-5 py-5 shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-4">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef3ff] text-sm font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
-                        {index + 1}
-                      </div>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  {TEMPLATE_PRESETS.map((preset) => {
+                    const active = selectedPresetId === preset.id;
 
-                      <GripVertical className="h-4 w-4 shrink-0 text-slate-300" />
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => applyTemplatePreset(preset.id)}
+                        className={cx(
+                          "rounded-[22px] border p-4 text-left transition",
+                          active
+                            ? "border-[#cfd8f6] bg-[#f7f9ff] shadow-[0_10px_24px_rgba(91,124,255,0.08)]"
+                            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">
+                              {preset.label}
+                            </p>
+                            <p className="mt-1 text-sm leading-6 text-slate-500">
+                              {preset.description}
+                            </p>
+                          </div>
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">
-                          {section.label.trim() || `Section ${index + 1}`}
-                        </p>
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <span
-                            className={cx(
-                              "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-                              section.required
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-slate-100 text-slate-600"
-                            )}
-                          >
-                            {section.required ? "Required" : "Optional"}
-                          </span>
-
-                          {section.allowedComponentIds.length > 0 ? (
-                            section.allowedComponentIds.slice(0, 2).map((componentId) => (
-                              <span
-                                key={componentId}
-                                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
-                              >
-                                {getComponentName(componentId)}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                              No components yet
-                            </span>
-                          )}
+                          {active ? (
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#5b7cff] text-white">
+                              <Check className="h-4 w-4" />
+                            </div>
+                          ) : null}
                         </div>
-                      </div>
+
+                        <p className="mt-4 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">
+                          {preset.sections.length} sections
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div>
+                  <FieldLabel>Template Name</FieldLabel>
+                  <TextInput
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Service Page"
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel hint="Optional. Leave blank to generate from the name.">
+                    Slug
+                  </FieldLabel>
+                  <TextInput
+                    value={slug}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="service-page"
+                  />
+                </div>
+
+                <div>
+                  <FieldLabel>Category</FieldLabel>
+                  <Select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value as TemplateCategory)}
+                  >
+                    <option value="service">Service</option>
+                    <option value="landing">Landing</option>
+                    <option value="article">Article</option>
+                    <option value="contact">Contact</option>
+                    <option value="resource">Resource</option>
+                    <option value="custom">Custom</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <FieldLabel>Audience</FieldLabel>
+                  <TextInput
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                    placeholder="Enterprise buyers"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <FieldLabel>Description</FieldLabel>
+                  <TextArea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={4}
+                    placeholder="A governed template for core service pages."
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <FieldLabel>Purpose</FieldLabel>
+                  <TextInput
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    placeholder="Explain services and drive conversion"
+                  />
+                </div>
+
+                <div className="lg:col-span-2">
+                  <FieldLabel hint="Applies across the full template unless section rules override it.">
+                    Default AI Instruction
+                  </FieldLabel>
+                  <TextArea
+                    value={defaultAiInstruction}
+                    onChange={(e) => setDefaultAiInstruction(e.target.value)}
+                    rows={4}
+                    placeholder="Maintain a clear, authoritative, enterprise tone."
+                  />
+                </div>
+              </div>
+            </section>
+
+            <aside className="space-y-6">
+              <Panel
+                title="What happens next"
+                subtitle="A simpler creation flow."
+                icon={<Sparkles className="h-5 w-5" />}
+              >
+                <div className="space-y-3">
+                  {[
+                    {
+                      title: "Choose a page baseline",
+                      text: "Use a preset so admins are not starting from a blank template.",
+                    },
+                    {
+                      title: "Shape the structure visually",
+                      text: "Review section order and add or remove parts of the page.",
+                    },
+                    {
+                      title: "Refine section rules",
+                      text: "Choose allowed blocks and define section-specific controls.",
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"
+                    >
+                      <p className="text-sm font-semibold text-slate-900">
+                        {item.title}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">
+                        {item.text}
+                      </p>
                     </div>
+                  ))}
+                </div>
+              </Panel>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveSectionId(section.id);
-                          setStep("settings");
-                        }}
-                        className="rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        Edit Settings
-                      </button>
+              <Panel
+                title="Current draft summary"
+                subtitle="A quick snapshot as you build."
+                icon={<LayoutTemplate className="h-5 w-5" />}
+              >
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <MiniStat label="Preset" value={TEMPLATE_PRESETS.find((p) => p.id === selectedPresetId)?.label ?? "Custom"} />
+                  <MiniStat label="Sections" value={sections.length} />
+                  <MiniStat label="Required" value={sections.filter((s) => s.required).length} />
+                  <MiniStat label="Allowed blocks" value={sections.reduce((sum, section) => sum + section.allowedComponentIds.length, 0)} />
+                </div>
+              </Panel>
+            </aside>
+          </div>
+        ) : null}
 
-                      <button
-                        type="button"
-                        onClick={() => moveSection(section.id, "up")}
-                        disabled={index === 0}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
-                      >
-                        ↑
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => moveSection(section.id, "down")}
-                        disabled={index === sections.length - 1}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
-                      >
-                        ↓
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteSection(section.id)}
-                        className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-600 transition hover:bg-rose-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
+        {step === "structure" ? (
+          <div className="mt-5 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_380px]">
+            <main className="min-w-0">
+              <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                  <div className="max-w-[760px]">
+                    <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
+                      Page structure
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      Shape the template as a visual page blueprint. Keep the main flow
+                      simple and scan-friendly.
+                    </p>
                   </div>
 
-                  {section.description ? (
-                    <p className="mt-4 text-sm leading-6 text-slate-500">
-                      {section.description}
-                    </p>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleAddEmptySection}
+                    className="inline-flex h-11 items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Custom Section
+                  </button>
                 </div>
-              ))}
-            </div>
-          </section>
-        )}
 
-        {step === "settings" && (
+                <div className="mb-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Quick section presets
+                  </p>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {SECTION_PRESETS.map((preset) => (
+                      <SectionChip
+                        key={preset.key}
+                        label={preset.label}
+                        onClick={() => handleAddPresetSection(preset)}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <MiniStat label="Sections" value={sections.length} />
+                  <MiniStat
+                    label="Required"
+                    value={sections.filter((s) => s.required).length}
+                  />
+                  <MiniStat
+                    label="Optional"
+                    value={sections.filter((s) => !s.required).length}
+                  />
+                  <MiniStat
+                    label="Locked order"
+                    value={sections.filter((s) => s.lockedOrder).length}
+                  />
+                </div>
+
+                <div className="mt-6 space-y-4">
+                  {sections.map((section, index) => (
+                    <button
+                      key={section.id}
+                      type="button"
+                      onClick={() => setActiveSectionId(section.id)}
+                      className={cx(
+                        "w-full rounded-[26px] border px-5 py-5 text-left transition",
+                        activeSection?.id === section.id
+                          ? "border-[#cfd8f6] bg-[#f7f9ff] shadow-[0_12px_28px_rgba(91,124,255,0.08)]"
+                          : "border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafcff_100%)] shadow-sm hover:border-slate-300"
+                      )}
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex min-w-0 items-center gap-4">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef3ff] text-sm font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                            {index + 1}
+                          </div>
+
+                          <GripVertical className="h-4 w-4 shrink-0 text-slate-300" />
+
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-900">
+                              {section.label.trim() || `Section ${index + 1}`}
+                            </p>
+                            <div className="mt-1 flex flex-wrap items-center gap-2">
+                              <span
+                                className={cx(
+                                  "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+                                  section.required
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-slate-100 text-slate-600"
+                                )}
+                              >
+                                {section.required ? "Required" : "Optional"}
+                              </span>
+
+                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                {section.allowedComponentIds.length} blocks
+                              </span>
+
+                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                                {section.minInstances}–{section.maxInstances} instances
+                              </span>
+
+                              {section.mustBeFirst ? (
+                                <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
+                                  Must be first
+                                </span>
+                              ) : null}
+
+                              {section.mustBeLast ? (
+                                <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-xs font-medium text-purple-700">
+                                  Must be last
+                                </span>
+                              ) : null}
+
+                              {section.lockedOrder ? (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
+                                  Order locked
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDuplicateSection(section.id);
+                            }}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 transition hover:bg-slate-50"
+                          >
+                            <CopyPlus className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSection(section.id, "up");
+                            }}
+                            disabled={index === 0}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
+                          >
+                            ↑
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              moveSection(section.id, "down");
+                            }}
+                            disabled={index === sections.length - 1}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:opacity-40"
+                          >
+                            ↓
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteSection(section.id);
+                            }}
+                            className="rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm text-rose-600 transition hover:bg-rose-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {section.description ? (
+                        <p className="mt-4 text-sm leading-6 text-slate-500">
+                          {section.description}
+                        </p>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            </main>
+
+            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+              <Panel
+                title="Selected section"
+                subtitle="Edit the currently selected section while keeping the page blueprint visible."
+                icon={<FileText className="h-5 w-5" />}
+              >
+                {!activeSection ? (
+                  <p className="text-sm text-slate-500">
+                    Select a section to edit it.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <div>
+                      <FieldLabel>Section Label</FieldLabel>
+                      <TextInput
+                        value={activeSection.label}
+                        onChange={(e) =>
+                          updateSection(activeSection.id, {
+                            label: e.target.value,
+                            key:
+                              !activeSection.key || activeSection.key.startsWith("section-")
+                                ? slugify(e.target.value)
+                                : activeSection.key,
+                          })
+                        }
+                        placeholder="Hero"
+                      />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Section Key</FieldLabel>
+                      <TextInput
+                        value={activeSection.key}
+                        onChange={(e) =>
+                          updateSection(activeSection.id, {
+                            key: slugify(e.target.value),
+                          })
+                        }
+                        placeholder="hero"
+                      />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Description</FieldLabel>
+                      <TextArea
+                        value={activeSection.description}
+                        onChange={(e) =>
+                          updateSection(activeSection.id, {
+                            description: e.target.value,
+                          })
+                        }
+                        rows={3}
+                        placeholder="Describe what this section is for."
+                      />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Required
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={activeSection.required}
+                          onChange={(e) =>
+                            updateSection(activeSection.id, {
+                              required: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Can Skip
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={activeSection.canSkip}
+                          onChange={(e) =>
+                            updateSection(activeSection.id, {
+                              canSkip: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Locked Order
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={activeSection.lockedOrder}
+                          onChange={(e) =>
+                            updateSection(activeSection.id, {
+                              lockedOrder: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                        <span className="text-sm font-medium text-slate-700">
+                          Must Be First
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={activeSection.mustBeFirst}
+                          onChange={(e) =>
+                            updateSection(activeSection.id, {
+                              mustBeFirst: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                        />
+                      </label>
+
+                      <label className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3 sm:col-span-2">
+                        <span className="text-sm font-medium text-slate-700">
+                          Must Be Last
+                        </span>
+                        <input
+                          type="checkbox"
+                          checked={activeSection.mustBeLast}
+                          onChange={(e) =>
+                            updateSection(activeSection.id, {
+                              mustBeLast: e.target.checked,
+                            })
+                          }
+                          className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+              </Panel>
+            </aside>
+          </div>
+        ) : null}
+
+        {step === "rules" ? (
           <div className="mt-5 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
             <aside className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
               <div className="mb-5 flex items-start gap-3">
@@ -789,7 +1469,7 @@ export default function NewTemplatePage() {
                           {section.label.trim() || `Section ${index + 1}`}
                         </p>
                         <p className="mt-1 text-xs text-slate-500">
-                          {section.required ? "Required" : "Optional"}
+                          {section.allowedComponentIds.length} allowed blocks
                         </p>
                       </div>
                     </button>
@@ -810,58 +1490,15 @@ export default function NewTemplatePage() {
                 <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
                   <div className="mb-6">
                     <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                      Section settings
+                      Section rules
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Choose the real block types this section is allowed to use.
+                      Control what this section is allowed to use and how it should
+                      behave.
                     </p>
                   </div>
 
                   <div className="grid gap-5 lg:grid-cols-2">
-                    <div>
-                      <FieldLabel>Section Label</FieldLabel>
-                      <TextInput
-                        value={activeSection.label}
-                        onChange={(e) =>
-                          updateSection(activeSection.id, {
-                            label: e.target.value,
-                            key:
-                              !activeSection.key || activeSection.key.startsWith("section-")
-                                ? slugify(e.target.value)
-                                : activeSection.key,
-                          })
-                        }
-                        placeholder="Hero"
-                      />
-                    </div>
-
-                    <div>
-                      <FieldLabel>Section Key</FieldLabel>
-                      <TextInput
-                        value={activeSection.key}
-                        onChange={(e) =>
-                          updateSection(activeSection.id, {
-                            key: slugify(e.target.value),
-                          })
-                        }
-                        placeholder="hero"
-                      />
-                    </div>
-
-                    <div className="lg:col-span-2">
-                      <FieldLabel>Description</FieldLabel>
-                      <TextArea
-                        value={activeSection.description}
-                        onChange={(e) =>
-                          updateSection(activeSection.id, {
-                            description: e.target.value,
-                          })
-                        }
-                        rows={3}
-                        placeholder="Describe what this section is for."
-                      />
-                    </div>
-
                     <div className="lg:col-span-2">
                       <FieldLabel>Helper Text</FieldLabel>
                       <TextArea
@@ -941,7 +1578,7 @@ export default function NewTemplatePage() {
                       </Select>
                     </div>
 
-                    <div>
+                    <div className="lg:col-span-2">
                       <FieldLabel>AI Prompt Hint</FieldLabel>
                       <TextInput
                         value={activeSection.promptHint}
@@ -1025,62 +1662,12 @@ export default function NewTemplatePage() {
                         placeholder={"Do not use exaggerated claims\nDo not change legal language"}
                       />
                     </div>
-
-                    <div className="lg:col-span-2 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                      {[
-                        {
-                          label: "Required Section",
-                          checked: activeSection.required,
-                          onChange: (checked: boolean) =>
-                            updateSection(activeSection.id, { required: checked }),
-                        },
-                        {
-                          label: "Can Skip",
-                          checked: activeSection.canSkip,
-                          onChange: (checked: boolean) =>
-                            updateSection(activeSection.id, { canSkip: checked }),
-                        },
-                        {
-                          label: "Locked Order",
-                          checked: activeSection.lockedOrder,
-                          onChange: (checked: boolean) =>
-                            updateSection(activeSection.id, { lockedOrder: checked }),
-                        },
-                        {
-                          label: "Must Be First",
-                          checked: activeSection.mustBeFirst,
-                          onChange: (checked: boolean) =>
-                            updateSection(activeSection.id, { mustBeFirst: checked }),
-                        },
-                        {
-                          label: "Must Be Last",
-                          checked: activeSection.mustBeLast,
-                          onChange: (checked: boolean) =>
-                            updateSection(activeSection.id, { mustBeLast: checked }),
-                        },
-                      ].map((item) => (
-                        <label
-                          key={item.label}
-                          className="flex items-center justify-between rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
-                        >
-                          <span className="text-sm font-medium text-slate-700">
-                            {item.label}
-                          </span>
-                          <input
-                            type="checkbox"
-                            checked={item.checked}
-                            onChange={(e) => item.onChange(e.target.checked)}
-                            className="h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
-                          />
-                        </label>
-                      ))}
-                    </div>
                   </div>
                 </section>
               )}
             </main>
           </div>
-        )}
+        ) : null}
 
         <div className="mt-8 flex items-center justify-between">
           <button
@@ -1093,7 +1680,7 @@ export default function NewTemplatePage() {
             Back
           </button>
 
-          {step !== "settings" ? (
+          {step !== "rules" ? (
             <button
               type="button"
               onClick={goNext}

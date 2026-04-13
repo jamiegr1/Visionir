@@ -7,16 +7,19 @@ import {
   Archive,
   CheckCircle2,
   Copy,
+  Eye,
   FileText,
   LayoutTemplate,
   Pencil,
   Plus,
+  Settings2,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 
 type Role = "creator" | "approver" | "admin";
-
 type TemplateStatus = "draft" | "published" | "archived";
+type TemplateTab = "overview" | "structure" | "rules" | "preview";
 
 type TemplateSectionRule = {
   id: string;
@@ -90,12 +93,31 @@ function formatDateTime(value: string | null | undefined) {
   }).format(date);
 }
 
+function formatCategoryLabel(value: TemplateRecord["category"]) {
+  switch (value) {
+    case "service":
+      return "Service";
+    case "landing":
+      return "Landing";
+    case "article":
+      return "Article";
+    case "contact":
+      return "Contact";
+    case "resource":
+      return "Resource";
+    case "custom":
+    default:
+      return "Custom";
+  }
+}
+
 function StatusPill({ status }: { status: TemplateStatus }) {
   return (
     <span
       className={cx(
         "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-semibold ring-1",
-        status === "published" && "bg-emerald-50 text-emerald-700 ring-emerald-200",
+        status === "published" &&
+          "bg-emerald-50 text-emerald-700 ring-emerald-200",
         status === "draft" && "bg-amber-50 text-amber-700 ring-amber-200",
         status === "archived" && "bg-slate-100 text-slate-600 ring-slate-200"
       )}
@@ -185,6 +207,184 @@ function Panel({
   );
 }
 
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-medium transition",
+        active
+          ? "bg-[#5b7cff] text-white shadow-[0_12px_28px_rgba(91,124,255,0.22)]"
+          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      )}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function Badge({
+  children,
+  tone = "slate",
+}: {
+  children: React.ReactNode;
+  tone?: "slate" | "blue" | "emerald" | "amber" | "purple";
+}) {
+  const styles =
+    tone === "blue"
+      ? "bg-blue-50 text-blue-700"
+      : tone === "emerald"
+        ? "bg-emerald-50 text-emerald-700"
+        : tone === "amber"
+          ? "bg-amber-50 text-amber-700"
+          : tone === "purple"
+            ? "bg-purple-50 text-purple-700"
+            : "bg-slate-100 text-slate-600";
+
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
+        styles
+      )}
+    >
+      {children}
+    </span>
+  );
+}
+
+function EmptyState({
+  title,
+  text,
+}: {
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center">
+      <p className="text-sm font-medium text-slate-700">{title}</p>
+      <p className="mt-1 text-sm text-slate-500">{text}</p>
+    </div>
+  );
+}
+
+function SectionSummaryCard({
+  section,
+  index,
+  isSelected,
+  onClick,
+}: {
+  section: TemplateSectionRule;
+  index: number;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const allowedCount = section.allowedComponentIds.length;
+  const hasAiHint = Boolean(section.ai?.promptHint);
+  const hasImageRules = Boolean(section.imageRequirement);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "w-full rounded-[24px] border p-4 text-left transition",
+        isSelected
+          ? "border-[#cfd8f6] bg-[#f7f9ff] shadow-[0_12px_28px_rgba(91,124,255,0.08)]"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70"
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+              {index + 1}
+            </span>
+
+            <h3 className="truncate text-[16px] font-semibold text-slate-900">
+              {section.label}
+            </h3>
+          </div>
+
+          <p className="mt-2 text-sm leading-6 text-slate-500">
+            {section.description || "No section description provided."}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Badge tone={section.required ? "emerald" : "slate"}>
+            {section.required ? "Required" : "Optional"}
+          </Badge>
+
+          {section.mustBeFirst ? <Badge tone="blue">Must be first</Badge> : null}
+          {section.mustBeLast ? <Badge tone="purple">Must be last</Badge> : null}
+          {section.lockedOrder ? <Badge tone="amber">Order locked</Badge> : null}
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Allowed blocks
+          </p>
+          <p className="mt-1.5 text-sm font-medium text-slate-900">
+            {allowedCount}
+          </p>
+        </div>
+
+        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Instances
+          </p>
+          <p className="mt-1.5 text-sm font-medium text-slate-900">
+            {section.minInstances}–{section.maxInstances}
+          </p>
+        </div>
+
+        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Signals
+          </p>
+          <p className="mt-1.5 text-sm font-medium text-slate-900">
+            {[hasAiHint ? "AI" : null, hasImageRules ? "Images" : null]
+              .filter(Boolean)
+              .join(" • ") || "Basic"}
+          </p>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function RuleRow({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 last:pb-0 first:pt-0">
+      <p className="text-sm font-medium text-slate-600">{label}</p>
+      <div className="max-w-[60%] text-right text-sm leading-6 text-slate-900">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export default function TemplateDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -205,6 +405,8 @@ export default function TemplateDetailPage() {
   const [isCreatingPage, setIsCreatingPage] = useState(false);
   const [copied, setCopied] = useState(false);
   const [template, setTemplate] = useState<TemplateRecord | null>(null);
+  const [activeTab, setActiveTab] = useState<TemplateTab>("structure");
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadTemplate() {
@@ -235,6 +437,18 @@ export default function TemplateDetailPage() {
       void loadTemplate();
     }
   }, [id, role]);
+
+  useEffect(() => {
+    if (!template?.sections?.length) {
+      setSelectedSectionId(null);
+      return;
+    }
+
+    setSelectedSectionId((current) => {
+      const exists = template.sections.some((section) => section.id === current);
+      return exists ? current : template.sections.slice().sort((a, b) => a.order - b.order)[0]?.id ?? null;
+    });
+  }, [template]);
 
   async function refreshTemplate() {
     const res = await fetch(`/api/templates/${id}?role=${role}`, {
@@ -368,12 +582,23 @@ export default function TemplateDetailPage() {
     );
   }
 
-  const requiredSections = template.sections.filter((section) => section.required);
-  const optionalSections = template.sections.filter((section) => !section.required);
+  const sortedSections = template.sections.slice().sort((a, b) => a.order - b.order);
+  const requiredSections = sortedSections.filter((section) => section.required);
+  const optionalSections = sortedSections.filter((section) => !section.required);
+  const selectedSection =
+    sortedSections.find((section) => section.id === selectedSectionId) ?? null;
+
+  const totalAllowedBlocks = sortedSections.reduce(
+    (sum, section) => sum + section.allowedComponentIds.length,
+    0
+  );
+
+  const totalAiHints = sortedSections.filter((section) => section.ai?.promptHint).length;
+  const lockedSections = sortedSections.filter((section) => section.lockedOrder).length;
 
   return (
     <div className="min-h-[calc(100dvh-72px)] bg-[#f5f7fb] text-slate-900">
-      <div className="mx-auto max-w-[1600px] px-6 py-8">
+      <div className="mx-auto max-w-[1680px] px-6 py-8">
         <section className="rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] lg:p-7">
           <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
             <div className="min-w-0 flex-1">
@@ -391,32 +616,29 @@ export default function TemplateDetailPage() {
               </div>
 
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                Template Detail
+                Template Workspace
               </p>
 
               <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
                 {template.name}
               </h1>
 
-              <p className="mt-3 max-w-[900px] text-sm leading-7 text-slate-500">
+              <p className="mt-3 max-w-[920px] text-sm leading-7 text-slate-500">
                 {template.description || "No description provided for this template yet."}
               </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[920px]">
-                <OverviewCard label="Category" value={template.category} />
+              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[980px]">
+                <OverviewCard
+                  label="Category"
+                  value={formatCategoryLabel(template.category)}
+                />
                 <OverviewCard label="Version" value={`v${template.version}`} />
-                <OverviewCard
-                  label="Sections"
-                  value={`${template.sections.length}`}
-                />
-                <OverviewCard
-                  label="Required"
-                  value={`${requiredSections.length}`}
-                />
+                <OverviewCard label="Sections" value={`${sortedSections.length}`} />
+                <OverviewCard label="Required" value={`${requiredSections.length}`} />
               </div>
             </div>
 
-            <div className="flex w-full max-w-[720px] flex-col gap-3">
+            <div className="flex w-full max-w-[760px] flex-col gap-3">
               <div className="flex flex-wrap items-center gap-3 2xl:justify-end">
                 <button
                   type="button"
@@ -474,160 +696,465 @@ export default function TemplateDetailPage() {
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+        <div className="mt-6 flex flex-wrap gap-2">
+          <TabButton
+            active={activeTab === "overview"}
+            onClick={() => setActiveTab("overview")}
+            icon={<LayoutTemplate className="h-4 w-4" />}
+            label="Overview"
+          />
+          <TabButton
+            active={activeTab === "structure"}
+            onClick={() => setActiveTab("structure")}
+            icon={<FileText className="h-4 w-4" />}
+            label="Structure"
+          />
+          <TabButton
+            active={activeTab === "rules"}
+            onClick={() => setActiveTab("rules")}
+            icon={<Settings2 className="h-4 w-4" />}
+            label="Rules"
+          />
+          <TabButton
+            active={activeTab === "preview"}
+            onClick={() => setActiveTab("preview")}
+            icon={<Eye className="h-4 w-4" />}
+            label="Preview"
+          />
+        </div>
+
+        {activeTab === "overview" ? (
+          <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+              <Panel
+                title="Template Metadata"
+                subtitle="Ownership and publishing information."
+                icon={<LayoutTemplate className="h-5 w-5" />}
+              >
+                <div>
+                  <MetaRow label="Template ID" value={template.id} />
+                  <MetaRow label="Slug" value={template.slug} />
+                  <MetaRow label="Status" value={template.status} />
+                  <MetaRow
+                    label="Category"
+                    value={formatCategoryLabel(template.category)}
+                  />
+                  <MetaRow label="Audience" value={template.audience || "—"} />
+                  <MetaRow label="Purpose" value={template.purpose || "—"} />
+                  <MetaRow label="Created At" value={formatDateTime(template.createdAt)} />
+                  <MetaRow label="Updated At" value={formatDateTime(template.updatedAt)} />
+                  <MetaRow
+                    label="Published At"
+                    value={formatDateTime(template.publishedAt)}
+                  />
+                </div>
+              </Panel>
+
+              <Panel
+                title="AI Guidance"
+                subtitle="Template-level generation direction."
+                icon={<Sparkles className="h-5 w-5" />}
+              >
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm leading-6 text-slate-700">
+                    {template.defaultAiInstruction || "No default AI instruction set."}
+                  </p>
+                </div>
+              </Panel>
+            </aside>
+
+            <main className="min-w-0 space-y-6">
+              <Panel
+                title="Template Summary"
+                subtitle="High-level structure and governance signals."
+                icon={<FileText className="h-5 w-5" />}
+              >
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <OverviewCard
+                    label="Total sections"
+                    value={`${sortedSections.length}`}
+                  />
+                  <OverviewCard
+                    label="Required sections"
+                    value={`${requiredSections.length}`}
+                  />
+                  <OverviewCard
+                    label="Allowed blocks"
+                    value={`${totalAllowedBlocks}`}
+                  />
+                  <OverviewCard
+                    label="Locked sections"
+                    value={`${lockedSections}`}
+                  />
+                </div>
+
+                <div className="mt-5 grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Structure overview
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {sortedSections.map((section, index) => (
+                        <span
+                          key={section.id}
+                          className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
+                        >
+                          <span className="text-slate-400">{index + 1}</span>
+                          {section.label}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Governance signals
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Badge tone="emerald">{requiredSections.length} required</Badge>
+                      <Badge tone="slate">{optionalSections.length} optional</Badge>
+                      <Badge tone="amber">{lockedSections} locked order</Badge>
+                      <Badge tone="blue">{totalAiHints} AI hints</Badge>
+                    </div>
+                  </div>
+                </div>
+              </Panel>
+
+              <div className="grid gap-6 xl:grid-cols-2">
+                <Panel
+                  title="Required Sections"
+                  subtitle="Core sections that must be completed."
+                  icon={<CheckCircle2 className="h-5 w-5" />}
+                >
+                  <div className="space-y-3">
+                    {requiredSections.length > 0 ? (
+                      requiredSections.map((section) => (
+                        <div
+                          key={section.id}
+                          className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                        >
+                          <p className="text-sm font-medium text-slate-900">
+                            {section.label}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {section.defaultComponentId || "No default component set"}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">No required sections.</p>
+                    )}
+                  </div>
+                </Panel>
+
+                <Panel
+                  title="Optional Sections"
+                  subtitle="Additional sections available to the marketer."
+                  icon={<FileText className="h-5 w-5" />}
+                >
+                  <div className="space-y-3">
+                    {optionalSections.length > 0 ? (
+                      optionalSections.map((section) => (
+                        <div
+                          key={section.id}
+                          className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                        >
+                          <p className="text-sm font-medium text-slate-900">
+                            {section.label}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {section.defaultComponentId || "No default component set"}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">
+                        No optional sections configured.
+                      </p>
+                    )}
+                  </div>
+                </Panel>
+              </div>
+            </main>
+          </div>
+        ) : null}
+
+        {activeTab === "structure" ? (
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_380px]">
+            <main className="min-w-0">
+              <Panel
+                title="Page Structure"
+                subtitle="A clearer page blueprint showing how this template is assembled."
+                icon={<FileText className="h-5 w-5" />}
+              >
+                <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <OverviewCard
+                    label="Sections"
+                    value={`${sortedSections.length}`}
+                  />
+                  <OverviewCard
+                    label="Required"
+                    value={`${requiredSections.length}`}
+                  />
+                  <OverviewCard
+                    label="Allowed blocks"
+                    value={`${totalAllowedBlocks}`}
+                  />
+                  <OverviewCard
+                    label="Locked order"
+                    value={`${lockedSections}`}
+                  />
+                </div>
+
+                {sortedSections.length === 0 ? (
+                  <EmptyState
+                    title="No sections configured"
+                    text="This template does not have any sections yet."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {sortedSections.map((section, index) => (
+                      <SectionSummaryCard
+                        key={section.id}
+                        section={section}
+                        index={index}
+                        isSelected={selectedSection?.id === section.id}
+                        onClick={() => setSelectedSectionId(section.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </Panel>
+            </main>
+
+            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+              <Panel
+                title="Selected Section"
+                subtitle="Focused detail for the section currently selected in the blueprint."
+                icon={<LayoutTemplate className="h-5 w-5" />}
+              >
+                {selectedSection ? (
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                          {selectedSection.label}
+                        </h3>
+
+                        <Badge tone={selectedSection.required ? "emerald" : "slate"}>
+                          {selectedSection.required ? "Required" : "Optional"}
+                        </Badge>
+                      </div>
+
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {selectedSection.description ||
+                          "No section description provided."}
+                      </p>
+                    </div>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Section signals
+                      </p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedSection.mustBeFirst ? (
+                          <Badge tone="blue">Must be first</Badge>
+                        ) : null}
+                        {selectedSection.mustBeLast ? (
+                          <Badge tone="purple">Must be last</Badge>
+                        ) : null}
+                        {selectedSection.lockedOrder ? (
+                          <Badge tone="amber">Order locked</Badge>
+                        ) : (
+                          <Badge tone="slate">Order flexible</Badge>
+                        )}
+                        {selectedSection.canSkip ? (
+                          <Badge tone="slate">Can skip</Badge>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                      <RuleRow
+                        label="Instances"
+                        value={`${selectedSection.minInstances}–${selectedSection.maxInstances}`}
+                      />
+                      <RuleRow
+                        label="Default block"
+                        value={selectedSection.defaultComponentId || "—"}
+                      />
+                      <RuleRow
+                        label="Allowed blocks"
+                        value={`${selectedSection.allowedComponentIds.length}`}
+                      />
+                      <RuleRow
+                        label="AI scope"
+                        value={selectedSection.ai?.generateScope || "—"}
+                      />
+                    </div>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Allowed blocks
+                      </p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedSection.allowedComponentIds.length > 0 ? (
+                          selectedSection.allowedComponentIds.map((componentId) => (
+                            <span
+                              key={componentId}
+                              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                            >
+                              {componentId}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-500">None set</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {(selectedSection.helpText || selectedSection.ai?.promptHint) ? (
+                      <div className="grid gap-4">
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Help text
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">
+                            {selectedSection.helpText || "—"}
+                          </p>
+                        </div>
+
+                        <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            AI prompt hint
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">
+                            {selectedSection.ai?.promptHint || "—"}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">Select a section to inspect it.</p>
+                )}
+              </Panel>
+            </aside>
+          </div>
+        ) : null}
+
+        {activeTab === "rules" ? (
+          <div className="mt-6 grid gap-6">
             <Panel
-              title="Template Metadata"
-              subtitle="Ownership and publishing information."
-              icon={<LayoutTemplate className="h-5 w-5" />}
+              title="Section Rules"
+              subtitle="A separate rules view so governance does not clutter the page blueprint."
+              icon={<Settings2 className="h-5 w-5" />}
             >
-              <div>
-                <MetaRow label="Template ID" value={template.id} />
-                <MetaRow label="Slug" value={template.slug} />
-                <MetaRow label="Status" value={template.status} />
-                <MetaRow label="Category" value={template.category} />
-                <MetaRow label="Audience" value={template.audience || "—"} />
-                <MetaRow label="Purpose" value={template.purpose || "—"} />
-                <MetaRow label="Created At" value={formatDateTime(template.createdAt)} />
-                <MetaRow label="Updated At" value={formatDateTime(template.updatedAt)} />
-                <MetaRow
-                  label="Published At"
-                  value={formatDateTime(template.publishedAt)}
+              {sortedSections.length === 0 ? (
+                <EmptyState
+                  title="No section rules available"
+                  text="This template does not currently contain any rule-bearing sections."
                 />
-              </div>
-            </Panel>
-
-            <Panel
-              title="AI Guidance"
-              subtitle="Template-level generation direction."
-              icon={<Sparkles className="h-5 w-5" />}
-            >
-              <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                <p className="text-sm leading-6 text-slate-700">
-                  {template.defaultAiInstruction || "No default AI instruction set."}
-                </p>
-              </div>
-            </Panel>
-          </aside>
-
-          <main className="min-w-0 space-y-6">
-            <Panel
-              title="Page Structure"
-              subtitle="Ordered template sections marketers will complete."
-              icon={<FileText className="h-5 w-5" />}
-            >
-              <div className="space-y-4">
-                {template.sections
-                  .slice()
-                  .sort((a, b) => a.order - b.order)
-                  .map((section, index) => (
+              ) : (
+                <div className="space-y-4">
+                  {sortedSections.map((section, index) => (
                     <div
                       key={section.id}
-                      className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-[24px] border border-slate-200 bg-white p-5"
                     >
-                      <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
                               {index + 1}
                             </span>
                             <h3 className="text-[16px] font-semibold text-slate-900">
                               {section.label}
                             </h3>
                           </div>
-
                           <p className="mt-2 text-sm leading-6 text-slate-500">
                             {section.description || "No section description provided."}
                           </p>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
-                          <span
-                            className={cx(
-                              "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-                              section.required
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-slate-100 text-slate-600"
-                            )}
-                          >
+                          <Badge tone={section.required ? "emerald" : "slate"}>
                             {section.required ? "Required" : "Optional"}
-                          </span>
-
+                          </Badge>
                           {section.mustBeFirst ? (
-                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                              Must be first
-                            </span>
+                            <Badge tone="blue">Must be first</Badge>
                           ) : null}
-
                           {section.mustBeLast ? (
-                            <span className="inline-flex items-center rounded-full bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700">
-                              Must be last
-                            </span>
+                            <Badge tone="purple">Must be last</Badge>
                           ) : null}
-
                           {section.lockedOrder ? (
-                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                              Order locked
-                            </span>
+                            <Badge tone="amber">Locked order</Badge>
                           ) : null}
                         </div>
                       </div>
 
-                      <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                        <div className="rounded-[20px] border border-slate-200 bg-white p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            Allowed Components
-                          </p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {section.allowedComponentIds.length > 0 ? (
-                              section.allowedComponentIds.map((componentId) => (
-                                <span
-                                  key={componentId}
-                                  className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                                >
-                                  {componentId}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-sm text-slate-500">None set</span>
-                            )}
-                          </div>
+                      <div className="grid gap-4 lg:grid-cols-2">
+                        <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                          <RuleRow
+                            label="Min / max instances"
+                            value={`${section.minInstances}–${section.maxInstances}`}
+                          />
+                          <RuleRow
+                            label="Default block"
+                            value={section.defaultComponentId || "—"}
+                          />
+                          <RuleRow
+                            label="Can skip"
+                            value={section.canSkip ? "Yes" : "No"}
+                          />
+                          <RuleRow
+                            label="Allowed blocks"
+                            value={`${section.allowedComponentIds.length}`}
+                          />
                         </div>
 
-                        <div className="rounded-[20px] border border-slate-200 bg-white p-4">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            Rules
-                          </p>
-                          <div className="mt-2 space-y-1.5 text-sm text-slate-700">
-                            <p>
-                              Instances: {section.minInstances}–{section.maxInstances}
-                            </p>
-                            <p>
-                              Default component:{" "}
-                              {section.defaultComponentId || "—"}
-                            </p>
-                            <p>
-                              Images: {section.imageRequirement?.min ?? 0}–
-                              {section.imageRequirement?.max ?? 0}
-                            </p>
-                          </div>
+                        <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+                          <RuleRow
+                            label="Image min / max"
+                            value={
+                              section.imageRequirement
+                                ? `${section.imageRequirement.min}–${section.imageRequirement.max}`
+                                : "—"
+                            }
+                          />
+                          <RuleRow
+                            label="Alt text required"
+                            value={
+                              section.imageRequirement?.requiredAltText ? "Yes" : "No"
+                            }
+                          />
+                          <RuleRow
+                            label="AI scope"
+                            value={section.ai?.generateScope || "—"}
+                          />
+                          <RuleRow
+                            label="Blocked instructions"
+                            value={`${section.ai?.blockedInstructions?.length ?? 0}`}
+                          />
                         </div>
                       </div>
 
                       {(section.helpText || section.ai?.promptHint) ? (
-                        <div className="mt-4 grid gap-3 lg:grid-cols-2">
-                          <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+                        <div className="mt-4 grid gap-4 lg:grid-cols-2">
+                          <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                              Help Text
+                              Help text
                             </p>
                             <p className="mt-2 text-sm leading-6 text-slate-700">
                               {section.helpText || "—"}
                             </p>
                           </div>
 
-                          <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+                          <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
                             <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                              AI Prompt Hint
+                              AI prompt hint
                             </p>
                             <p className="mt-2 text-sm leading-6 text-slate-700">
                               {section.ai?.promptHint || "—"}
@@ -637,66 +1164,111 @@ export default function TemplateDetailPage() {
                       ) : null}
                     </div>
                   ))}
-              </div>
+                </div>
+              )}
             </Panel>
+          </div>
+        ) : null}
 
-            <div className="grid gap-6 xl:grid-cols-2">
+        {activeTab === "preview" ? (
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_380px]">
+            <main className="min-w-0">
               <Panel
-                title="Required Sections"
-                subtitle="Core sections that must be completed."
-                icon={<CheckCircle2 className="h-5 w-5" />}
+                title="Template Preview"
+                subtitle="A simplified page-level preview showing how the template is structured."
+                icon={<Eye className="h-5 w-5" />}
               >
-                <div className="space-y-3">
-                  {requiredSections.length > 0 ? (
-                    requiredSections.map((section) => (
+                {sortedSections.length === 0 ? (
+                  <EmptyState
+                    title="Nothing to preview"
+                    text="Add sections to this template to generate a preview."
+                  />
+                ) : (
+                  <div className="space-y-4">
+                    {sortedSections.map((section, index) => (
                       <div
                         key={section.id}
-                        className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
+                        className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
                       >
-                        <p className="text-sm font-medium text-slate-900">
-                          {section.label}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {section.defaultComponentId || "No default component set"}
-                        </p>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                              {index + 1}
+                            </span>
+                            <div>
+                              <p className="text-sm font-semibold text-slate-900">
+                                {section.label}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {section.required ? "Required section" : "Optional section"}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <Badge tone={section.required ? "emerald" : "slate"}>
+                              {section.required ? "Required" : "Optional"}
+                            </Badge>
+                            <Badge tone="slate">
+                              {section.allowedComponentIds.length} blocks
+                            </Badge>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
+                          <p className="text-sm font-medium text-slate-700">
+                            {section.defaultComponentId || "Representative block preview"}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-500">
+                            This is a placeholder preview area for the section.
+                          </p>
+                        </div>
                       </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-500">No required sections.</p>
-                  )}
-                </div>
+                    ))}
+                  </div>
+                )}
               </Panel>
+            </main>
 
+            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
-                title="Optional Sections"
-                subtitle="Additional sections available to the marketer."
-                icon={<FileText className="h-5 w-5" />}
+                title="Preview Modes"
+                subtitle="A foundation for richer visualisation in the next iteration."
+                icon={<Wand2 className="h-5 w-5" />}
               >
                 <div className="space-y-3">
-                  {optionalSections.length > 0 ? (
-                    optionalSections.map((section) => (
-                      <div
-                        key={section.id}
-                        className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3"
-                      >
-                        <p className="text-sm font-medium text-slate-900">
-                          {section.label}
-                        </p>
-                        <p className="mt-1 text-sm text-slate-500">
-                          {section.defaultComponentId || "No default component set"}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-slate-500">
-                      No optional sections configured.
+                  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Structure view
                     </p>
-                  )}
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Shows the order and composition of the page.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Content view
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Can later show representative blocks and real sample content.
+                    </p>
+                  </div>
+
+                  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Governance view
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-500">
+                      Can later visualise locked areas, optional sections, and review
+                      requirements.
+                    </p>
+                  </div>
                 </div>
               </Panel>
-            </div>
-          </main>
-        </div>
+            </aside>
+          </div>
+        ) : null}
       </div>
     </div>
   );

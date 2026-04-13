@@ -7,7 +7,8 @@ import {
   Sparkles,
   Blocks,
   Palette,
-  LayoutTemplate, // ✅ changed
+  LayoutTemplate,
+  FileText, // ✅ added for Pages
   Settings,
 } from "lucide-react";
 
@@ -80,9 +81,14 @@ export default function Sidebar() {
       icon: <Palette className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/templates", // ✅ changed
+      href: "/templates",
       label: "Templates",
-      icon: <LayoutTemplate className="h-5 w-5" strokeWidth={1.9} />, // ✅ changed
+      icon: <LayoutTemplate className="h-5 w-5" strokeWidth={1.9} />,
+    },
+    {
+      href: "/pages", // ✅ NEW
+      label: "Pages",
+      icon: <FileText className="h-5 w-5" strokeWidth={1.9} />, // ✅ NEW
     },
   ];
 
@@ -92,9 +98,20 @@ export default function Sidebar() {
     }
 
     if (href === "/blocks/new") return pathname === "/blocks/new";
-    if (href === "/blocks") return pathname === "/blocks" || pathname.startsWith("/blocks/");
+
+    if (href === "/blocks") {
+      return pathname === "/blocks" || pathname.startsWith("/blocks/");
+    }
+
     if (href === "/brand") return pathname === "/brand";
-    if (href === "/templates") return pathname === "/templates" || pathname.startsWith("/templates/"); // ✅ added
+
+    if (href === "/templates") {
+      return pathname === "/templates" || pathname.startsWith("/templates/");
+    }
+
+    if (href === "/pages") {
+      return pathname === "/pages" || pathname.startsWith("/pages/");
+    }
 
     return pathname === href || pathname.startsWith(`${href}/`);
   };
@@ -104,17 +121,16 @@ export default function Sidebar() {
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
       <Link
-        href="/dashboard"
-        prefetch={false}
-        className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
-        aria-label="Visionir dashboard"
-      >
-        <img
-          src="/kiwalogo.png"
-          alt="Kiwa"
-          className="h-7 w-7 object-contain"
-        />
-      </Link>
+  href="/dashboard"
+  prefetch={false}
+  className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+  aria-label="Visionir dashboard"
+>
+  <img
+    src="/mediascout-white-logo.png"
+    alt="Mediascout"
+    className="h-[46px] w-[46px] object-cover rounded-lg"  />
+</Link>
 
       <nav className="flex flex-1 flex-col items-center gap-3">
         {navItems.map((item) => (

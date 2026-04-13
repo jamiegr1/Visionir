@@ -160,5 +160,266 @@
     "createdAt": "2026-04-11T11:02:42.111Z",
     "updatedAt": "2026-04-11T11:02:42.111Z",
     "publishedAt": null
+  },
+  {
+    "id": "afa5161a-0819-4a39-942f-ac896f7423f3",
+    "name": "Website Development Service",
+    "slug": "web-development",
+    "description": "For campaigns, propositions, and focused journeys.",
+    "category": "service",
+    "status": "draft",
+    "version": 1,
+    "audience": "Enterprise",
+    "purpose": "Showcase Web development services, testimonials, and development cycles",
+    "defaultAiInstruction": "",
+    "sections": [
+      {
+        "id": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
+        "key": "hero",
+        "label": "Hero",
+        "description": "Primary opening section for the page.",
+        "helpText": "Explain the service clearly and confidently.",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard"
+        ],
+        "defaultComponentId": "hero-standard",
+        "lockedOrder": true,
+        "mustBeFirst": true,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Introduce the service clearly and confidently.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
+        "key": "intro",
+        "label": "Intro",
+        "description": "Short supporting intro section.",
+        "helpText": "Frame the service before deeper content.",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": true,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "172d7a98-abb0-4d42-8065-189adf3ce264",
+        "key": "content",
+        "label": "Content",
+        "description": "Main explanatory section.",
+        "helpText": "Add benefits, detail, and proof.",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "lockedOrder": true,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Support the service proposition with structured content.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+        "key": "stats",
+        "label": "Stats",
+        "description": "Numerical proof or measurable outcomes.",
+        "helpText": "Keep stat labels short and meaningful.",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": true,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Use clear, credible supporting metrics.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "1445a8eb-c24f-4107-adf3-298dc161f601",
+        "key": "testimonials",
+        "label": "Testimonials",
+        "description": "Social proof and customer confidence.",
+        "helpText": "Only include strong proof with real relevance.",
+        "order": 4,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 2,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": true,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Use concise, specific trust-building proof.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "ba72ed90-242c-4358-92e8-69d8870f656a",
+        "key": "faq",
+        "label": "FAQ",
+        "description": "Common questions and clarifications.",
+        "helpText": "Keep answers simple and useful.",
+        "order": 5,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": true,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Answer likely objections clearly.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
+        "key": "cta",
+        "label": "Call to Action",
+        "description": "Closing conversion section.",
+        "helpText": "Use a strong next-step CTA.",
+        "order": 6,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": false,
+        "mustBeFirst": false,
+        "mustBeLast": true,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Drive a clear next step for the user.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      }
+    ],
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "createdAt": "2026-04-13T15:13:24.366Z",
+    "updatedAt": "2026-04-13T15:13:24.366Z",
+    "publishedAt": null
   }
 ]
