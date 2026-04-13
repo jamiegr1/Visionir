@@ -1,0 +1,79 @@
+[
+  {
+    "id": "6a489d3f-1167-4e3c-99c4-60a69f59e6c7",
+    "templateId": "10af30df-1b07-4cdb-b0f7-7be6beab36c3",
+    "templateVersion": 1,
+    "templateName": "Consultancy Service",
+    "name": "Consultancy Service Page",
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "createdAt": "2026-04-11T11:02:57.053Z",
+    "updatedAt": "2026-04-11T11:02:57.053Z",
+    "sections": [
+      {
+        "sectionId": "ebe7bb69-e879-4721-9872-0cf95e3f2a02",
+        "key": "hero",
+        "label": "Hero",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard",
+          "hero-split"
+        ],
+        "defaultComponentId": "hero-standard",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "61148312-bc0c-4198-b099-ac668f8d7b17",
+        "key": "content",
+        "label": "Content",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "e7a57448-15ce-46e3-8e6a-9340cc9178a9",
+        "key": "cta",
+        "label": "Call to Action",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "cta-banner"
+        ],
+        "defaultComponentId": "cta-banner",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "fb53f291-d636-4cef-b6ce-93bfd8e61d3d",
+        "key": "section-4",
+        "label": "Section 4",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      }
+    ]
+  }
+]

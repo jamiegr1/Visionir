@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
-  FileText,
+  Check,
   GripVertical,
   Plus,
   Save,
@@ -13,6 +13,7 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import { COMPONENT_OPTIONS } from "@/lib/component-options";
 
 type Role = "creator" | "approver" | "admin";
 
@@ -36,7 +37,7 @@ type SectionForm = {
   canSkip: boolean;
   minInstances: number;
   maxInstances: number;
-  allowedComponentIdsText: string;
+  allowedComponentIds: string[];
   defaultComponentId: string;
   lockedOrder: boolean;
   mustBeFirst: boolean;
@@ -71,7 +72,7 @@ function createEmptySection(index: number): SectionForm {
     canSkip: false,
     minInstances: 1,
     maxInstances: 1,
-    allowedComponentIdsText: "",
+    allowedComponentIds: [],
     defaultComponentId: "",
     lockedOrder: false,
     mustBeFirst: index === 0,
@@ -157,11 +158,7 @@ function StepBarItem({
   onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="group min-w-0 text-left"
-    >
+    <button type="button" onClick={onClick} className="group min-w-0 text-left">
       <div className="flex items-start gap-3">
         <div
           className={cx(
@@ -205,6 +202,10 @@ function StepBarItem({
   );
 }
 
+function getComponentName(id: string) {
+  return COMPONENT_OPTIONS.find((component) => component.id === id)?.name ?? id;
+}
+
 export default function NewTemplatePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -233,7 +234,7 @@ export default function NewTemplatePage() {
       ...createEmptySection(0),
       label: "Hero",
       key: "hero",
-      allowedComponentIdsText: "hero-standard, hero-split",
+      allowedComponentIds: ["hero-standard"],
       defaultComponentId: "hero-standard",
       promptHint: "Introduce the page clearly and confidently.",
       description: "Primary opening section for the page.",
@@ -248,7 +249,7 @@ export default function NewTemplatePage() {
       ...createEmptySection(1),
       label: "Content",
       key: "content",
-      allowedComponentIdsText: "value-points-grid",
+      allowedComponentIds: ["value-points-grid"],
       defaultComponentId: "value-points-grid",
       promptHint: "Support the core proposition with structured content.",
       description: "Main explanatory body section.",
@@ -261,8 +262,8 @@ export default function NewTemplatePage() {
       ...createEmptySection(2),
       label: "Call to Action",
       key: "cta",
-      allowedComponentIdsText: "cta-banner",
-      defaultComponentId: "cta-banner",
+      allowedComponentIds: [],
+      defaultComponentId: "",
       promptHint: "Drive a clear next step for the user.",
       description: "Closing conversion section.",
       helpText: "Use a strong, direct CTA aligned to the page goal.",
@@ -281,7 +282,7 @@ export default function NewTemplatePage() {
     sections.length > 0 && sections.every((section) => section.label.trim());
   const settingsComplete =
     sections.length > 0 &&
-    sections.every((section) => section.allowedComponentIdsText.trim());
+    sections.every((section) => section.allowedComponentIds.length > 0);
 
   function updateSection(id: string, patch: Partial<SectionForm>) {
     setSections((prev) =>
@@ -325,6 +326,22 @@ export default function NewTemplatePage() {
       next.splice(targetIndex, 0, moved);
 
       return next;
+    });
+  }
+
+  function toggleAllowedComponent(sectionId: string, componentId: string, checked: boolean) {
+    const section = sections.find((item) => item.id === sectionId);
+    if (!section) return;
+
+    const nextAllowed = checked
+      ? [...section.allowedComponentIds, componentId]
+      : section.allowedComponentIds.filter((id) => id !== componentId);
+
+    updateSection(sectionId, {
+      allowedComponentIds: nextAllowed,
+      defaultComponentId: nextAllowed.includes(section.defaultComponentId)
+        ? section.defaultComponentId
+        : nextAllowed[0] || "",
     });
   }
 
@@ -386,10 +403,7 @@ export default function NewTemplatePage() {
           canSkip: section.canSkip,
           minInstances: section.minInstances,
           maxInstances: section.maxInstances,
-          allowedComponentIds: section.allowedComponentIdsText
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean),
+          allowedComponentIds: section.allowedComponentIds,
           defaultComponentId: section.defaultComponentId.trim() || null,
           lockedOrder: section.lockedOrder,
           mustBeFirst: section.mustBeFirst,
@@ -657,11 +671,20 @@ export default function NewTemplatePage() {
                             {section.required ? "Required" : "Optional"}
                           </span>
 
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                            {section.allowedComponentIdsText
-                              ? section.allowedComponentIdsText
-                              : "No components yet"}
-                          </span>
+                          {section.allowedComponentIds.length > 0 ? (
+                            section.allowedComponentIds.slice(0, 2).map((componentId) => (
+                              <span
+                                key={componentId}
+                                className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600"
+                              >
+                                {getComponentName(componentId)}
+                              </span>
+                            ))
+                          ) : (
+                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
+                              No components yet
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -790,8 +813,7 @@ export default function NewTemplatePage() {
                       Section settings
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Define what this section allows, how it behaves, and what guidance
-                      marketers should see.
+                      Choose the real block types this section is allowed to use.
                     </p>
                   </div>
 
@@ -855,31 +877,68 @@ export default function NewTemplatePage() {
                     </div>
 
                     <div className="lg:col-span-2">
-                      <FieldLabel hint="Comma separated component IDs from your registry.">
+                      <FieldLabel hint="Choose real block types from your registry.">
                         Allowed Components
                       </FieldLabel>
-                      <TextInput
-                        value={activeSection.allowedComponentIdsText}
-                        onChange={(e) =>
-                          updateSection(activeSection.id, {
-                            allowedComponentIdsText: e.target.value,
-                          })
-                        }
-                        placeholder="hero-standard, hero-split"
-                      />
+
+                      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                        {COMPONENT_OPTIONS.map((component) => {
+                          const checked = activeSection.allowedComponentIds.includes(component.id);
+
+                          return (
+                            <label
+                              key={component.id}
+                              className="flex cursor-pointer items-start gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) =>
+                                  toggleAllowedComponent(
+                                    activeSection.id,
+                                    component.id,
+                                    e.target.checked
+                                  )
+                                }
+                                className="mt-1 h-4 w-4 rounded border-slate-300 text-[#5b7cff]"
+                              />
+
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {component.name}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {component.category} · {component.id}
+                                </p>
+                                <p className="mt-2 text-xs leading-5 text-slate-500">
+                                  {component.description}
+                                </p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div>
+                    <div className="lg:col-span-2">
                       <FieldLabel>Default Component</FieldLabel>
-                      <TextInput
+                      <Select
                         value={activeSection.defaultComponentId}
                         onChange={(e) =>
                           updateSection(activeSection.id, {
                             defaultComponentId: e.target.value,
                           })
                         }
-                        placeholder="hero-standard"
-                      />
+                      >
+                        <option value="">Select default component</option>
+                        {COMPONENT_OPTIONS.filter((component) =>
+                          activeSection.allowedComponentIds.includes(component.id)
+                        ).map((component) => (
+                          <option key={component.id} value={component.id}>
+                            {component.name}
+                          </option>
+                        ))}
+                      </Select>
                     </div>
 
                     <div>

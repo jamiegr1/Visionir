@@ -1,1 +1,164 @@
-[]
+[
+  {
+    "id": "10af30df-1b07-4cdb-b0f7-7be6beab36c3",
+    "name": "Consultancy Service",
+    "slug": "consultancy",
+    "description": "a template for our consultancy level pages",
+    "category": "service",
+    "status": "draft",
+    "version": 1,
+    "audience": "Enterprise Buyers",
+    "purpose": "Showcase Consultancy Services",
+    "defaultAiInstruction": "Maintian a clear, corporate and proffesional tone",
+    "sections": [
+      {
+        "id": "ebe7bb69-e879-4721-9872-0cf95e3f2a02",
+        "key": "hero",
+        "label": "Hero",
+        "description": "Primary opening section for the page.",
+        "helpText": "Explain the main purpose of the page immediately.",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard",
+          "hero-split"
+        ],
+        "defaultComponentId": "hero-standard",
+        "lockedOrder": true,
+        "mustBeFirst": true,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Introduce the page clearly and confidently.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "61148312-bc0c-4198-b099-ac668f8d7b17",
+        "key": "content",
+        "label": "Content",
+        "description": "Main explanatory body section.",
+        "helpText": "Add benefits, proof, or structured supporting detail.",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "lockedOrder": false,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Support the core proposition with structured content.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "e7a57448-15ce-46e3-8e6a-9340cc9178a9",
+        "key": "cta",
+        "label": "Call to Action",
+        "description": "Closing conversion section.",
+        "helpText": "Use a strong, direct CTA aligned to the page goal.",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "cta-banner"
+        ],
+        "defaultComponentId": "cta-banner",
+        "lockedOrder": false,
+        "mustBeFirst": false,
+        "mustBeLast": true,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "Drive a clear next step for the user.",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      },
+      {
+        "id": "fb53f291-d636-4cef-b6ce-93bfd8e61d3d",
+        "key": "section-4",
+        "label": "Section 4",
+        "description": "",
+        "helpText": "",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "lockedOrder": false,
+        "mustBeFirst": false,
+        "mustBeLast": false,
+        "imageRequirement": {
+          "min": 0,
+          "max": 0,
+          "requiredAltText": false
+        },
+        "ai": {
+          "promptHint": "",
+          "blockedInstructions": [],
+          "generateScope": "copy_and_layout"
+        },
+        "permissions": {
+          "creatorCanEdit": true,
+          "approverCanEdit": true,
+          "adminCanEdit": true,
+          "copyLocked": false,
+          "layoutLocked": false
+        }
+      }
+    ],
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "createdAt": "2026-04-11T11:02:42.111Z",
+    "updatedAt": "2026-04-11T11:02:42.111Z",
+    "publishedAt": null
+  }
+]
