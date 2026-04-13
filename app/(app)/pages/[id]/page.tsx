@@ -9,10 +9,12 @@ import {
   FileText,
   LayoutTemplate,
   Pencil,
+  Plus,
   Save,
-  Send,
+ Send,
   ShieldCheck,
   Sparkles,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import type {
@@ -23,6 +25,17 @@ import type {
 
 type Role = "creator" | "approver" | "admin";
 type PageTab = "overview" | "sections" | "preview";
+
+type ApiBlockRecord = {
+  id: string;
+  status?: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  createdBy?: string;
+  createdByName?: string;
+  createdByUserId?: string;
+  data?: Record<string, unknown> | null;
+};
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -40,6 +53,19 @@ function formatDateTime(value: string | null | undefined) {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+  }).format(date);
+}
+
+function formatDate(value: string | null | undefined) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
   }).format(date);
 }
 
@@ -81,6 +107,70 @@ function getStatusPillClass(status: PageStatus) {
     default:
       return "bg-amber-50 text-amber-700 ring-amber-200";
   }
+}
+
+function getBlockStatusLabel(status: string | undefined) {
+  switch (status) {
+    case "draft":
+      return "Draft";
+    case "generating":
+      return "Generating";
+    case "in_review":
+      return "In Review";
+    case "pending_approval":
+      return "Pending Review";
+    case "approved":
+      return "Approved";
+    case "published":
+      return "Published";
+    case "rejected":
+      return "Changes Requested";
+    case "deploying":
+      return "Deploying";
+    case "deployed":
+      return "Live";
+    case "completed":
+      return "Completed";
+    default:
+      return "Draft";
+  }
+}
+
+function getBlockStatusPillClass(status: string | undefined) {
+  switch (status) {
+    case "approved":
+    case "published":
+    case "completed":
+    case "deployed":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-100";
+    case "pending_approval":
+    case "in_review":
+      return "bg-amber-50 text-amber-700 ring-amber-100";
+    case "rejected":
+      return "bg-rose-50 text-rose-700 ring-rose-100";
+    default:
+      return "bg-slate-100 text-slate-600 ring-slate-200";
+  }
+}
+
+function getBlockComponentType(block: ApiBlockRecord) {
+  const componentType = block.data?.componentType;
+  return typeof componentType === "string" && componentType.trim()
+    ? componentType.trim()
+    : "";
+}
+
+function getBlockName(block: ApiBlockRecord) {
+  const headline = block.data?.headline;
+  const eyebrow = block.data?.eyebrow;
+
+  if (typeof headline === "string" && headline.trim()) return headline.trim();
+  if (typeof eyebrow === "string" && eyebrow.trim()) return eyebrow.trim();
+
+  const componentType = getBlockComponentType(block);
+  if (componentType) return componentType;
+
+  return `Block ${block.id.slice(0, 8)}`;
 }
 
 function StatusPill({ status }: { status: PageStatus }) {
@@ -361,6 +451,117 @@ function SectionSummaryCard({
   );
 }
 
+function AttachedBlockCard({
+  block,
+  onEdit,
+  onRemove,
+  isRemoving,
+}: {
+  block: ApiBlockRecord;
+  onEdit: () => void;
+  onRemove: () => void;
+  isRemoving: boolean;
+}) {
+  return (
+    <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {getBlockName(block)}
+          </p>
+          <p className="mt-1 truncate text-xs text-slate-500">
+            {getBlockComponentType(block) || "Unknown component"} · {formatDate(block.updatedAt)}
+          </p>
+        </div>
+
+        <span
+          className={cx(
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            getBlockStatusPillClass(block.status)
+          )}
+        >
+          {getBlockStatusLabel(block.status)}
+        </span>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onEdit}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+        >
+          <Pencil className="h-4 w-4" />
+          Edit
+        </button>
+
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={isRemoving}
+          className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-3 py-2 text-sm font-medium text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Trash2 className="h-4 w-4" />
+          {isRemoving ? "Removing..." : "Remove"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExistingBlockPickerCard({
+  block,
+  onAttach,
+  isAttached,
+  isAttaching,
+}: {
+  block: ApiBlockRecord;
+  onAttach: () => void;
+  isAttached: boolean;
+  isAttaching: boolean;
+}) {
+  return (
+    <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {getBlockName(block)}
+          </p>
+          <p className="mt-1 truncate text-xs text-slate-500">
+            {getBlockComponentType(block) || "Unknown component"} · {formatDate(block.updatedAt)}
+          </p>
+        </div>
+
+        <span
+          className={cx(
+            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ring-1",
+            getBlockStatusPillClass(block.status)
+          )}
+        >
+          {getBlockStatusLabel(block.status)}
+        </span>
+      </div>
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={onAttach}
+          disabled={isAttached || isAttaching}
+          className={cx(
+            "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition",
+            isAttached
+              ? "cursor-not-allowed border border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100",
+            isAttaching && "cursor-not-allowed opacity-60"
+          )}
+        >
+          <Plus className="h-4 w-4" />
+          {isAttached ? "Attached" : isAttaching ? "Attaching..." : "Attach block"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PageDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -376,8 +577,14 @@ export default function PageDetailPage() {
   const id = params.id;
 
   const [loading, setLoading] = useState(true);
+  const [blocksLoading, setBlocksLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isActing, setIsActing] = useState(false);
+  const [isGeneratingBlock, setIsGeneratingBlock] = useState(false);
+  const [attachLoadingBlockId, setAttachLoadingBlockId] = useState<string | null>(null);
+  const [removeLoadingBlockId, setRemoveLoadingBlockId] = useState<string | null>(null);
+  const [showBlockPicker, setShowBlockPicker] = useState(false);
+
   const [activeTab, setActiveTab] = useState<PageTab>("sections");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
@@ -385,6 +592,7 @@ export default function PageDetailPage() {
   const [pageName, setPageName] = useState("");
   const [pageSlug, setPageSlug] = useState("");
   const [pageStatus, setPageStatus] = useState<PageStatus>("draft");
+  const [allBlocks, setAllBlocks] = useState<ApiBlockRecord[]>([]);
 
   useEffect(() => {
     async function loadPage() {
@@ -420,6 +628,32 @@ export default function PageDetailPage() {
     }
   }, [id, role]);
 
+  useEffect(() => {
+    async function loadBlocks() {
+      try {
+        setBlocksLoading(true);
+
+        const res = await fetch(`/api/blocks?role=${role}`, {
+          cache: "no-store",
+        });
+
+        const json = await res.json().catch(() => ({}));
+        const rawBlocks = Array.isArray(json?.blocks)
+          ? (json.blocks as ApiBlockRecord[])
+          : [];
+
+        setAllBlocks(rawBlocks);
+      } catch (error) {
+        console.error("Failed to load blocks:", error);
+        setAllBlocks([]);
+      } finally {
+        setBlocksLoading(false);
+      }
+    }
+
+    void loadBlocks();
+  }, [role]);
+
   const sortedSections = useMemo(() => {
     return (page?.sections ?? []).slice().sort((a, b) => a.order - b.order);
   }, [page]);
@@ -439,6 +673,24 @@ export default function PageDetailPage() {
   const selectedSection =
     sortedSections.find((section) => section.sectionId === selectedSectionId) ?? null;
 
+  const attachedBlocksForSelectedSection = useMemo(() => {
+    if (!selectedSection) return [];
+    return selectedSection.blockIds
+      .map((blockId) => allBlocks.find((block) => block.id === blockId))
+      .filter((block): block is ApiBlockRecord => Boolean(block));
+  }, [selectedSection, allBlocks]);
+
+  const availableBlocksForSelectedSection = useMemo(() => {
+    if (!selectedSection) return [];
+
+    const allowed = new Set(selectedSection.allowedComponentIds);
+
+    return allBlocks.filter((block) => {
+      const componentType = getBlockComponentType(block);
+      return componentType ? allowed.has(componentType) : false;
+    });
+  }, [selectedSection, allBlocks]);
+
   async function refreshPage() {
     const res = await fetch(`/api/pages/${id}?role=${role}`, {
       cache: "no-store",
@@ -453,6 +705,19 @@ export default function PageDetailPage() {
       setPageSlug(nextPage.slug || "");
       setPageStatus(nextPage.status || "draft");
     }
+  }
+
+  async function refreshBlocks() {
+    const res = await fetch(`/api/blocks?role=${role}`, {
+      cache: "no-store",
+    });
+
+    const json = await res.json().catch(() => ({}));
+    const rawBlocks = Array.isArray(json?.blocks)
+      ? (json.blocks as ApiBlockRecord[])
+      : [];
+
+    setAllBlocks(rawBlocks);
   }
 
   async function handleSave() {
@@ -514,6 +779,138 @@ export default function PageDetailPage() {
       alert(error instanceof Error ? error.message : `Failed to ${action} page.`);
     } finally {
       setIsActing(false);
+    }
+  }
+
+  async function handleAttachBlock(blockId: string) {
+    if (!selectedSection) return;
+
+    try {
+      setAttachLoadingBlockId(blockId);
+
+      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "attach_block",
+          sectionId: selectedSection.sectionId,
+          blockId,
+          updatedByUserId: "user-1",
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(json?.error || "Failed to attach block.");
+      }
+
+      await refreshPage();
+      setShowBlockPicker(false);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Failed to attach block.");
+    } finally {
+      setAttachLoadingBlockId(null);
+    }
+  }
+
+  async function handleRemoveBlock(blockId: string) {
+    if (!selectedSection) return;
+
+    try {
+      setRemoveLoadingBlockId(blockId);
+
+      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "remove_block",
+          sectionId: selectedSection.sectionId,
+          blockId,
+          updatedByUserId: "user-1",
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(json?.error || "Failed to remove block.");
+      }
+
+      await refreshPage();
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Failed to remove block.");
+    } finally {
+      setRemoveLoadingBlockId(null);
+    }
+  }
+
+  async function handleGenerateBlock() {
+    if (!selectedSection || !page) return;
+
+    const componentType =
+      selectedSection.defaultComponentId || selectedSection.allowedComponentIds[0];
+
+    if (!componentType) {
+      alert("This section does not have any allowed block types.");
+      return;
+    }
+
+    try {
+      setIsGeneratingBlock(true);
+
+      const blockPayload = {
+        data: {
+          componentType,
+          headline: `${page.name} — ${selectedSection.label}`,
+          eyebrow: selectedSection.label,
+          body: `Draft content for the ${selectedSection.label} section.`,
+          ctaText: "Learn more",
+        },
+        status: "draft",
+      };
+
+      const createRes = await fetch(`/api/blocks?role=${role}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(blockPayload),
+      });
+
+      const createJson = await createRes.json().catch(() => ({}));
+
+      if (!createRes.ok || !createJson?.block?.id) {
+        throw new Error(createJson?.error || "Failed to generate block.");
+      }
+
+      const blockId = createJson.block.id as string;
+
+      const attachRes = await fetch(`/api/pages/${id}?role=${role}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "attach_block",
+          sectionId: selectedSection.sectionId,
+          blockId,
+          updatedByUserId: "user-1",
+        }),
+      });
+
+      const attachJson = await attachRes.json().catch(() => ({}));
+
+      if (!attachRes.ok) {
+        throw new Error(attachJson?.error || "Failed to attach generated block.");
+      }
+
+      await Promise.all([refreshBlocks(), refreshPage()]);
+
+      router.push(`/blocks/${blockId}/details?role=${role}`);
+    } catch (error) {
+      console.error(error);
+      alert(error instanceof Error ? error.message : "Failed to generate block.");
+    } finally {
+      setIsGeneratingBlock(false);
     }
   }
 
@@ -784,7 +1181,7 @@ export default function PageDetailPage() {
         ) : null}
 
         {activeTab === "sections" ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_380px]">
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_420px]">
             <main className="min-w-0">
               <Panel
                 title="Page Sections"
@@ -819,7 +1216,7 @@ export default function PageDetailPage() {
             <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
                 title="Selected Section"
-                subtitle="Inspect the current section and its constraints."
+                subtitle="Generate, attach, edit and remove blocks inside this section."
                 icon={<LayoutTemplate className="h-5 w-5" />}
               >
                 {selectedSection ? (
@@ -887,9 +1284,30 @@ export default function PageDetailPage() {
                       />
                     </div>
 
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateBlock}
+                        disabled={isGeneratingBlock}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        {isGeneratingBlock ? "Generating..." : "Generate Block"}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setShowBlockPicker((current) => !current)}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {showBlockPicker ? "Hide Existing Blocks" : "Add Existing Block"}
+                      </button>
+                    </div>
+
                     <div className="rounded-[22px] border border-slate-200 bg-white p-4">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Allowed blocks
+                        Allowed block types
                       </p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -909,25 +1327,70 @@ export default function PageDetailPage() {
                     </div>
 
                     <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Attached block IDs
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                          Attached blocks
+                        </p>
+                        <span className="text-xs text-slate-400">
+                          {attachedBlocksForSelectedSection.length} attached
+                        </span>
+                      </div>
 
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedSection.blockIds.length > 0 ? (
-                          selectedSection.blockIds.map((blockId) => (
-                            <span
-                              key={blockId}
-                              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                            >
-                              {blockId}
-                            </span>
+                      <div className="mt-4 space-y-3">
+                        {attachedBlocksForSelectedSection.length > 0 ? (
+                          attachedBlocksForSelectedSection.map((block) => (
+                            <AttachedBlockCard
+                              key={block.id}
+                              block={block}
+                              onEdit={() =>
+                                router.push(`/blocks/${block.id}/details?role=${role}`)
+                              }
+                              onRemove={() => handleRemoveBlock(block.id)}
+                              isRemoving={removeLoadingBlockId === block.id}
+                            />
                           ))
                         ) : (
-                          <span className="text-sm text-slate-500">No blocks attached</span>
+                          <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                            No blocks attached to this section yet.
+                          </div>
                         )}
                       </div>
                     </div>
+
+                    {showBlockPicker ? (
+                      <div className="rounded-[22px] border border-slate-200 bg-white p-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                            Existing matching blocks
+                          </p>
+                          <span className="text-xs text-slate-400">
+                            {availableBlocksForSelectedSection.length} available
+                          </span>
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                          {blocksLoading ? (
+                            <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                              Loading blocks…
+                            </div>
+                          ) : availableBlocksForSelectedSection.length > 0 ? (
+                            availableBlocksForSelectedSection.map((block) => (
+                              <ExistingBlockPickerCard
+                                key={block.id}
+                                block={block}
+                                onAttach={() => handleAttachBlock(block.id)}
+                                isAttached={selectedSection.blockIds.includes(block.id)}
+                                isAttaching={attachLoadingBlockId === block.id}
+                              />
+                            ))
+                          ) : (
+                            <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
+                              No existing blocks match this section’s allowed block types.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">Select a section to inspect it.</p>

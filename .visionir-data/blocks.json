@@ -4595,5 +4595,51 @@
     "publishedAt": "2026-03-31T07:06:03.894Z",
     "createdAt": "2026-03-31T06:59:46.914Z",
     "updatedAt": "2026-03-31T07:06:03.894Z"
+  },
+  {
+    "id": "33b4d4a0-12c5-48ed-9802-173af01918d3",
+    "data": {
+      "componentType": "hero-standard",
+      "headline": "Website Development Service Page — Hero",
+      "eyebrow": "Hero",
+      "body": "Draft content for the Hero section.",
+      "ctaText": "Learn more"
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-04-13T20:18:12.027Z",
+    "updatedAt": "2026-04-13T20:18:12.027Z"
+  },
+  {
+    "id": "fa2edbaa-3c18-415a-a6d2-39452db35f19",
+    "data": {
+      "componentType": "hero-standard",
+      "headline": "Website Development Service Page — Hero",
+      "eyebrow": "Hero",
+      "body": "Draft content for the Hero section.",
+      "ctaText": "Learn more"
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-04-13T20:18:33.123Z",
+    "updatedAt": "2026-04-13T20:18:33.123Z"
   }
 ]
