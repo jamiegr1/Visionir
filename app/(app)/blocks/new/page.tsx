@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Generating from "./_components/Generating";
 import type { BlockData } from "@/lib/types";
 import { hasPermission, type Role } from "@/lib/permissions";
+import { COMPONENT_OPTIONS } from "@/lib/component-options";
 
 type Step = "context" | "instructions" | "generating";
 type ImageSourceMode = "none" | "upload" | "gallery";
@@ -246,6 +247,70 @@ function SegmentedOptions({
   );
 }
 
+function BlockTypeSelector({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{
+    id: string;
+    name: string;
+    category?: string;
+    description?: string;
+  }>;
+}) {
+  return (
+    <div className="grid gap-3 md:grid-cols-2">
+      {options.map((option) => {
+        const selected = value === option.id;
+
+        return (
+          <button
+            key={option.id}
+            type="button"
+            onClick={() => onChange(option.id)}
+            className={cx(
+              "rounded-[16px] border px-4 py-4 text-left transition-all",
+              selected
+                ? "border-[#5b7cff] bg-[#f4f7ff] shadow-[0_0_0_3px_rgba(91,124,255,0.08)]"
+                : "border-[#e6eaf3] bg-white hover:border-[#d7def1] hover:bg-[#fafbff]"
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-[13px] font-semibold text-[#20263a]">
+                  {option.name}
+                </div>
+
+                <div className="mt-1 text-[11px] font-medium uppercase tracking-[0.08em] text-[#98a1ba]">
+                  {option.category || "component"}
+                </div>
+
+                {option.description ? (
+                  <p className="mt-2 text-[12px] leading-5 text-[#7d859d]">
+                    {option.description}
+                  </p>
+                ) : null}
+              </div>
+
+              <span
+                className={cx(
+                  "mt-0.5 h-4 w-4 shrink-0 rounded-full border transition-all",
+                  selected
+                    ? "border-[#5b7cff] bg-[#5b7cff] shadow-[inset_0_0_0_4px_white]"
+                    : "border-[#cbd4ea] bg-white"
+                )}
+              />
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function ImageSourceSelector({
   mode,
   setMode,
@@ -408,10 +473,35 @@ export default function NewBlockPage() {
 
   const canCreate = hasPermission(currentUser.role, "block.create");
 
+  const pageId = searchParams.get("pageId") || "";
+  const sectionId = searchParams.get("sectionId") || "";
+
+  const allowedComponentIds = useMemo(() => {
+    const raw = searchParams.get("allowed");
+    if (!raw) return null;
+
+    return raw
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }, [searchParams]);
+
+  const defaultComponentId = searchParams.get("defaultComponentId");
+
+  const availableBlockTypes = useMemo(() => {
+    if (!allowedComponentIds || allowedComponentIds.length === 0) {
+      return COMPONENT_OPTIONS;
+    }
+
+    return COMPONENT_OPTIONS.filter((component) =>
+      allowedComponentIds.includes(component.id)
+    );
+  }, [allowedComponentIds]);
+
   const [step, setStep] = useState<Step>("context");
 
   const [blockName, setBlockName] = useState("Why Choose Us");
-  const [blockType, setBlockType] = useState("Why Choose Us");
+  const [blockType, setBlockType] = useState("");
   const [location, setLocation] = useState("Food, Feed & Agriculture");
   const [contentLength, setContentLength] = useState("Standard");
 
@@ -463,6 +553,26 @@ export default function NewBlockPage() {
     return () => window.clearInterval(interval);
   }, [step]);
 
+  useEffect(() => {
+    if (availableBlockTypes.length === 0) return;
+
+    if (
+      defaultComponentId &&
+      availableBlockTypes.some((item) => item.id === defaultComponentId)
+    ) {
+      setBlockType(defaultComponentId);
+      return;
+    }
+
+    setBlockType((current) => {
+      if (current && availableBlockTypes.some((item) => item.id === current)) {
+        return current;
+      }
+
+      return availableBlockTypes[0]?.id || "";
+    });
+  }, [availableBlockTypes, defaultComponentId]);
+
   function handleContinue() {
     setError(null);
     setStep("instructions");
@@ -479,6 +589,11 @@ export default function NewBlockPage() {
       return;
     }
 
+    if (!blockType) {
+      setError("Please select a valid block type.");
+      return;
+    }
+
     setError(null);
     setIsGenerating(true);
     setStep("generating");
@@ -490,9 +605,13 @@ export default function NewBlockPage() {
     );
 
     try {
+      const selectedBlockType =
+        availableBlockTypes.find((item) => item.id === blockType) || null;
+
       const enrichedPrompt = `
 Block Name: ${blockName}
-Block Type: ${blockType}
+Block Type: ${selectedBlockType?.name || blockType}
+Block Type ID: ${blockType}
 Location / Business Area: ${location}
 Content Length: ${contentLength}
 Image Source: ${
@@ -504,6 +623,8 @@ Image Source: ${
               : "Provided Brand Image"
             : "Visionir Brand Gallery Selection"
       }
+${pageId ? `Page ID: ${pageId}` : ""}
+${sectionId ? `Section ID: ${sectionId}` : ""}
 
 Generation Request:
 ${prompt}
@@ -517,6 +638,7 @@ ${prompt}
             blockName,
             location,
             category: blockType,
+            componentType: blockType,
             prompt: enrichedPrompt,
           }),
         });
@@ -532,7 +654,10 @@ ${prompt}
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            data: generateJson.blockData,
+            data: {
+              ...generateJson.blockData,
+              componentType: blockType,
+            },
             status: "draft",
           }),
         });
@@ -545,10 +670,33 @@ ${prompt}
 
         const blockId = createJson.block.id as string;
 
-        return blockId;
+        if (pageId && sectionId) {
+          const attachRes = await fetch(`/api/pages/${pageId}?role=${role}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "attach_block",
+              sectionId,
+              blockId,
+              updatedByUserId: "user-1",
+            }),
+          });
+
+          const attachJson = await attachRes.json().catch(() => ({}));
+
+          if (!attachRes.ok) {
+            throw new Error(
+              attachJson?.error || "Block was created but could not be attached to the page."
+            );
+          }
+
+          return { blockId, attachedToPage: true };
+        }
+
+        return { blockId, attachedToPage: false };
       })();
 
-      const [, blockId] = await Promise.all([
+      const [, result] = await Promise.all([
         minimumDelayPromise,
         generationAndSavePromise,
       ]);
@@ -557,7 +705,12 @@ ${prompt}
       setProgressLabel("Block ready");
 
       window.setTimeout(() => {
-        router.push(`/blocks/${blockId}/review?role=${role}`);
+        if (result.attachedToPage && pageId) {
+          router.push(`/pages/${pageId}?role=${role}`);
+          return;
+        }
+
+        router.push(`/blocks/${result.blockId}/review?role=${role}`);
       }, 250);
     } catch (e: any) {
       setError(e?.message || "Something went wrong");
@@ -586,7 +739,7 @@ ${prompt}
   if (step === "generating") {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
-        <TopBar title="Generating" stepLabel="Step 2 of 3" />
+        <TopBar title="Generating" stepLabel="Step 3 of 3" />
 
         <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
           <Generating progress={progress} label={progressLabel} />
@@ -621,12 +774,26 @@ ${prompt}
                   />
                 </FormRow>
 
-                <FormRow label="Block Type">
-                  <TextInput
-                    value={blockType}
-                    onChange={setBlockType}
-                    placeholder="Why Choose Us"
-                  />
+                <FormRow
+                  label="Block Type"
+                  multiline
+                  helper={
+                    allowedComponentIds && allowedComponentIds.length > 0
+                      ? "Restricted by selected page section"
+                      : "Choose a governed component type"
+                  }
+                >
+                  {availableBlockTypes.length > 0 ? (
+                    <BlockTypeSelector
+                      value={blockType}
+                      onChange={setBlockType}
+                      options={availableBlockTypes}
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      No valid block types are available for this context.
+                    </div>
+                  )}
                 </FormRow>
 
                 <FormRow label="Where will this block be used">
@@ -664,7 +831,11 @@ ${prompt}
               <div className="mt-5 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/?role=${role}`)}
+                  onClick={() =>
+                    pageId
+                      ? router.push(`/pages/${pageId}?role=${role}`)
+                      : router.push(`/?role=${role}`)
+                  }
                   className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
                 >
                   Cancel
@@ -742,10 +913,14 @@ ${prompt}
                 <button
                   type="button"
                   onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim()}
+                  disabled={isGenerating || !prompt.trim() || !blockType.trim()}
                   className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {isGenerating ? "Generating..." : "Generate Block"}
+                  {isGenerating
+                    ? "Generating..."
+                    : pageId && sectionId
+                      ? "Generate & Attach"
+                      : "Generate Block"}
                 </button>
               </div>
             </>

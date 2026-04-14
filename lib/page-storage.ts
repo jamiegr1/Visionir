@@ -7,6 +7,7 @@ import type {
   UpdatePageInput,
 } from "@/lib/template-types";
 import { getTemplateById } from "@/lib/template-storage";
+import { getBlockById } from "@/lib/storage";
 
 const DATA_DIR = path.join(process.cwd(), ".visionir-data");
 const PAGES_FILE = path.join(DATA_DIR, "pages.json");
@@ -43,19 +44,61 @@ async function writePages(pages: PageRecord[]) {
   await fs.writeFile(PAGES_FILE, JSON.stringify(pages, null, 2), "utf8");
 }
 
+function getRequiredBlockCount(section: PageTemplateSectionInstance) {
+  return Math.max(section.minInstances, section.required ? 1 : 0);
+}
+
+function isSectionComplete(section: PageTemplateSectionInstance) {
+  const blockIds = Array.isArray(section.blockIds) ? section.blockIds : [];
+  return blockIds.length >= getRequiredBlockCount(section);
+}
+
 function normaliseSectionInstances(
   sections: PageTemplateSectionInstance[]
 ): PageTemplateSectionInstance[] {
   return [...sections]
     .sort((a, b) => a.order - b.order)
-    .map((section, index) => ({
-      ...section,
-      order: index,
-      blockIds: Array.isArray(section.blockIds) ? section.blockIds : [],
-      completed: Array.isArray(section.blockIds)
-        ? section.blockIds.length >= Math.max(section.minInstances, section.required ? 1 : 0)
-        : false,
-    }));
+    .map((section, index) => {
+      const safeBlockIds = Array.isArray(section.blockIds) ? section.blockIds : [];
+
+      return {
+        ...section,
+        order: index,
+        blockIds: safeBlockIds,
+        completed: isSectionComplete({
+          ...section,
+          blockIds: safeBlockIds,
+        }),
+      };
+    });
+}
+
+function derivePageStatusFromSections(
+  existingStatus: PageRecord["status"],
+  sections: PageTemplateSectionInstance[]
+): PageRecord["status"] {
+  const requiredSections = sections.filter((section) => section.required);
+  const allRequiredComplete =
+    requiredSections.length === 0 ||
+    requiredSections.every((section) => section.completed);
+
+  const hasAnyBlocks = sections.some((section) => section.blockIds.length > 0);
+
+  if (existingStatus === "pending_approval") return "pending_approval";
+  if (existingStatus === "approved") return "approved";
+  if (existingStatus === "published") return "published";
+  if (existingStatus === "archived") return "archived";
+  if (existingStatus === "rejected") return "rejected";
+
+  if (allRequiredComplete && hasAnyBlocks) {
+    return "in_progress";
+  }
+
+  if (hasAnyBlocks) {
+    return "in_progress";
+  }
+
+  return "draft";
 }
 
 export async function listPages(): Promise<PageRecord[]> {
@@ -97,6 +140,8 @@ export async function createPageFromTemplate(
     })
   );
 
+  const normalisedSections = normaliseSectionInstances(sections);
+
   const page: PageRecord = {
     id: crypto.randomUUID(),
     templateId: template.id,
@@ -109,7 +154,7 @@ export async function createPageFromTemplate(
     updatedByUserId: input.updatedByUserId,
     createdAt: now,
     updatedAt: now,
-    sections: normaliseSectionInstances(sections),
+    sections: normalisedSections,
   };
 
   pages.push(page);
@@ -129,6 +174,13 @@ export async function updatePage(
 
   const existing = pages[index];
 
+  const nextSections = patch.sections
+    ? normaliseSectionInstances(patch.sections)
+    : existing.sections;
+
+  const explicitStatus = patch.status;
+  const derivedStatus = derivePageStatusFromSections(existing.status, nextSections);
+
   const updated: PageRecord = {
     ...existing,
     name:
@@ -139,12 +191,10 @@ export async function updatePage(
       typeof patch.slug === "string"
         ? patch.slug.trim() || undefined
         : existing.slug,
-    status: patch.status ?? existing.status,
+    status: explicitStatus ?? derivedStatus,
     updatedByUserId: patch.updatedByUserId ?? existing.updatedByUserId,
     updatedAt: patch.updatedAt ?? new Date().toISOString(),
-    sections: patch.sections
-      ? normaliseSectionInstances(patch.sections)
-      : existing.sections,
+    sections: nextSections,
   };
 
   pages[index] = updated;
@@ -160,37 +210,70 @@ export async function attachBlockToPageSection(
   updatedByUserId: string
 ): Promise<PageRecord | null> {
   const page = await getPageById(pageId);
-  if (!page) return null;
 
-  const nextSections = page.sections.map((section) => {
-    if (section.sectionId !== sectionId) {
-      return section;
+  if (!page) {
+    return null;
+  }
+
+  const section = page.sections.find((item) => item.sectionId === sectionId);
+
+  if (!section) {
+    throw new Error("Section not found.");
+  }
+
+  const block = await getBlockById(blockId);
+
+  if (!block) {
+    throw new Error("Block not found.");
+  }
+
+  const componentType = block.data?.componentType;
+  const safeComponentType =
+    typeof componentType === "string" ? componentType.trim() : "";
+
+  if (!safeComponentType) {
+    throw new Error("Block does not have a valid component type.");
+  }
+
+  if (!section.allowedComponentIds.includes(safeComponentType)) {
+    throw new Error(
+      `Block type "${safeComponentType}" is not allowed in section "${section.label}".`
+    );
+  }
+
+  if (section.blockIds.includes(blockId)) {
+    return page;
+  }
+
+  if (section.blockIds.length >= section.maxInstances) {
+    throw new Error(
+      `Section "${section.label}" already has the maximum of ${section.maxInstances} block(s).`
+    );
+  }
+
+  const nextSections = page.sections.map((item) => {
+    if (item.sectionId !== sectionId) {
+      return item;
     }
 
-    const nextBlockIds = section.blockIds.includes(blockId)
-      ? section.blockIds
-      : [...section.blockIds, blockId];
-
-    const completed =
-      nextBlockIds.length >= Math.max(section.minInstances, section.required ? 1 : 0);
+    const nextBlockIds = [...item.blockIds, blockId];
 
     return {
-      ...section,
-      blockIds:
-        nextBlockIds.length > section.maxInstances
-          ? nextBlockIds.slice(0, section.maxInstances)
-          : nextBlockIds,
-      completed,
+      ...item,
+      blockIds: nextBlockIds,
+      completed: isSectionComplete({
+        ...item,
+        blockIds: nextBlockIds,
+      }),
     };
   });
 
-  const allRequiredComplete = nextSections
-    .filter((section) => section.required)
-    .every((section) => section.completed);
+  const normalisedSections = normaliseSectionInstances(nextSections);
+  const nextStatus = derivePageStatusFromSections(page.status, normalisedSections);
 
   return updatePage(pageId, {
-    sections: nextSections,
-    status: allRequiredComplete ? "in_progress" : page.status,
+    sections: normalisedSections,
+    status: nextStatus,
     updatedByUserId,
     updatedAt: new Date().toISOString(),
   });
@@ -203,26 +286,40 @@ export async function removeBlockFromPageSection(
   updatedByUserId: string
 ): Promise<PageRecord | null> {
   const page = await getPageById(pageId);
-  if (!page) return null;
 
-  const nextSections = page.sections.map((section) => {
-    if (section.sectionId !== sectionId) {
-      return section;
+  if (!page) {
+    return null;
+  }
+
+  const section = page.sections.find((item) => item.sectionId === sectionId);
+
+  if (!section) {
+    throw new Error("Section not found.");
+  }
+
+  const nextSections = page.sections.map((item) => {
+    if (item.sectionId !== sectionId) {
+      return item;
     }
 
-    const nextBlockIds = section.blockIds.filter((id) => id !== blockId);
-    const completed =
-      nextBlockIds.length >= Math.max(section.minInstances, section.required ? 1 : 0);
+    const nextBlockIds = item.blockIds.filter((id) => id !== blockId);
 
     return {
-      ...section,
+      ...item,
       blockIds: nextBlockIds,
-      completed,
+      completed: isSectionComplete({
+        ...item,
+        blockIds: nextBlockIds,
+      }),
     };
   });
 
+  const normalisedSections = normaliseSectionInstances(nextSections);
+  const nextStatus = derivePageStatusFromSections(page.status, normalisedSections);
+
   return updatePage(pageId, {
-    sections: nextSections,
+    sections: normalisedSections,
+    status: nextStatus,
     updatedByUserId,
     updatedAt: new Date().toISOString(),
   });

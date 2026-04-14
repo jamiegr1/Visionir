@@ -39,6 +39,10 @@ function getUserIdFromBody(body: unknown, fallback = "user-1") {
   return fallback;
 }
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ id: string }> }
@@ -132,14 +136,28 @@ export async function PATCH(
         );
       }
 
-      const updated = await attachBlockToPageSection(
-        id,
-        body.sectionId,
-        body.blockId,
-        user.id
-      );
+      try {
+        const updated = await attachBlockToPageSection(
+          id,
+          body.sectionId,
+          body.blockId,
+          user.id
+        );
 
-      return NextResponse.json({ page: updated });
+        if (!updated) {
+          return NextResponse.json(
+            { error: "Failed to attach block." },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ page: updated });
+      } catch (error) {
+        return NextResponse.json(
+          { error: getErrorMessage(error, "Failed to attach block.") },
+          { status: 400 }
+        );
+      }
     }
 
     if (body.action === "remove_block") {
@@ -157,14 +175,28 @@ export async function PATCH(
         );
       }
 
-      const updated = await removeBlockFromPageSection(
-        id,
-        body.sectionId,
-        body.blockId,
-        user.id
-      );
+      try {
+        const updated = await removeBlockFromPageSection(
+          id,
+          body.sectionId,
+          body.blockId,
+          user.id
+        );
 
-      return NextResponse.json({ page: updated });
+        if (!updated) {
+          return NextResponse.json(
+            { error: "Failed to remove block." },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ page: updated });
+      } catch (error) {
+        return NextResponse.json(
+          { error: getErrorMessage(error, "Failed to remove block.") },
+          { status: 400 }
+        );
+      }
     }
 
     if (body.action === "submit") {

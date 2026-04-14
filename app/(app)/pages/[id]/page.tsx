@@ -580,7 +580,6 @@ export default function PageDetailPage() {
   const [blocksLoading, setBlocksLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isActing, setIsActing] = useState(false);
-  const [isGeneratingBlock, setIsGeneratingBlock] = useState(false);
   const [attachLoadingBlockId, setAttachLoadingBlockId] = useState<string | null>(null);
   const [removeLoadingBlockId, setRemoveLoadingBlockId] = useState<string | null>(null);
   const [showBlockPicker, setShowBlockPicker] = useState(false);
@@ -847,71 +846,28 @@ export default function PageDetailPage() {
     }
   }
 
-  async function handleGenerateBlock() {
+  function handleGenerateBlock() {
     if (!selectedSection || !page) return;
-
-    const componentType =
-      selectedSection.defaultComponentId || selectedSection.allowedComponentIds[0];
-
-    if (!componentType) {
+  
+    const allowed = selectedSection.allowedComponentIds || [];
+  
+    if (allowed.length === 0) {
       alert("This section does not have any allowed block types.");
       return;
     }
-
-    try {
-      setIsGeneratingBlock(true);
-
-      const blockPayload = {
-        data: {
-          componentType,
-          headline: `${page.name} — ${selectedSection.label}`,
-          eyebrow: selectedSection.label,
-          body: `Draft content for the ${selectedSection.label} section.`,
-          ctaText: "Learn more",
-        },
-        status: "draft",
-      };
-
-      const createRes = await fetch(`/api/blocks?role=${role}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(blockPayload),
-      });
-
-      const createJson = await createRes.json().catch(() => ({}));
-
-      if (!createRes.ok || !createJson?.block?.id) {
-        throw new Error(createJson?.error || "Failed to generate block.");
-      }
-
-      const blockId = createJson.block.id as string;
-
-      const attachRes = await fetch(`/api/pages/${id}?role=${role}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "attach_block",
-          sectionId: selectedSection.sectionId,
-          blockId,
-          updatedByUserId: "user-1",
-        }),
-      });
-
-      const attachJson = await attachRes.json().catch(() => ({}));
-
-      if (!attachRes.ok) {
-        throw new Error(attachJson?.error || "Failed to attach generated block.");
-      }
-
-      await Promise.all([refreshBlocks(), refreshPage()]);
-
-      router.push(`/blocks/${blockId}/details?role=${role}`);
-    } catch (error) {
-      console.error(error);
-      alert(error instanceof Error ? error.message : "Failed to generate block.");
-    } finally {
-      setIsGeneratingBlock(false);
+    
+    const params = new URLSearchParams({
+      role,
+      pageId: page.id,
+      sectionId: selectedSection.sectionId,
+      allowed: allowed.join(","),
+    });
+  
+    if (selectedSection.defaultComponentId) {
+      params.set("defaultComponentId", selectedSection.defaultComponentId);
     }
+  
+    router.push(`/blocks/new?${params.toString()}`);
   }
 
   if (loading) {
@@ -1285,15 +1241,14 @@ export default function PageDetailPage() {
                     </div>
 
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={handleGenerateBlock}
-                        disabled={isGeneratingBlock}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        {isGeneratingBlock ? "Generating..." : "Generate Block"}
-                      </button>
+                    <button
+  type="button"
+  onClick={handleGenerateBlock}
+  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+>
+  <Sparkles className="h-4 w-4" />
+  Generate Block
+</button>
 
                       <button
                         type="button"
