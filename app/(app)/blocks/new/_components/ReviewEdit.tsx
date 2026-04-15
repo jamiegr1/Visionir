@@ -45,13 +45,19 @@ export type ReviewEditProps = {
   canSubmit?: boolean;
   canPublish?: boolean;
 
-  // New props for page-builder flow
   mode?: "standard" | "page_builder";
   onBack?: () => void;
   backLabel?: string;
   onPrimaryAction?: () => void;
   primaryActionLabel?: string;
   primaryActionDisabled?: boolean;
+
+  changesRequestedInfo?: {
+    requestedBy?: string;
+    requestedAt?: string;
+    notes?: string;
+    fields?: string[];
+  } | null;
 };
 
 const ACCENT_STYLES: Record<
@@ -96,6 +102,16 @@ const ACCENT_STYLES: Record<
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function formatFieldLabel(field: string) {
+  return field
+    .replace(/\./g, " / ")
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function ImproveButton({
@@ -235,6 +251,7 @@ export default function ReviewEdit({
   onPrimaryAction,
   primaryActionLabel = "Done",
   primaryActionDisabled = false,
+  changesRequestedInfo = null,
 }: ReviewEditProps) {
   const [loadingField, setLoadingField] = useState<string | null>(null);
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -254,6 +271,12 @@ export default function ReviewEdit({
   }, [governance]);
 
   const isPageBuilderMode = mode === "page_builder";
+  const hasChangesRequestedInfo =
+    !!changesRequestedInfo &&
+    (!!changesRequestedInfo.notes ||
+      !!changesRequestedInfo.requestedAt ||
+      !!changesRequestedInfo.requestedBy ||
+      (changesRequestedInfo.fields?.length ?? 0) > 0);
 
   function markFieldImproved(key: string) {
     setFlashFields((prev) => ({ ...prev, [key]: true }));
@@ -462,6 +485,100 @@ export default function ReviewEdit({
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5 pr-3">
+              {hasChangesRequestedInfo ? (
+                <section className="mb-8">
+                  <div className="rounded-3xl border border-rose-200 bg-[linear-gradient(180deg,#fff7f8_0%,#fff1f2_100%)] p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                    <div className="mb-3 flex items-start gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600">
+                        <svg
+                          className="h-4.5 w-4.5"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M12 9v4" />
+                          <path d="M12 17h.01" />
+                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+                        </svg>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-600">
+                          Changes Requested
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-700">
+                          Keep this feedback visible while editing so the block can
+                          be updated and resubmitted correctly.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3">
+                      {(changesRequestedInfo?.requestedBy ||
+                        changesRequestedInfo?.requestedAt) && (
+                        <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Requested By
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {changesRequestedInfo?.requestedBy || "—"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Requested At
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {changesRequestedInfo?.requestedAt || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Notes
+                        </p>
+                        <p className="mt-1 text-sm leading-6 text-slate-700">
+                          {changesRequestedInfo?.notes?.trim()
+                            ? changesRequestedInfo.notes
+                            : "No additional notes were added. Review the requested fields and update the block before resubmitting."}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Requested Fields
+                        </p>
+
+                        {changesRequestedInfo?.fields &&
+                        changesRequestedInfo.fields.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {changesRequestedInfo.fields.map((field) => (
+                              <span
+                                key={field}
+                                className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-[12px] font-medium text-rose-700"
+                              >
+                                {formatFieldLabel(field)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="mt-1 text-sm text-slate-700">
+                            General review requested.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
               <section className="mb-8">
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
                   <div className="mb-3">
@@ -824,6 +941,27 @@ export default function ReviewEdit({
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
+                {onBack ? (
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12.5 4.5 7 10l5.5 5.5" />
+                    </svg>
+                    {backLabel}
+                  </button>
+                ) : null}
+
                 <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
                   <HistoryButton label="Undo" disabled={!canUndo} onClick={onUndo}>
                     <svg
@@ -985,16 +1123,6 @@ export default function ReviewEdit({
               </div>
 
               <div className="flex items-center gap-3">
-                {onBack ? (
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    {backLabel}
-                  </button>
-                ) : null}
-
                 {canEdit && onSaveDraft && !isPageBuilderMode && (
                   <button
                     type="button"

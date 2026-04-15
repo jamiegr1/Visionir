@@ -81,10 +81,10 @@ function getStatusLabel(status: PageStatus) {
       return "In Progress";
     case "pending_approval":
       return "Pending Approval";
+    case "changes_requested":
+      return "Changes Requested";
     case "approved":
       return "Approved";
-    case "rejected":
-      return "Rejected";
     case "published":
       return "Published";
     case "archived":
@@ -101,10 +101,10 @@ function getStatusPillClass(status: PageStatus) {
       return "bg-blue-50 text-blue-700 ring-blue-200";
     case "pending_approval":
       return "bg-violet-50 text-violet-700 ring-violet-200";
+    case "changes_requested":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
     case "approved":
       return "bg-sky-50 text-sky-700 ring-sky-200";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-200";
     case "published":
       return "bg-emerald-50 text-emerald-700 ring-emerald-200";
     case "archived":
@@ -125,12 +125,12 @@ function getBlockStatusLabel(status: string | undefined) {
       return "In Review";
     case "pending_approval":
       return "Pending Review";
+    case "changes_requested":
+      return "Changes Requested";
     case "approved":
       return "Approved";
     case "published":
       return "Published";
-    case "rejected":
-      return "Changes Requested";
     case "deploying":
       return "Deploying";
     case "deployed":
@@ -151,9 +151,8 @@ function getBlockStatusPillClass(status: string | undefined) {
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
     case "pending_approval":
     case "in_review":
+    case "changes_requested":
       return "bg-amber-50 text-amber-700 ring-amber-100";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-100";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
   }
@@ -813,20 +812,20 @@ export default function PageDetailPage() {
     const matchedBlocks = section.blockIds
       .map((blockId) => allBlocks.find((block) => block.id === blockId))
       .filter((block): block is ApiBlockRecord => Boolean(block?.data));
-  
+
     if (matchedBlocks.length === 0) {
       return "";
     }
-  
+
     if (matchedBlocks.length === 1) {
       return makePreviewHtml(matchedBlocks[0].data as any);
     }
-  
+
     const firstBlockHtml = makePreviewHtml(matchedBlocks[0].data as any);
-  
+
     const headMatch = firstBlockHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
     const extractedHead = headMatch ? headMatch[1] : "";
-  
+
     const blockBodies = matchedBlocks
       .map((block) => {
         const html = makePreviewHtml(block.data as any);
@@ -834,7 +833,7 @@ export default function PageDetailPage() {
         return bodyMatch ? bodyMatch[1] : html;
       })
       .join("");
-  
+
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -846,7 +845,7 @@ export default function PageDetailPage() {
               padding: 0;
               background: #ffffff;
             }
-  
+
             .page-preview-stack > * + * {
               margin-top: 24px;
             }
@@ -923,7 +922,7 @@ export default function PageDetailPage() {
   }
 
   async function handleWorkflowAction(
-    action: "submit" | "approve" | "reject" | "publish"
+    action: "submit" | "approve" | "request_changes" | "publish"
   ) {
     try {
       setIsActing(true);
@@ -1078,7 +1077,7 @@ export default function PageDetailPage() {
           ? "This page is awaiting approval."
           : pageStatus === "approved"
             ? "This page has been approved and is ready for publishing."
-            : pageStatus === "rejected"
+            : pageStatus === "changes_requested"
               ? "This page needs further changes before resubmission."
               : pageStatus === "published"
                 ? "This page has been published."
@@ -1131,7 +1130,7 @@ export default function PageDetailPage() {
                 </button>
 
                 {(pageStatus === "draft" ||
-                  pageStatus === "rejected" ||
+                  pageStatus === "changes_requested" ||
                   pageStatus === "in_progress") ? (
                   <button
                     type="button"
@@ -1159,12 +1158,12 @@ export default function PageDetailPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleWorkflowAction("reject")}
+                      onClick={() => handleWorkflowAction("request_changes")}
                       disabled={isActing}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 text-sm font-medium text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <XCircle className="h-4 w-4" />
-                      {isActing ? "Rejecting..." : "Reject"}
+                      {isActing ? "Sending..." : "Request Changes"}
                     </button>
                   </>
                 ) : null}

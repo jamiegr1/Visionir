@@ -85,10 +85,10 @@ function derivePageStatusFromSections(
   const hasAnyBlocks = sections.some((section) => section.blockIds.length > 0);
 
   if (existingStatus === "pending_approval") return "pending_approval";
+  if (existingStatus === "changes_requested") return "changes_requested";
   if (existingStatus === "approved") return "approved";
   if (existingStatus === "published") return "published";
   if (existingStatus === "archived") return "archived";
-  if (existingStatus === "rejected") return "rejected";
 
   if (allRequiredComplete && hasAnyBlocks) {
     return "in_progress";
@@ -152,6 +152,17 @@ export async function createPageFromTemplate(
     status: "draft",
     createdByUserId: input.createdByUserId,
     updatedByUserId: input.updatedByUserId,
+
+    approvedByUserId: null,
+    approvedAt: null,
+    publishedByUserId: null,
+    publishedAt: null,
+
+    changesRequestedByUserId: null,
+    changesRequestedAt: null,
+    changesRequestedNotes: null,
+    changesRequestedSections: null,
+
     createdAt: now,
     updatedAt: now,
     sections: normalisedSections,
@@ -195,6 +206,46 @@ export async function updatePage(
     updatedByUserId: patch.updatedByUserId ?? existing.updatedByUserId,
     updatedAt: patch.updatedAt ?? new Date().toISOString(),
     sections: nextSections,
+
+    approvedByUserId:
+      typeof patch.approvedByUserId !== "undefined"
+        ? patch.approvedByUserId
+        : existing.approvedByUserId ?? null,
+
+    approvedAt:
+      typeof patch.approvedAt !== "undefined"
+        ? patch.approvedAt
+        : existing.approvedAt ?? null,
+
+    publishedByUserId:
+      typeof patch.publishedByUserId !== "undefined"
+        ? patch.publishedByUserId
+        : existing.publishedByUserId ?? null,
+
+    publishedAt:
+      typeof patch.publishedAt !== "undefined"
+        ? patch.publishedAt
+        : existing.publishedAt ?? null,
+
+    changesRequestedByUserId:
+      typeof patch.changesRequestedByUserId !== "undefined"
+        ? patch.changesRequestedByUserId
+        : existing.changesRequestedByUserId ?? null,
+
+    changesRequestedAt:
+      typeof patch.changesRequestedAt !== "undefined"
+        ? patch.changesRequestedAt
+        : existing.changesRequestedAt ?? null,
+
+    changesRequestedNotes:
+      typeof patch.changesRequestedNotes !== "undefined"
+        ? patch.changesRequestedNotes
+        : existing.changesRequestedNotes ?? null,
+
+    changesRequestedSections:
+      typeof patch.changesRequestedSections !== "undefined"
+        ? patch.changesRequestedSections
+        : existing.changesRequestedSections ?? null,
   };
 
   pages[index] = updated;
@@ -227,7 +278,8 @@ export async function attachBlockToPageSection(
     throw new Error("Block not found.");
   }
 
-  const componentType = block.data?.componentType;
+  const componentType = (block.data as { componentType?: unknown } | undefined)
+    ?.componentType;
   const safeComponentType =
     typeof componentType === "string" ? componentType.trim() : "";
 

@@ -75,7 +75,7 @@ type PageStatus =
   | "in_progress"
   | "pending_approval"
   | "approved"
-  | "rejected"
+  | "changes_requested"
   | "published"
   | "archived";
 
@@ -188,8 +188,8 @@ function getBlockStatusLabel(status: string) {
       return "Approved";
     case "published":
       return "Published";
-    case "rejected":
-      return "Changes Requested";
+      case "changes_requested":
+        return "Changes Requested";
     case "deploying":
       return "Deploying";
     case "deployed":
@@ -211,8 +211,8 @@ function getBlockStatusPillClass(status: string) {
     case "pending_approval":
     case "in_review":
       return "bg-amber-50 text-amber-700 ring-amber-100";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-100";
+      case "changes_requested":
+        return "bg-rose-50 text-rose-700 ring-rose-100";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
   }
@@ -226,8 +226,8 @@ function getPageStatusLabel(status: PageStatus) {
       return "Pending Approval";
     case "approved":
       return "Approved";
-    case "rejected":
-      return "Rejected";
+   case "changes_requested":
+  return "Changes Requested";
     case "published":
       return "Published";
     case "archived":
@@ -246,8 +246,8 @@ function getPageStatusPillClass(status: PageStatus) {
       return "bg-violet-50 text-violet-700 ring-violet-100";
     case "approved":
       return "bg-sky-50 text-sky-700 ring-sky-100";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-100";
+    case "changes_requested":
+  return "bg-rose-50 text-rose-700 ring-rose-100";
     case "published":
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
     case "archived":
@@ -672,7 +672,7 @@ export default function DashboardPage() {
     ).length;
 
     const blockPending = visibleBlocks.filter((block) =>
-      ["pending_approval", "in_review"].includes(block.status)
+      ["pending_approval", "in_review", "changes_requested"].includes(block.status)
     ).length;
 
     return {
@@ -706,14 +706,20 @@ export default function DashboardPage() {
       averageScore,
       livePages: pages.filter((page) => page.status === "published").length,
       inProgressPages: pages.filter((page) =>
-        ["draft", "in_progress", "pending_approval", "approved", "rejected"].includes(
+        [
+          "draft",
+          "in_progress",
+          "pending_approval",
+          "approved",
+          "changes_requested",
+        ].includes(
           page.status
         )
       ).length,
       publishedTemplates: templates.filter((t) => t.status === "published").length,
       draftTemplates: templates.filter((t) => t.status === "draft").length,
       liveBlocks,
-      blockedBlocks: blocks.filter((b) => b.status === "rejected").length,
+      blockedBlocks: blocks.filter((b) => b.status === "changes_requested").length,
     };
   }, [blocks, pages, templates, pendingApprovals]);
 
@@ -866,7 +872,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Rejected Blocks</span>
+                    <span>Changes Requested</span>
                       <span className="font-semibold text-slate-900">
                         {totals.blockedBlocks}
                       </span>

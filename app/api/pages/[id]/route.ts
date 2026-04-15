@@ -9,7 +9,7 @@ import {
   canApprovePage,
   canEditPage,
   canPublishPage,
-  canRejectPage,
+  canRequestChangesPage,
   canSubmitPage,
   type Role,
 } from "@/lib/permissions";
@@ -41,6 +41,18 @@ function getUserIdFromBody(body: unknown, fallback = "user-1") {
 
 function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function isValidPageStatus(value: unknown): value is PageStatus {
+  return (
+    value === "draft" ||
+    value === "in_progress" ||
+    value === "pending_approval" ||
+    value === "changes_requested" ||
+    value === "approved" ||
+    value === "published" ||
+    value === "archived"
+  );
 }
 
 export async function GET(
@@ -99,13 +111,15 @@ export async function PATCH(
           action?:
             | "submit"
             | "approve"
-            | "reject"
+            | "request_changes"
             | "publish"
             | "attach_block"
             | "remove_block";
           sectionId?: string;
           blockId?: string;
           updatedByUserId?: string;
+          changesRequestedNotes?: string | null;
+          changesRequestedSections?: string[] | null;
         })
       | null;
 
@@ -207,10 +221,20 @@ export async function PATCH(
         );
       }
 
+      const now = new Date().toISOString();
+
       const updated = await updatePage(id, {
         status: "pending_approval",
         updatedByUserId: user.id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+
+        approvedByUserId: null,
+        approvedAt: null,
+
+        changesRequestedByUserId: null,
+        changesRequestedAt: null,
+        changesRequestedNotes: null,
+        changesRequestedSections: null,
       });
 
       return NextResponse.json({ page: updated });
@@ -224,27 +248,59 @@ export async function PATCH(
         );
       }
 
+      const now = new Date().toISOString();
+
       const updated = await updatePage(id, {
         status: "approved",
         updatedByUserId: user.id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+
+        approvedByUserId: user.id,
+        approvedAt: now,
+
+        changesRequestedByUserId: null,
+        changesRequestedAt: null,
+        changesRequestedNotes: null,
+        changesRequestedSections: null,
       });
 
       return NextResponse.json({ page: updated });
     }
 
-    if (body.action === "reject") {
-      if (!canRejectPage(user, page)) {
+    if (body.action === "request_changes") {
+      if (!canRequestChangesPage(user, page)) {
         return NextResponse.json(
-          { error: "You do not have permission to reject this page." },
+          { error: "You do not have permission to request changes for this page." },
           { status: 403 }
         );
       }
 
+      const now = new Date().toISOString();
+
+      const cleanedSections = Array.isArray(body.changesRequestedSections)
+        ? body.changesRequestedSections
+            .filter((value): value is string => typeof value === "string")
+            .map((value) => value.trim())
+            .filter(Boolean)
+        : null;
+
+      const cleanedNotes =
+        typeof body.changesRequestedNotes === "string"
+          ? body.changesRequestedNotes.trim() || null
+          : null;
+
       const updated = await updatePage(id, {
-        status: "rejected",
+        status: "changes_requested",
         updatedByUserId: user.id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+
+        approvedByUserId: null,
+        approvedAt: null,
+
+        changesRequestedByUserId: user.id,
+        changesRequestedAt: now,
+        changesRequestedNotes: cleanedNotes,
+        changesRequestedSections: cleanedSections,
       });
 
       return NextResponse.json({ page: updated });
@@ -258,10 +314,14 @@ export async function PATCH(
         );
       }
 
+      const now = new Date().toISOString();
+
       const updated = await updatePage(id, {
         status: "published",
         updatedByUserId: user.id,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
+        publishedByUserId: user.id,
+        publishedAt: now,
       });
 
       return NextResponse.json({ page: updated });
@@ -274,8 +334,7 @@ export async function PATCH(
       );
     }
 
-    const nextStatus =
-      typeof body.status === "string" ? (body.status as PageStatus) : undefined;
+    const nextStatus = isValidPageStatus(body.status) ? body.status : undefined;
 
     const updated = await updatePage(id, {
       name: body.name,

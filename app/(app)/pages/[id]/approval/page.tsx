@@ -77,10 +77,10 @@ function getPageStatusLabel(status: PageStatus) {
       return "In Progress";
     case "pending_approval":
       return "Pending Approval";
+    case "changes_requested":
+      return "Changes Requested";
     case "approved":
       return "Approved";
-    case "rejected":
-      return "Rejected";
     case "published":
       return "Published";
     case "archived":
@@ -97,10 +97,10 @@ function getPageStatusPillClass(status: PageStatus) {
       return "bg-blue-50 text-blue-700 ring-blue-200";
     case "pending_approval":
       return "bg-violet-50 text-violet-700 ring-violet-200";
+    case "changes_requested":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
     case "approved":
       return "bg-sky-50 text-sky-700 ring-sky-200";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-200";
     case "published":
       return "bg-emerald-50 text-emerald-700 ring-emerald-200";
     case "archived":
@@ -121,12 +121,12 @@ function getBlockStatusLabel(status: string | undefined) {
       return "In Review";
     case "pending_approval":
       return "Pending Review";
+    case "changes_requested":
+      return "Changes Requested";
     case "approved":
       return "Approved";
     case "published":
       return "Published";
-    case "rejected":
-      return "Changes Requested";
     case "deploying":
       return "Deploying";
     case "deployed":
@@ -147,9 +147,8 @@ function getBlockStatusPillClass(status: string | undefined) {
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
     case "pending_approval":
     case "in_review":
+    case "changes_requested":
       return "bg-amber-50 text-amber-700 ring-amber-100";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-100";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
   }
@@ -454,9 +453,13 @@ function SectionReviewCard({
   ).length;
 
   const flaggedBlocks = matchedBlocks.filter((block) =>
-    ["pending_approval", "in_review", "rejected", "draft", "generating"].includes(
-      block.status || ""
-    )
+    [
+      "pending_approval",
+      "in_review",
+      "changes_requested",
+      "draft",
+      "generating",
+    ].includes(block.status || "")
   ).length;
 
   return (
@@ -572,6 +575,9 @@ export default function PageApprovalPage() {
   const [pageStatus, setPageStatus] = useState<PageStatus>("draft");
   const [allBlocks, setAllBlocks] = useState<ApiBlockRecord[]>([]);
 
+  const [changeRequestNotes, setChangeRequestNotes] = useState("");
+  const [selectedSections, setSelectedSections] = useState<string[]>([]);
+
   useEffect(() => {
     async function loadPage() {
       try {
@@ -591,6 +597,8 @@ export default function PageApprovalPage() {
         const nextPage = json.page as PageRecord;
         setPage(nextPage);
         setPageStatus(nextPage.status || "draft");
+        setChangeRequestNotes(nextPage.changesRequestedNotes ?? "");
+        setSelectedSections(nextPage.changesRequestedSections ?? []);
       } catch (error) {
         console.error("Failed to load page approval:", error);
         setPage(null);
@@ -665,9 +673,13 @@ export default function PageApprovalPage() {
   const pageFlaggedBlocks = useMemo(
     () =>
       attachedBlocks.filter((block) =>
-        ["pending_approval", "in_review", "rejected", "draft", "generating"].includes(
-          block.status || ""
-        )
+        [
+          "pending_approval",
+          "in_review",
+          "changes_requested",
+          "draft",
+          "generating",
+        ].includes(block.status || "")
       ),
     [attachedBlocks]
   );
@@ -723,6 +735,14 @@ export default function PageApprovalPage() {
     `;
   }
 
+  function toggleSection(sectionId: string) {
+    setSelectedSections((prev) =>
+      prev.includes(sectionId)
+        ? prev.filter((id) => id !== sectionId)
+        : [...prev, sectionId]
+    );
+  }
+
   async function refreshPage() {
     const res = await fetch(`/api/pages/${id}?role=${role}`, {
       cache: "no-store",
@@ -734,22 +754,31 @@ export default function PageApprovalPage() {
       const nextPage = json.page as PageRecord;
       setPage(nextPage);
       setPageStatus(nextPage.status || "draft");
+      setChangeRequestNotes(nextPage.changesRequestedNotes ?? "");
+      setSelectedSections(nextPage.changesRequestedSections ?? []);
     }
   }
 
   async function handleWorkflowAction(
-    action: "submit" | "approve" | "reject" | "publish"
+    action: "submit" | "approve" | "request_changes" | "publish"
   ) {
     try {
       setIsActing(true);
 
+      const payload: Record<string, unknown> = {
+        action,
+        updatedByUserId: "user-1",
+      };
+
+      if (action === "request_changes") {
+        payload.changesRequestedNotes = changeRequestNotes.trim();
+        payload.changesRequestedSections = selectedSections;
+      }
+
       const res = await fetch(`/api/pages/${id}?role=${role}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action,
-          updatedByUserId: "user-1",
-        }),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json().catch(() => ({}));
@@ -767,14 +796,16 @@ export default function PageApprovalPage() {
     }
   }
 
-  const canApproveOrReject =
+  const canApproveOrRequestChanges =
     pageStatus === "pending_approval" && (role === "approver" || role === "admin");
 
   const canPublish =
     pageStatus === "approved" && (role === "approver" || role === "admin");
 
   const canSubmit =
-    pageStatus === "draft" || pageStatus === "in_progress" || pageStatus === "rejected";
+    pageStatus === "draft" ||
+    pageStatus === "in_progress" ||
+    pageStatus === "changes_requested";
 
   const workflowSummary =
     pageStatus === "draft"
@@ -785,8 +816,8 @@ export default function PageApprovalPage() {
           ? "This page is awaiting reviewer sign-off before it can move forward."
           : pageStatus === "approved"
             ? "This page has been approved and is ready for publishing."
-            : pageStatus === "rejected"
-              ? "This page has been rejected and requires changes before resubmission."
+            : pageStatus === "changes_requested"
+              ? "This page has requested amendments and requires updates before resubmission."
               : pageStatus === "published"
                 ? "This page has been published."
                 : "This page is archived.";
@@ -836,7 +867,7 @@ export default function PageApprovalPage() {
 
               <p className="mt-2 max-w-[820px] text-sm leading-6 text-slate-500">
                 Review this page against its governed structure, attached blocks,
-                completion state, and workflow readiness before approving or rejecting it.
+                completion state, and workflow readiness before approving or requesting changes.
               </p>
             </div>
 
@@ -854,7 +885,7 @@ export default function PageApprovalPage() {
                   </button>
                 ) : null}
 
-                {canApproveOrReject ? (
+                {canApproveOrRequestChanges ? (
                   <>
                     <button
                       type="button"
@@ -868,12 +899,12 @@ export default function PageApprovalPage() {
 
                     <button
                       type="button"
-                      onClick={() => handleWorkflowAction("reject")}
-                      disabled={isActing}
-                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={() => handleWorkflowAction("request_changes")}
+                      disabled={isActing || !changeRequestNotes.trim()}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 text-sm font-medium text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <XCircle className="h-4 w-4" />
-                      {isActing ? "Rejecting..." : "Reject"}
+                      {isActing ? "Sending..." : "Request Changes"}
                     </button>
                   </>
                 ) : null}
@@ -963,6 +994,69 @@ export default function PageApprovalPage() {
             </Panel>
 
             <Panel
+              title="Reviewer Feedback"
+              subtitle="Provide clear change instructions before sending the page back."
+              icon={<XCircle className="h-5 w-5" />}
+            >
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Change notes
+                  </label>
+                  <textarea
+                    value={changeRequestNotes}
+                    onChange={(e) => setChangeRequestNotes(e.target.value)}
+                    disabled={!canApproveOrRequestChanges && pageStatus !== "changes_requested"}
+                    placeholder="Explain what needs fixing before this page can be approved."
+                    className="min-h-[140px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#cfd8f6] focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Sections needing updates
+                  </label>
+
+                  {sortedSections.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                      No sections available.
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {sortedSections.map((section) => {
+                        const active = selectedSections.includes(section.sectionId);
+
+                        return (
+                          <button
+                            key={section.sectionId}
+                            type="button"
+                            onClick={() => toggleSection(section.sectionId)}
+                            disabled={!canApproveOrRequestChanges && pageStatus !== "changes_requested"}
+                            className={cx(
+                              "rounded-full border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
+                              active
+                                ? "border-amber-200 bg-amber-50 text-amber-700"
+                                : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                            )}
+                          >
+                            {section.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {pageStatus === "changes_requested" && (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    This page currently has requested amendments recorded. The notes
+                    and selected sections above reflect the current reviewer feedback.
+                  </div>
+                )}
+              </div>
+            </Panel>
+
+            <Panel
               title="Metadata"
               subtitle="Core page information."
               icon={<FileText className="h-5 w-5" />}
@@ -980,7 +1074,13 @@ export default function PageApprovalPage() {
               icon={<Sparkles className="h-5 w-5" />}
             >
               <div className="flex flex-wrap gap-2">
-                <Badge tone={completedSections.length === sortedSections.length ? "emerald" : "amber"}>
+                <Badge
+                  tone={
+                    completedSections.length === sortedSections.length
+                      ? "emerald"
+                      : "amber"
+                  }
+                >
                   {completedSections.length === sortedSections.length
                     ? "All sections complete"
                     : "Incomplete sections present"}
@@ -1056,11 +1156,17 @@ export default function PageApprovalPage() {
                 <div className="space-y-5">
                   {sortedSections.map((section, index) => {
                     const previewHtml = buildSectionPreviewHtml(section);
+                    const isFlagged = selectedSections.includes(section.sectionId);
 
                     return (
                       <div
                         key={section.sectionId}
-                        className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
+                        className={cx(
+                          "rounded-[24px] border bg-slate-50 p-4",
+                          isFlagged
+                            ? "border-amber-300 ring-2 ring-amber-100"
+                            : "border-slate-200"
+                        )}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-3">
                           <div className="flex items-center gap-2">
@@ -1078,6 +1184,7 @@ export default function PageApprovalPage() {
                           </div>
 
                           <div className="flex flex-wrap gap-2">
+                            {isFlagged && <Badge tone="amber">Needs changes</Badge>}
                             <Badge tone={section.required ? "emerald" : "slate"}>
                               {section.required ? "Required" : "Optional"}
                             </Badge>

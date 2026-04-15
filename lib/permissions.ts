@@ -9,7 +9,6 @@ export type Permission =
   | "block.view.all"
   | "block.submit"
   | "block.approve"
-  | "block.reject"
   | "block.request_changes"
   | "block.publish"
   | "template.create"
@@ -26,7 +25,7 @@ export type Permission =
   | "page.view.all"
   | "page.submit"
   | "page.approve"
-  | "page.reject"
+  | "page.request_changes"
   | "page.publish"
   | "user.manage"
   | "role.manage"
@@ -38,7 +37,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.edit.own",
     "block.view.own",
     "block.submit",
-    "block.publish",
     "template.view",
     "page.create",
     "page.edit.own",
@@ -53,7 +51,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.view.team",
     "block.submit",
     "block.approve",
-    "block.reject",
     "block.request_changes",
     "block.publish",
     "template.view",
@@ -64,7 +61,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "page.view.team",
     "page.submit",
     "page.approve",
-    "page.reject",
+    "page.request_changes",
     "page.publish",
   ],
   admin: [
@@ -76,7 +73,6 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "block.view.all",
     "block.submit",
     "block.approve",
-    "block.reject",
     "block.request_changes",
     "block.publish",
     "template.create",
@@ -93,7 +89,7 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "page.view.all",
     "page.submit",
     "page.approve",
-    "page.reject",
+    "page.request_changes",
     "page.publish",
     "user.manage",
     "role.manage",
@@ -112,7 +108,6 @@ export type BlockStatus =
   | "changes_requested"
   | "approved"
   | "published"
-  | "rejected"
   | "archived";
 
 export type TemplateStatus = "draft" | "published" | "archived";
@@ -121,9 +116,9 @@ export type PageStatus =
   | "draft"
   | "in_progress"
   | "pending_approval"
+  | "changes_requested"
   | "approved"
   | "published"
-  | "rejected"
   | "archived";
 
 export type UserLike = {
@@ -171,13 +166,6 @@ export function canApproveBlock(user: UserLike, block: BlockLike) {
   );
 }
 
-export function canRejectBlock(user: UserLike, block: BlockLike) {
-  return (
-    hasPermission(user.role, "block.reject") &&
-    (block.status === "pending_approval" || block.status === "in_review")
-  );
-}
-
 export function canRequestChanges(user: UserLike, block: BlockLike) {
   return (
     hasPermission(user.role, "block.request_changes") &&
@@ -204,10 +192,7 @@ export function canEditTemplate(user: UserLike, template: TemplateLike) {
   if (!hasPermission(user.role, "template.edit")) return false;
   if (user.role === "admin") return true;
 
-  return (
-    template.createdByUserId === user.id &&
-    template.status === "draft"
-  );
+  return template.createdByUserId === user.id && template.status === "draft";
 }
 
 export function canPublishTemplate(user: UserLike, template: TemplateLike) {
@@ -237,7 +222,7 @@ export function canEditPage(user: UserLike, page: PageLike) {
   return (
     hasPermission(user.role, "page.edit.own") &&
     page.createdByUserId === user.id &&
-    ["draft", "in_progress", "rejected"].includes(page.status)
+    ["draft", "in_progress", "changes_requested"].includes(page.status)
   );
 }
 
@@ -245,7 +230,7 @@ export function canSubmitPage(user: UserLike, page: PageLike) {
   return (
     hasPermission(user.role, "page.submit") &&
     page.createdByUserId === user.id &&
-    ["draft", "in_progress", "rejected"].includes(page.status)
+    ["draft", "in_progress", "changes_requested"].includes(page.status)
   );
 }
 
@@ -256,9 +241,9 @@ export function canApprovePage(user: UserLike, page: PageLike) {
   );
 }
 
-export function canRejectPage(user: UserLike, page: PageLike) {
+export function canRequestChangesPage(user: UserLike, page: PageLike) {
   return (
-    hasPermission(user.role, "page.reject") &&
+    hasPermission(user.role, "page.request_changes") &&
     page.status === "pending_approval"
   );
 }
@@ -273,6 +258,8 @@ export function canPublishPage(user: UserLike, page: PageLike) {
 export function canAccessApprovals(user: UserLike) {
   return (
     hasPermission(user.role, "block.approve") ||
-    hasPermission(user.role, "page.approve")
+    hasPermission(user.role, "block.request_changes") ||
+    hasPermission(user.role, "page.approve") ||
+    hasPermission(user.role, "page.request_changes")
   );
 }

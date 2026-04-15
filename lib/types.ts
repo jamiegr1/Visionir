@@ -42,27 +42,30 @@ export type BlockStatus =
   | "changes_requested"
   | "approved"
   | "published"
-  | "rejected"
   | "archived";
 
-export type BlockRecord = {
-  id: string;
-  data: BlockData;
-  status: BlockStatus;
-
-  createdByUserId: string;
-  updatedByUserId: string;
-
-  submittedByUserId?: string | null;
-  approvedByUserId?: string | null;
-  rejectedByUserId?: string | null;
-  publishedByUserId?: string | null;
-
-  submittedAt?: string | null;
-  approvedAt?: string | null;
-  rejectedAt?: string | null;
-  publishedAt?: string | null;
-
-  createdAt: string;
-  updatedAt: string;
-};
+  export type BlockRecord = {
+    id: string;
+    data: BlockData;
+    status: BlockStatus;
+  
+    createdByUserId: string;
+    updatedByUserId: string;
+  
+    submittedByUserId?: string | null;
+    approvedByUserId?: string | null;
+    publishedByUserId?: string | null;
+  
+    submittedAt?: string | null;
+    approvedAt?: string | null;
+    publishedAt?: string | null;
+  
+    // ✅ NEW — change request system
+    changesRequestedByUserId?: string | null;
+    changesRequestedAt?: string | null;
+    changesRequestedNotes?: string | null;
+    changesRequestedFields?: string[] | null;
+  
+    createdAt: string;
+    updatedAt: string;
+  };

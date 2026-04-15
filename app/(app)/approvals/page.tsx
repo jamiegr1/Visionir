@@ -7,7 +7,6 @@ import {
   Blocks,
   CheckCircle2,
   Clock3,
-  FileText,
   Filter,
   Search,
   Shield,
@@ -31,7 +30,7 @@ type PageStatus =
   | "in_progress"
   | "pending_approval"
   | "approved"
-  | "rejected"
+  | "changes_requested"
   | "published"
   | "archived";
 
@@ -76,7 +75,11 @@ type PageSummary = {
 
 type ApprovalType = "block" | "page";
 
-type ApprovalStatus = "pending_approval" | "in_review" | "approved" | "rejected";
+type ApprovalStatus =
+  | "pending_approval"
+  | "in_review"
+  | "approved"
+  | "changes_requested";
 
 type ApprovalItem = {
   id: string;
@@ -91,7 +94,13 @@ type ApprovalItem = {
   href: string;
 };
 
-type QueueFilter = "all" | "block" | "page" | "pending" | "approved" | "rejected";
+type QueueFilter =
+  | "all"
+  | "block"
+  | "page"
+  | "pending"
+  | "approved"
+  | "changes_requested";
 
 function formatDate(value: string | null | undefined) {
   if (!value) return "—";
@@ -158,8 +167,8 @@ function getStatusLabel(status: ApprovalStatus) {
       return "In Review";
     case "approved":
       return "Approved";
-    case "rejected":
-      return "Rejected";
+    case "changes_requested":
+      return "Changes Requested";
     default:
       return "Pending Approval";
   }
@@ -169,12 +178,12 @@ function getStatusPillClass(status: ApprovalStatus) {
   switch (status) {
     case "approved":
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
-    case "rejected":
-      return "bg-rose-50 text-rose-700 ring-rose-100";
+    case "changes_requested":
+      return "bg-amber-50 text-amber-700 ring-amber-100";
     case "in_review":
     case "pending_approval":
     default:
-      return "bg-amber-50 text-amber-700 ring-amber-100";
+      return "bg-violet-50 text-violet-700 ring-violet-100";
   }
 }
 
@@ -253,7 +262,7 @@ function QueueRow({
     <button
       type="button"
       onClick={() => router.push(item.href)}
-      className="grid w-full grid-cols-[120px_minmax(0,1.7fr)_180px_140px_120px_140px] gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
+      className="grid w-full grid-cols-[120px_minmax(0,1.7fr)_180px_160px_120px_140px] gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
     >
       <div className="flex items-center">
         <span
@@ -362,7 +371,7 @@ export default function ApprovalsPage() {
 
         const blockItems: ApprovalItem[] = rawBlocks
           .filter((block) =>
-            ["pending_approval", "in_review", "approved", "rejected"].includes(
+            ["pending_approval", "in_review", "approved", "changes_requested"].includes(
               String(block.status || "")
             )
           )
@@ -371,11 +380,13 @@ export default function ApprovalsPage() {
             type: "block",
             name: getBlockName(block.data ?? null, block.id),
             owner: getOwnerName(block),
-            status: (["pending_approval", "in_review", "approved", "rejected"].includes(
-              String(block.status || "")
-            )
-              ? String(block.status)
-              : "pending_approval") as ApprovalStatus,
+            status: (
+              ["pending_approval", "in_review", "approved", "changes_requested"].includes(
+                String(block.status || "")
+              )
+                ? String(block.status)
+                : "pending_approval"
+            ) as ApprovalStatus,
             governanceScore: getGovernanceScore(block.data ?? null),
             updatedAt: block.updatedAt || null,
             createdAt: block.createdAt || null,
@@ -385,16 +396,18 @@ export default function ApprovalsPage() {
 
         const pageItems: ApprovalItem[] = rawPages
           .filter((page) =>
-            ["pending_approval", "approved", "rejected"].includes(page.status)
+            ["pending_approval", "approved", "changes_requested"].includes(page.status)
           )
           .map((page) => ({
             id: page.id,
             type: "page",
             name: page.name,
             owner: page.createdByUserId || "Jamie",
-            status: (page.status === "approved" || page.status === "rejected"
-              ? page.status
-              : "pending_approval") as ApprovalStatus,
+            status: (
+              page.status === "approved" || page.status === "changes_requested"
+                ? page.status
+                : "pending_approval"
+            ) as ApprovalStatus,
             governanceScore: null,
             updatedAt: page.updatedAt || null,
             createdAt: page.createdAt || null,
@@ -448,8 +461,10 @@ export default function ApprovalsPage() {
         return searchedItems.filter((item) => item.type === "page");
       case "approved":
         return searchedItems.filter((item) => item.status === "approved");
-      case "rejected":
-        return searchedItems.filter((item) => item.status === "rejected");
+      case "changes_requested":
+        return searchedItems.filter(
+          (item) => item.status === "changes_requested"
+        );
       case "pending":
         return searchedItems.filter((item) =>
           ["pending_approval", "in_review"].includes(item.status)
@@ -467,7 +482,9 @@ export default function ApprovalsPage() {
       ["pending_approval", "in_review"].includes(item.status)
     ).length;
     const approved = items.filter((item) => item.status === "approved").length;
-    const rejected = items.filter((item) => item.status === "rejected").length;
+    const changesRequested = items.filter(
+      (item) => item.status === "changes_requested"
+    ).length;
 
     return {
       total: items.length,
@@ -475,7 +492,7 @@ export default function ApprovalsPage() {
       pages,
       pending,
       approved,
-      rejected,
+      changesRequested,
     };
   }, [items]);
 
@@ -564,8 +581,8 @@ export default function ApprovalsPage() {
             icon={<CheckCircle2 className="h-5 w-5" />}
           />
           <MetricCard
-            label="Rejected"
-            value={totals.rejected}
+            label="Changes Requested"
+            value={totals.changesRequested}
             tone="rose"
             icon={<XCircle className="h-5 w-5" />}
           />
@@ -600,7 +617,11 @@ export default function ApprovalsPage() {
               <FilterButton active={filter === "block"} label="Blocks" onClick={() => setFilter("block")} />
               <FilterButton active={filter === "page"} label="Pages" onClick={() => setFilter("page")} />
               <FilterButton active={filter === "approved"} label="Approved" onClick={() => setFilter("approved")} />
-              <FilterButton active={filter === "rejected"} label="Rejected" onClick={() => setFilter("rejected")} />
+              <FilterButton
+                active={filter === "changes_requested"}
+                label="Changes Requested"
+                onClick={() => setFilter("changes_requested")}
+              />
             </div>
           </div>
 
@@ -651,7 +672,7 @@ export default function ApprovalsPage() {
           </div>
 
           <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white">
-            <div className="grid grid-cols-[120px_minmax(0,1.7fr)_180px_140px_120px_140px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+            <div className="grid grid-cols-[120px_minmax(0,1.7fr)_180px_160px_120px_140px] gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
               <div>Type</div>
               <div>Item</div>
               <div>Owner</div>
@@ -670,7 +691,9 @@ export default function ApprovalsPage() {
                   <EmptyState text="No approval items match your current filters." />
                 </div>
               ) : (
-                filteredItems.map((item) => <QueueRow key={`${item.type}-${item.id}`} item={item} />)
+                filteredItems.map((item) => (
+                  <QueueRow key={`${item.type}-${item.id}`} item={item} />
+                ))
               )}
             </div>
           </div>

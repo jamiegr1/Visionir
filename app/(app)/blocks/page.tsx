@@ -56,7 +56,7 @@ type FilterStatus =
   | "pending_approval"
   | "approved"
   | "published"
-  | "rejected";
+  | "changes_requested";
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -139,7 +139,7 @@ function getStatusLabel(status: string) {
       return "Approved";
     case "published":
       return "Published";
-    case "rejected":
+    case "changes_requested":
       return "Changes Requested";
     case "deploying":
       return "Deploying";
@@ -162,7 +162,7 @@ function getStatusPillClass(status: string) {
     case "pending_approval":
     case "in_review":
       return "bg-amber-50 text-amber-700 ring-amber-100";
-    case "rejected":
+    case "changes_requested":
       return "bg-rose-50 text-rose-700 ring-rose-100";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
@@ -170,8 +170,8 @@ function getStatusPillClass(status: string) {
 }
 
 function getActionHref(block: LibraryBlock, role: Role) {
-    return `/blocks/${block.id}/details?role=${role}`;
-  }
+  return `/blocks/${block.id}/details?role=${role}`;
+}
 
 function MetricCard({
   label,
@@ -661,11 +661,11 @@ export default function BlocksPage() {
   const [publishedPage, setPublishedPage] = useState(1);
   const [approvalPage, setApprovalPage] = useState(1);
   const [draftPage, setDraftPage] = useState(1);
-  const [rejectedPage, setRejectedPage] = useState(1);
+  const [changesRequestedPage, setChangesRequestedPage] = useState(1);
 
   const PUBLISHED_PER_PAGE = 6;
   const COMPACT_PER_PAGE = 4;
-  const REJECTED_PER_PAGE = 4;
+  const CHANGES_REQUESTED_PER_PAGE = 4;
 
   useEffect(() => {
     async function loadBlocks() {
@@ -747,6 +747,10 @@ export default function BlocksPage() {
         return ["draft", "generating"].includes(block.status);
       }
 
+      if (statusFilter === "changes_requested") {
+        return block.status === "changes_requested";
+      }
+
       return block.status === statusFilter;
     });
   }, [searchedBlocks, statusFilter]);
@@ -775,8 +779,9 @@ export default function BlocksPage() {
     [filteredBlocks]
   );
 
-  const rejectedBlocks = useMemo(
-    () => filteredBlocks.filter((block) => block.status === "rejected"),
+  const changesRequestedBlocks = useMemo(
+    () =>
+      filteredBlocks.filter((block) => block.status === "changes_requested"),
     [filteredBlocks]
   );
 
@@ -784,7 +789,7 @@ export default function BlocksPage() {
     setPublishedPage(1);
     setApprovalPage(1);
     setDraftPage(1);
-    setRejectedPage(1);
+    setChangesRequestedPage(1);
   }, [query, statusFilter, refreshKey]);
 
   const totals = useMemo(() => {
@@ -816,7 +821,9 @@ export default function BlocksPage() {
       live,
       pending,
       drafts,
-      rejected: blocks.filter((b) => b.status === "rejected").length,
+      changesRequested: blocks.filter(
+        (b) => b.status === "changes_requested"
+      ).length,
       averageScore,
     };
   }, [blocks]);
@@ -943,9 +950,9 @@ export default function BlocksPage() {
                 onClick={() => setStatusFilter("draft")}
               />
               <FilterButton
-                active={statusFilter === "rejected"}
-                label="Rejected"
-                onClick={() => setStatusFilter("rejected")}
+                active={statusFilter === "changes_requested"}
+                label="Changes Requested"
+                onClick={() => setStatusFilter("changes_requested")}
               />
             </div>
           </div>
@@ -1034,20 +1041,20 @@ export default function BlocksPage() {
 
         <section className="mt-6 rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
           <SectionHeader
-            title="Rejected / Changes Requested"
+            title="Changes Requested"
             subtitle="Blocks that need updates before they can continue through the workflow."
-            count={rejectedBlocks.length}
+            count={changesRequestedBlocks.length}
             icon={<XCircle className="h-5 w-5 text-rose-500" />}
           />
 
           <CompactBlockSection
-            blocks={rejectedBlocks}
+            blocks={changesRequestedBlocks}
             role={role}
             loading={loading}
-            emptyText="No rejected blocks match your current filters."
-            page={rejectedPage}
-            onPageChange={setRejectedPage}
-            perPage={REJECTED_PER_PAGE}
+            emptyText="No blocks with requested changes match your current filters."
+            page={changesRequestedPage}
+            onPageChange={setChangesRequestedPage}
+            perPage={CHANGES_REQUESTED_PER_PAGE}
           />
         </section>
       </div>

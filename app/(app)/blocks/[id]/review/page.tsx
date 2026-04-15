@@ -21,6 +21,28 @@ function createTimeLabel() {
   });
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function getUserLabel(userId?: string | null) {
+  if (!userId) return "—";
+  if (userId === "user-1") return "Jamie";
+  if (userId === "user-2") return "Approver";
+  return userId;
+}
+
 function cloneBlockData(data: BlockData): BlockData {
   return JSON.parse(JSON.stringify(data));
 }
@@ -105,6 +127,16 @@ type HistorySnapshot = {
 
 type EditMode = "standard" | "page_builder";
 
+type ApiBlockRecord = {
+  id: string;
+  status?: string;
+  data?: BlockData | null;
+  changesRequestedByUserId?: string | null;
+  changesRequestedAt?: string | null;
+  changesRequestedNotes?: string | null;
+  changesRequestedFields?: string[] | null;
+};
+
 export default function BlockReviewPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -123,7 +155,10 @@ export default function BlockReviewPage() {
       : "standard";
   }, [searchParams]);
 
-  const returnTo = useMemo(() => searchParams.get("returnTo") || "", [searchParams]);
+  const returnTo = useMemo(
+    () => searchParams.get("returnTo") || "",
+    [searchParams]
+  );
 
   const isPageBuilderEdit = editMode === "page_builder" || Boolean(returnTo);
 
@@ -136,6 +171,7 @@ export default function BlockReviewPage() {
   const [aiImprovedFields, setAiImprovedFields] = useState<Record<string, boolean>>(
     {}
   );
+  const [blockRecord, setBlockRecord] = useState<ApiBlockRecord | null>(null);
 
   const [undoStack, setUndoStack] = useState<HistorySnapshot[]>([]);
   const [redoStack, setRedoStack] = useState<HistorySnapshot[]>([]);
@@ -157,12 +193,15 @@ export default function BlockReviewPage() {
 
         if (!res.ok || !json?.block?.data) {
           setEditable(null);
+          setBlockRecord(null);
           return;
         }
 
-        const loaded = json.block.data as BlockData;
-        const currentStatus = String(json?.block?.status || "");
+        const loadedBlock = json.block as ApiBlockRecord;
+        const loaded = loadedBlock.data as BlockData;
+        const currentStatus = String(loadedBlock?.status || "");
 
+        setBlockRecord(loadedBlock);
         setEditable(loaded);
         setAiImprovedFields({});
         previousEditableRef.current = cloneBlockData(loaded);
@@ -170,11 +209,15 @@ export default function BlockReviewPage() {
         setUndoStack([]);
         setRedoStack([]);
         setPendingPatchExists(currentStatus === "pending_approval");
-        setRequiresApproval(currentStatus === "pending_approval");
+        setRequiresApproval(
+          currentStatus === "pending_approval" ||
+            currentStatus === "changes_requested"
+        );
         isInitialisingRef.current = true;
       } catch (error) {
         console.error("Failed to load review page:", error);
         setEditable(null);
+        setBlockRecord(null);
       } finally {
         setLoading(false);
       }
@@ -314,6 +357,21 @@ export default function BlockReviewPage() {
     return evaluateBlockGovernance(editable);
   }, [editable]);
 
+  const changesRequestedInfo = useMemo(() => {
+    if (!blockRecord || blockRecord.status !== "changes_requested") {
+      return null;
+    }
+
+    return {
+      requestedBy: getUserLabel(blockRecord.changesRequestedByUserId),
+      requestedAt: formatDateTime(blockRecord.changesRequestedAt),
+      notes: blockRecord.changesRequestedNotes ?? "",
+      fields: Array.isArray(blockRecord.changesRequestedFields)
+        ? blockRecord.changesRequestedFields
+        : [],
+    };
+  }, [blockRecord]);
+
   async function saveBlock(nextStatus?: string) {
     if (!editable) return;
 
@@ -334,8 +392,16 @@ export default function BlockReviewPage() {
       throw new Error(json?.error || "Failed to save block");
     }
 
-    if (json?.block?.status) {
-      setPendingPatchExists(json.block.status === "pending_approval");
+    if (json?.block) {
+      const nextBlock = json.block as ApiBlockRecord;
+      const nextApiStatus = String(nextBlock.status || "");
+
+      setBlockRecord(nextBlock);
+      setPendingPatchExists(nextApiStatus === "pending_approval");
+      setRequiresApproval(
+        nextApiStatus === "pending_approval" ||
+          nextApiStatus === "changes_requested"
+      );
     }
   }
 
@@ -504,6 +570,15 @@ export default function BlockReviewPage() {
     }
   }
 
+  function handleBack() {
+    if (returnTo) {
+      router.push(returnTo);
+      return;
+    }
+
+    router.push(`/blocks/${id}/details?role=${role}`);
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] text-slate-500">
@@ -522,55 +597,38 @@ export default function BlockReviewPage() {
 
   return (
     <ReviewEdit
-    editable={editable}
-    setEditable={setEditable}
-    previewDoc={previewDoc}
-    describe={describe}
-    setDescribe={setDescribe}
-    improveField={improveField}
-    requestDescribeChanges={requestDescribeChanges}
-    pendingPatchExists={pendingPatchExists}
-    governance={governance}
-  
-    // MODE
-    mode={isPageBuilderEdit ? "page_builder" : "standard"}
-  
-    // BACK BUTTON (only in page builder)
-    onBack={
-      isPageBuilderEdit && returnTo
-        ? () => router.push(returnTo)
-        : undefined
-    }
-    backLabel="Back to Page"
-  
-    // PRIMARY ACTION (this is the key change)
-    onPrimaryAction={
-      isPageBuilderEdit ? handlePrimaryPageBuilderAction : undefined
-    }
-    primaryActionLabel={
-      requiresApproval ? "Submit for Approval" : "Use This Block"
-    }
-    primaryActionDisabled={pendingPatchExists}
-  
-    // STANDARD FLOW (unchanged)
-    onSaveDraft={isPageBuilderEdit ? undefined : handleSaveDraft}
-    onSubmitApproval={!isPageBuilderEdit ? handleSubmitApproval : undefined}
-  
-    // HISTORY
-    onUndo={handleUndo}
-    onRedo={handleRedo}
-    canUndo={undoStack.length > 0}
-    canRedo={redoStack.length > 0}
-  
-    // AI STATE
-    aiImprovedFields={aiImprovedFields}
-    onResetAiImproved={handleResetAiImproved}
-  
-    // UI
-    changeLog={changeLog}
-    canEdit={!pendingPatchExists}
-    canSubmit={!pendingPatchExists}
-    canPublish={false}
-  />
+      editable={editable}
+      setEditable={setEditable}
+      previewDoc={previewDoc}
+      describe={describe}
+      setDescribe={setDescribe}
+      improveField={improveField}
+      requestDescribeChanges={requestDescribeChanges}
+      pendingPatchExists={pendingPatchExists}
+      governance={governance}
+      mode={isPageBuilderEdit ? "page_builder" : "standard"}
+      onBack={handleBack}
+      backLabel={returnTo ? "Back to Page" : "Back to Block Detail"}
+      onPrimaryAction={
+        isPageBuilderEdit ? handlePrimaryPageBuilderAction : undefined
+      }
+      primaryActionLabel={
+        requiresApproval ? "Submit for Approval" : "Use This Block"
+      }
+      primaryActionDisabled={pendingPatchExists}
+      onSaveDraft={isPageBuilderEdit ? undefined : handleSaveDraft}
+      onSubmitApproval={!isPageBuilderEdit ? handleSubmitApproval : undefined}
+      onUndo={handleUndo}
+      onRedo={handleRedo}
+      canUndo={undoStack.length > 0}
+      canRedo={redoStack.length > 0}
+      aiImprovedFields={aiImprovedFields}
+      onResetAiImproved={handleResetAiImproved}
+      changeLog={changeLog}
+      canEdit={!pendingPatchExists}
+      canSubmit={!pendingPatchExists}
+      canPublish={false}
+      changesRequestedInfo={changesRequestedInfo}
+    />
   );
 }

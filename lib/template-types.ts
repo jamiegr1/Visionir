@@ -87,8 +87,8 @@ export type PageStatus =
   | "draft"
   | "in_progress"
   | "pending_approval"
+  | "changes_requested"
   | "approved"
-  | "rejected"
   | "published"
   | "archived";
 
@@ -117,6 +117,17 @@ export type PageRecord = {
   status: PageStatus;
   createdByUserId: string;
   updatedByUserId: string;
+
+  approvedByUserId?: string | null;
+  approvedAt?: string | null;
+  publishedByUserId?: string | null;
+  publishedAt?: string | null;
+
+  changesRequestedByUserId?: string | null;
+  changesRequestedAt?: string | null;
+  changesRequestedNotes?: string | null;
+  changesRequestedSections?: string[] | null;
+
   createdAt: string;
   updatedAt: string;
   sections: PageTemplateSectionInstance[];
@@ -165,6 +176,16 @@ export type UpdatePageInput = Partial<{
   updatedByUserId: string;
   updatedAt: string;
   sections: PageTemplateSectionInstance[];
+
+  approvedByUserId: string | null;
+  approvedAt: string | null;
+  publishedByUserId: string | null;
+  publishedAt: string | null;
+
+  changesRequestedByUserId: string | null;
+  changesRequestedAt: string | null;
+  changesRequestedNotes: string | null;
+  changesRequestedSections: string[] | null;
 }>;
 
 export type TemplateSummary = Pick<

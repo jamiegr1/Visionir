@@ -12,7 +12,7 @@ import {
 
 type ViewportMode = "mobile" | "tablet" | "desktop";
 
-type CheckState = "pending" | "running" | "approved" | "waiting" | "rejected";
+type CheckState = "pending" | "running" | "approved" | "waiting";
 
 type GovernanceCheck = {
   id: string;
@@ -20,6 +20,14 @@ type GovernanceCheck = {
   helper: string;
   state: CheckState;
 };
+
+const BLOCK_FIELD_OPTIONS = [
+  { key: "eyebrow", label: "Eyebrow" },
+  { key: "headline", label: "Headline" },
+  { key: "subheading", label: "Subheading" },
+  { key: "valuePoints", label: "Value Points" },
+  { key: "design", label: "Design" },
+] as const;
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -34,7 +42,7 @@ function StatusPill({
   tone,
 }: {
   children: React.ReactNode;
-  tone: "blue" | "green" | "orange" | "red" | "slate";
+  tone: "blue" | "green" | "orange" | "slate";
 }) {
   return (
     <span
@@ -43,7 +51,6 @@ function StatusPill({
         tone === "blue" && "bg-[#eef3ff] text-[#4f6fff]",
         tone === "green" && "bg-emerald-50 text-emerald-700",
         tone === "orange" && "bg-amber-50 text-amber-700",
-        tone === "red" && "bg-rose-50 text-rose-700",
         tone === "slate" && "bg-slate-100 text-slate-600"
       )}
     >
@@ -103,22 +110,6 @@ function CheckIcon({ state }: { state: CheckState }) {
     );
   }
 
-  if (state === "rejected") {
-    return (
-      <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
-        <svg
-          className="h-4.5 w-4.5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.2"
-        >
-          <path d="M8 8l8 8M16 8l-8 8" />
-        </svg>
-      </span>
-    );
-  }
-
   return (
     <span className="flex h-9 w-9 items-center justify-center rounded-2xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
       <span className="h-2 w-2 rounded-full bg-slate-300" />
@@ -135,9 +126,6 @@ function CheckStatusLabel({ state }: { state: CheckState }) {
   }
   if (state === "waiting") {
     return <StatusPill tone="orange">Awaiting internal review</StatusPill>;
-  }
-  if (state === "rejected") {
-    return <StatusPill tone="red">Rejected</StatusPill>;
   }
   return <StatusPill tone="slate">Pending</StatusPill>;
 }
@@ -192,7 +180,6 @@ function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
     value === "changes_requested" ||
     value === "approved" ||
     value === "published" ||
-    value === "rejected" ||
     value === "archived"
   ) {
     return value;
@@ -226,9 +213,11 @@ export default function BlockApprovalPage() {
   const [status, setStatus] = useState<BlockStatus>("draft");
   const [, setCreatedByUserId] = useState("user-1");
   const [isApproving, setIsApproving] = useState(false);
-  const [isRejecting, setIsRejecting] = useState(false);
+  const [isRequestingChanges, setIsRequestingChanges] = useState(false);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [pipelineStarted, setPipelineStarted] = useState(false);
+  const [changeRequestNotes, setChangeRequestNotes] = useState("");
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
   const [checks, setChecks] = useState<GovernanceCheck[]>([
     {
@@ -303,6 +292,9 @@ export default function BlockApprovalPage() {
         setEditable(resolvedData);
         setStatus(mapApiStatusToBlockStatus(blockPayload.status));
         setCreatedByUserId(blockPayload.createdByUserId ?? "user-1");
+        setChangeRequestNotes(blockPayload.changesRequestedNotes ?? "");
+        setSelectedFields(blockPayload.changesRequestedFields ?? []);
+        setPipelineStarted(false);
       } catch (error) {
         console.error("Failed to load approval page:", error);
         setEditable(null);
@@ -336,11 +328,11 @@ export default function BlockApprovalPage() {
       return;
     }
 
-    if (status === "rejected") {
+    if (status === "changes_requested") {
       setChecks((prev) =>
         prev.map((item, index) => ({
           ...item,
-          state: index === prev.length - 1 ? "rejected" : "approved",
+          state: index === prev.length - 1 ? "waiting" : "approved",
         }))
       );
       setPipelineStarted(true);
@@ -436,11 +428,25 @@ export default function BlockApprovalPage() {
     });
   }, [editable]);
 
-  async function updateStatus(nextStatus: BlockStatus) {
+  function toggleField(fieldKey: string) {
+    setSelectedFields((prev) =>
+      prev.includes(fieldKey)
+        ? prev.filter((key) => key !== fieldKey)
+        : [...prev, fieldKey]
+    );
+  }
+
+  async function updateStatus(
+    nextStatus: BlockStatus,
+    extra?: Record<string, unknown>
+  ) {
     const res = await fetch(`/api/blocks/${id}?role=${role}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: nextStatus }),
+      body: JSON.stringify({
+        status: nextStatus,
+        ...extra,
+      }),
     });
 
     const json = await res.json().catch(() => ({}));
@@ -450,6 +456,8 @@ export default function BlockApprovalPage() {
     }
 
     setStatus(nextStatus);
+    setChangeRequestNotes(json?.block?.changesRequestedNotes ?? changeRequestNotes);
+    setSelectedFields(json?.block?.changesRequestedFields ?? selectedFields);
   }
 
   async function handleApprove() {
@@ -472,15 +480,18 @@ export default function BlockApprovalPage() {
     }
   }
 
-  async function handleReject() {
+  async function handleRequestChanges() {
     try {
-      setIsRejecting(true);
-      await updateStatus("rejected");
+      setIsRequestingChanges(true);
+      await updateStatus("changes_requested", {
+        changesRequestedNotes: changeRequestNotes.trim(),
+        changesRequestedFields: selectedFields,
+      });
 
       setChecks((prev) =>
         prev.map((item, index) => ({
           ...item,
-          state: index === prev.length - 1 ? "rejected" : "approved",
+          state: index === prev.length - 1 ? "waiting" : "approved",
         }))
       );
 
@@ -488,10 +499,10 @@ export default function BlockApprovalPage() {
         router.push(`/approvals?role=${role}`);
       }, 500);
     } catch (error) {
-      console.error("Reject failed:", error);
-      alert("Failed to reject block");
+      console.error("Request changes failed:", error);
+      alert("Failed to request changes");
     } finally {
-      setIsRejecting(false);
+      setIsRequestingChanges(false);
     }
   }
 
@@ -506,8 +517,8 @@ export default function BlockApprovalPage() {
       ? "Approved"
       : status === "published"
         ? "Published"
-        : status === "rejected"
-          ? "Rejected"
+        : status === "changes_requested"
+          ? "Changes Requested"
           : checks[5]?.state === "waiting"
             ? "Awaiting Internal Review"
             : "AI Checks Running";
@@ -515,8 +526,8 @@ export default function BlockApprovalPage() {
   const statusColorClass =
     status === "approved" || status === "published"
       ? "text-emerald-600"
-      : status === "rejected"
-        ? "text-rose-600"
+      : status === "changes_requested"
+        ? "text-amber-600"
         : checks[5]?.state === "waiting"
           ? "text-amber-600"
           : "text-[#4f6fff]";
@@ -542,10 +553,13 @@ export default function BlockApprovalPage() {
 
   const userCanReviewByRole =
     hasPermission(currentUser.role, "block.approve") ||
-    hasPermission(currentUser.role, "block.reject");
+    hasPermission(currentUser.role, "block.request_changes");
 
   const userCanApprove = hasPermission(currentUser.role, "block.approve");
-  const userCanReject = hasPermission(currentUser.role, "block.reject");
+  const userCanRequestChanges = hasPermission(
+    currentUser.role,
+    "block.request_changes"
+  );
 
   if (loading) {
     return (
@@ -634,6 +648,60 @@ export default function BlockApprovalPage() {
                     ))}
                   </div>
 
+                  <div className="mt-5 rounded-[20px] border border-slate-200 bg-slate-50 p-3.5">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                      Reviewer Feedback
+                    </p>
+
+                    <div className="mt-3">
+                      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Change notes
+                      </label>
+                      <textarea
+                        value={changeRequestNotes}
+                        onChange={(e) => setChangeRequestNotes(e.target.value)}
+                        disabled={!userCanRequestChanges}
+                        placeholder="Explain what needs improving before this block can be approved."
+                        className="min-h-[120px] w-full resize-none rounded-2xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff] disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                    </div>
+
+                    <div className="mt-4">
+                      <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                        Areas needing changes
+                      </label>
+
+                      <div className="flex flex-wrap gap-2">
+                        {BLOCK_FIELD_OPTIONS.map((field) => {
+                          const active = selectedFields.includes(field.key);
+
+                          return (
+                            <button
+                              key={field.key}
+                              type="button"
+                              onClick={() => toggleField(field.key)}
+                              disabled={!userCanRequestChanges}
+                              className={cx(
+                                "rounded-full border px-3 py-2 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
+                                active
+                                  ? "border-amber-200 bg-amber-50 text-amber-700"
+                                  : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                              )}
+                            >
+                              {field.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {status === "changes_requested" && (
+                      <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        This block currently has requested amendments recorded.
+                      </div>
+                    )}
+                  </div>
+
                   {userCanReviewByRole && (
                     <div className="mt-4 flex gap-2.5">
                       {userCanApprove && (
@@ -647,14 +715,18 @@ export default function BlockApprovalPage() {
                         </button>
                       )}
 
-                      {userCanReject && (
+                      {userCanRequestChanges && (
                         <button
                           type="button"
-                          onClick={handleReject}
-                          disabled={!manualReviewReady || isRejecting}
+                          onClick={handleRequestChanges}
+                          disabled={
+                            !manualReviewReady ||
+                            isRequestingChanges ||
+                            !changeRequestNotes.trim()
+                          }
                           className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-100 px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isRejecting ? "Rejecting..." : "Reject"}
+                          {isRequestingChanges ? "Sending..." : "Request Changes"}
                         </button>
                       )}
                     </div>
@@ -662,7 +734,7 @@ export default function BlockApprovalPage() {
 
                   {!userCanReviewByRole && (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      Your role can view this approval workflow, but cannot approve or reject this block.
+                      Your role can view this approval workflow, but cannot approve or request changes for this block.
                     </div>
                   )}
                 </div>
@@ -793,6 +865,12 @@ export default function BlockApprovalPage() {
                   </div>
                 </div>
               </div>
+
+              {selectedFields.length > 0 && (
+                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Requested updates: {selectedFields.join(", ")}
+                </div>
+              )}
             </div>
           </div>
 
@@ -813,14 +891,18 @@ export default function BlockApprovalPage() {
 
               {userCanReviewByRole && (
                 <div className="flex items-center gap-3">
-                  {userCanReject && (
+                  {userCanRequestChanges && (
                     <button
                       type="button"
-                      onClick={handleReject}
-                      disabled={!manualReviewReady || isRejecting}
+                      onClick={handleRequestChanges}
+                      disabled={
+                        !manualReviewReady ||
+                        isRequestingChanges ||
+                        !changeRequestNotes.trim()
+                      }
                       className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isRejecting ? "Rejecting..." : "Reject"}
+                      {isRequestingChanges ? "Sending..." : "Request Changes"}
                     </button>
                   )}
 

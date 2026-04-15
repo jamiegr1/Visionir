@@ -5,7 +5,6 @@ import {
   canApproveBlock,
   canEditBlock,
   canPublishBlock,
-  canRejectBlock,
   canRequestChanges,
 } from "@/lib/permissions";
 import type { BlockData, BlockStatus } from "@/lib/types";
@@ -15,6 +14,8 @@ type PatchBody = {
   status?: BlockStatus;
   editMode?: "standard" | "page_builder";
   requiresApproval?: boolean;
+  changesRequestedNotes?: string;
+  changesRequestedFields?: string[];
 };
 
 function resolveNextStatus(params: {
@@ -45,18 +46,26 @@ function resolveNextStatus(params: {
       return "pending_approval";
     }
 
-    if (
-      existingStatus === "approved" ||
-      existingStatus === "published"
-    ) {
+    if (existingStatus === "approved" || existingStatus === "published") {
       return "approved";
     }
 
-    return existingStatus === "pending_approval" ? "draft" : existingStatus;
+    if (
+      existingStatus === "pending_approval" ||
+      existingStatus === "changes_requested"
+    ) {
+      return "draft";
+    }
+
+    return existingStatus;
   }
 
   if (requiresApproval) {
     return "pending_approval";
+  }
+
+  if (existingStatus === "changes_requested") {
+    return "draft";
   }
 
   return existingStatus;
@@ -119,8 +128,6 @@ export async function PATCH(
     allowed = canEditBlock(currentUser, existing);
   } else if (nextStatus === "approved") {
     allowed = canApproveBlock(currentUser, existing);
-  } else if (nextStatus === "rejected") {
-    allowed = canRejectBlock(currentUser, existing);
   } else if (nextStatus === "changes_requested") {
     allowed = canRequestChanges(currentUser, existing);
   } else if (nextStatus === "published") {
@@ -146,9 +153,6 @@ export async function PATCH(
         ? existing.approvedByUserId ?? currentUser.id
         : existing.approvedByUserId,
 
-    rejectedByUserId:
-      nextStatus === "rejected" ? currentUser.id : existing.rejectedByUserId,
-
     publishedByUserId:
       nextStatus === "published" ? currentUser.id : existing.publishedByUserId,
 
@@ -157,9 +161,41 @@ export async function PATCH(
         ? existing.approvedAt ?? now
         : existing.approvedAt,
 
-    rejectedAt: nextStatus === "rejected" ? now : existing.rejectedAt,
-
     publishedAt: nextStatus === "published" ? now : existing.publishedAt,
+
+    changesRequestedByUserId:
+      nextStatus === "changes_requested"
+        ? currentUser.id
+        : nextStatus === "approved"
+          ? null
+          : existing.changesRequestedByUserId ?? null,
+
+    changesRequestedAt:
+      nextStatus === "changes_requested"
+        ? now
+        : nextStatus === "approved"
+          ? null
+          : existing.changesRequestedAt ?? null,
+
+    changesRequestedNotes:
+      nextStatus === "changes_requested"
+        ? body.changesRequestedNotes?.trim() || null
+        : nextStatus === "approved"
+          ? null
+          : typeof body.changesRequestedNotes !== "undefined"
+            ? body.changesRequestedNotes?.trim() || null
+            : existing.changesRequestedNotes ?? null,
+
+    changesRequestedFields:
+      nextStatus === "changes_requested"
+        ? Array.isArray(body.changesRequestedFields)
+          ? body.changesRequestedFields
+          : []
+        : nextStatus === "approved"
+          ? null
+          : Array.isArray(body.changesRequestedFields)
+            ? body.changesRequestedFields
+            : existing.changesRequestedFields ?? null,
   });
 
   if (!updated) {

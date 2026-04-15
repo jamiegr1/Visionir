@@ -2,6 +2,19 @@ import { NextResponse } from "next/server";
 import { createBlock, listBlocks } from "@/lib/storage";
 import { getMockCurrentUser } from "@/lib/current-user";
 import { hasPermission } from "@/lib/permissions";
+import type { BlockStatus } from "@/lib/types";
+
+function isValidBlockStatus(value: unknown): value is BlockStatus {
+  return (
+    value === "draft" ||
+    value === "pending_approval" ||
+    value === "in_review" ||
+    value === "changes_requested" ||
+    value === "approved" ||
+    value === "published" ||
+    value === "archived"
+  );
+}
 
 export async function GET(req: Request) {
   try {
@@ -42,7 +55,11 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const data = body?.data;
-    const status = body?.status ?? "draft";
+
+    const requestedStatus = body?.status;
+    const status: BlockStatus = isValidBlockStatus(requestedStatus)
+      ? requestedStatus
+      : "draft";
 
     if (!data) {
       return NextResponse.json(
@@ -59,12 +76,16 @@ export async function POST(req: Request) {
       updatedByUserId: currentUser.id,
       submittedByUserId: null,
       approvedByUserId: null,
-      rejectedByUserId: null,
       publishedByUserId: null,
       submittedAt: null,
       approvedAt: null,
-      rejectedAt: null,
       publishedAt: null,
+
+      changesRequestedByUserId: null,
+      changesRequestedAt: null,
+      changesRequestedNotes: null,
+      changesRequestedFields: null,
+
       createdAt: now,
       updatedAt: now,
     });

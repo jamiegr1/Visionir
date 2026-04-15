@@ -123,7 +123,14 @@
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-16T16:31:01.185Z",
-    "updatedAt": "2026-03-16T16:31:01.185Z"
+    "updatedAt": "2026-04-15T19:03:26.381Z",
+    "changesRequestedByUserId": "user-1",
+    "changesRequestedAt": "2026-04-15T13:12:22.596Z",
+    "changesRequestedNotes": "Change the title to why choose agri food, remove the last bullet point.",
+    "changesRequestedFields": [
+      "headline",
+      "valuePoints"
+    ]
   },
   {
     "id": "431a8c3f-fed7-4aaa-8079-803db024388d",
@@ -552,7 +559,7 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "changes_requested",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
@@ -564,7 +571,13 @@
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-17T08:23:51.977Z",
-    "updatedAt": "2026-03-17T08:23:51.977Z"
+    "updatedAt": "2026-04-15T12:25:48.755Z",
+    "changesRequestedByUserId": "user-1",
+    "changesRequestedAt": "2026-04-15T12:25:48.755Z",
+    "changesRequestedNotes": "Change the headline to this \"hjeadoing fgtewa\" and add an extra bullet point.",
+    "changesRequestedFields": [
+      "headline"
+    ]
   },
   {
     "id": "cafde310-9940-48bd-abf4-ffb1467c0fdc",
@@ -867,19 +880,23 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
-    "approvedByUserId": null,
+    "approvedByUserId": "user-1",
     "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:57:03.808Z",
-    "approvedAt": null,
+    "approvedAt": "2026-04-15T19:03:13.741Z",
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-17T08:57:03.808Z",
-    "updatedAt": "2026-03-17T08:57:03.808Z"
+    "updatedAt": "2026-04-15T19:03:13.741Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null
   },
   {
     "id": "c4dbb905-46b6-448f-846a-7ef3a2b7f8e3",

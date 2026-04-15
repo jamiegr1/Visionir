@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
+  AlertCircle,
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
@@ -13,8 +14,10 @@ import {
   Eye,
   FileText,
   LayoutTemplate,
+  ListChecks,
   Monitor,
   PenSquare,
+  RefreshCw,
   Shield,
   Smartphone,
   Sparkles,
@@ -39,12 +42,14 @@ type ApiBlockRecord = {
   updatedByUserId?: string | null;
   submittedByUserId?: string | null;
   approvedByUserId?: string | null;
-  rejectedByUserId?: string | null;
   publishedByUserId?: string | null;
   submittedAt?: string | null;
   approvedAt?: string | null;
-  rejectedAt?: string | null;
   publishedAt?: string | null;
+  changesRequestedByUserId?: string | null;
+  changesRequestedAt?: string | null;
+  changesRequestedNotes?: string | null;
+  changesRequestedFields?: string[] | null;
   data?: BlockData | null;
 };
 
@@ -103,7 +108,7 @@ function getStatusLabel(status: string) {
       return "Approved";
     case "published":
       return "Published";
-    case "rejected":
+    case "changes_requested":
       return "Changes Requested";
     case "deploying":
       return "Deploying";
@@ -126,7 +131,7 @@ function getStatusPillClass(status: string) {
     case "pending_approval":
     case "in_review":
       return "bg-amber-50 text-amber-700 ring-amber-200";
-    case "rejected":
+    case "changes_requested":
       return "bg-rose-50 text-rose-700 ring-rose-200";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
@@ -168,6 +173,16 @@ function getUserLabel(userId?: string | null) {
   if (userId === "user-1") return "Jamie";
   if (userId === "user-2") return "Approver";
   return userId;
+}
+
+function formatFieldLabel(field: string) {
+  return field
+    .replace(/\./g, " / ")
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 function Panel({
@@ -591,6 +606,7 @@ export default function BlockDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isResubmitting, setIsResubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [block, setBlock] = useState<ApiBlockRecord | null>(null);
@@ -634,6 +650,21 @@ export default function BlockDetailPage() {
     if (!data) return null;
     return evaluateBlockGovernance(data);
   }, [data]);
+
+  const requestedFields = useMemo(() => {
+    if (!Array.isArray(block?.changesRequestedFields)) return [];
+    return block.changesRequestedFields.filter(
+      (value): value is string => typeof value === "string" && value.trim().length > 0
+    );
+  }, [block?.changesRequestedFields]);
+
+  const changesRequestedNotes =
+    typeof block?.changesRequestedNotes === "string" &&
+    block.changesRequestedNotes.trim()
+      ? block.changesRequestedNotes.trim()
+      : "";
+
+  const hasChangesRequested = status === "changes_requested";
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
@@ -776,6 +807,39 @@ export default function BlockDetailPage() {
     }
   }
 
+  async function handleResubmitForApproval() {
+    try {
+      setIsResubmitting(true);
+
+      const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "pending_approval",
+        }),
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok || !json?.block) {
+        throw new Error(json?.error || "Failed to resubmit block");
+      }
+
+      router.push(
+        withReturnTo(`/blocks/${id}/approval?role=${role}&refresh=${Date.now()}`)
+      );
+    } catch (error) {
+      console.error("Failed to resubmit block:", error);
+      alert(
+        error instanceof Error ? error.message : "Failed to resubmit block"
+      );
+    } finally {
+      setIsResubmitting(false);
+    }
+  }
+
   function handleBack() {
     if (returnTo) {
       router.push(returnTo);
@@ -805,7 +869,7 @@ export default function BlockDetailPage() {
       case "completed":
         router.push(withReturnTo(`/blocks/${id}/deploy/embed?role=${role}`));
         break;
-      case "rejected":
+      case "changes_requested":
       case "draft":
       case "generating":
       default:
@@ -825,7 +889,7 @@ export default function BlockDetailPage() {
       case "deployed":
       case "completed":
         return "Open Embed & Reuse";
-      case "rejected":
+      case "changes_requested":
         return "Address Changes";
       case "draft":
       case "generating":
@@ -944,6 +1008,129 @@ export default function BlockDetailPage() {
           </div>
         </section>
 
+        {hasChangesRequested ? (
+          <section className="mt-6 rounded-[30px] border border-rose-200 bg-[linear-gradient(180deg,#fff7f8_0%,#fff1f2_100%)] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)] lg:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600">
+                    <AlertCircle className="h-5 w-5" />
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-rose-600">
+                      Changes Requested
+                    </p>
+                    <h2 className="mt-1 text-[24px] font-semibold tracking-[-0.04em] text-slate-900">
+                      This block needs updates before it can move forward.
+                    </h2>
+                    <p className="mt-2 max-w-[900px] text-sm leading-7 text-slate-600">
+                      Review the requested changes below, update the block, and
+                      resubmit it for approval once the feedback has been
+                      addressed.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-[22px] border border-rose-200 bg-white px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Requested By
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">
+                      {getUserLabel(block.changesRequestedByUserId)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-rose-200 bg-white px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Requested At
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">
+                      {formatDateTime(block.changesRequestedAt)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[22px] border border-rose-200 bg-white px-4 py-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Fields Marked
+                    </p>
+                    <p className="mt-2 text-sm font-medium text-slate-900">
+                      {requestedFields.length > 0 ? String(requestedFields.length) : "General review"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex w-full max-w-[420px] flex-col gap-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    router.push(withReturnTo(`/blocks/${id}/review?role=${role}`))
+                  }
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+                >
+                  <PenSquare className="h-4 w-4" />
+                  Edit Block
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleResubmitForApproval}
+                  disabled={isResubmitting}
+                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw className={cx("h-4 w-4", isResubmitting && "animate-spin")} />
+                  {isResubmitting ? "Resubmitting…" : "Resubmit for Approval"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+              <div className="rounded-[24px] border border-rose-200 bg-white p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-rose-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Reviewer Notes
+                  </h3>
+                </div>
+
+                <p className="text-sm leading-7 text-slate-700">
+                  {changesRequestedNotes ||
+                    "No additional review notes were added. Update the highlighted areas and resubmit the block for approval."}
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-rose-200 bg-white p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <ListChecks className="h-4 w-4 text-rose-600" />
+                  <h3 className="text-sm font-semibold text-slate-900">
+                    Requested Fields
+                  </h3>
+                </div>
+
+                {requestedFields.length > 0 ? (
+                  <div className="space-y-2">
+                    {requestedFields.map((field) => (
+                      <div
+                        key={field}
+                        className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm text-slate-700"
+                      >
+                        {formatFieldLabel(field)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm leading-7 text-slate-700">
+                    No specific fields were listed. Review the notes and make the
+                    requested updates across the block before resubmitting.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Panel
@@ -1017,6 +1204,17 @@ export default function BlockDetailPage() {
                   active={Boolean(block.submittedAt)}
                 />
                 <TimelineItem
+                  title="Changes Requested"
+                  value={
+                    block.changesRequestedAt
+                      ? `${formatDateTime(block.changesRequestedAt)} by ${getUserLabel(
+                          block.changesRequestedByUserId
+                        )}`
+                      : "No change request recorded"
+                  }
+                  active={Boolean(block.changesRequestedAt)}
+                />
+                <TimelineItem
                   title="Approved"
                   value={
                     block.approvedAt
@@ -1055,6 +1253,10 @@ export default function BlockDetailPage() {
                 <MetaRow
                   label="Approved By"
                   value={getUserLabel(block.approvedByUserId)}
+                />
+                <MetaRow
+                  label="Changes Requested By"
+                  value={getUserLabel(block.changesRequestedByUserId)}
                 />
                 <MetaRow
                   label="Created At"
@@ -1157,6 +1359,18 @@ export default function BlockDetailPage() {
                     >
                       <Sparkles className="h-4 w-4" />
                       Deployment
+                    </button>
+                  ) : null}
+
+                  {hasChangesRequested ? (
+                    <button
+                      type="button"
+                      onClick={handleResubmitForApproval}
+                      disabled={isResubmitting}
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 text-sm font-medium text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCw className={cx("h-4 w-4", isResubmitting && "animate-spin")} />
+                      {isResubmitting ? "Resubmitting…" : "Resubmit"}
                     </button>
                   ) : null}
                 </div>

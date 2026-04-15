@@ -6,7 +6,7 @@ import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
 import {
   canApproveBlock,
-  canRejectBlock,
+  canRequestChanges,
   type BlockStatus,
   type Role,
   type UserLike,
@@ -133,7 +133,9 @@ function CheckStatusLabel({ state }: { state: CheckState }) {
   if (state === "waiting") {
     return <StatusPill tone="orange">Awaiting internal review</StatusPill>;
   }
-  if (state === "rejected") return <StatusPill tone="red">Rejected</StatusPill>;
+  if (state === "rejected") {
+    return <StatusPill tone="red">Changes Requested</StatusPill>;
+  }
   return <StatusPill tone="slate">Pending</StatusPill>;
 }
 
@@ -179,7 +181,7 @@ function TimelineCheckRow({
 
 function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
   if (value === "pending_approval" || value === "in_review") {
-    return "pending_approval";
+    return value;
   }
 
   if (
@@ -187,7 +189,6 @@ function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
     value === "changes_requested" ||
     value === "approved" ||
     value === "published" ||
-    value === "rejected" ||
     value === "archived"
   ) {
     return value;
@@ -290,11 +291,13 @@ export default function BlockApprovalPage() {
   useEffect(() => {
     if (!id || !currentUser) return;
 
+    const user = currentUser;
+
     async function loadBlock() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${currentUser.role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${user.role}`, {
           cache: "no-store",
         });
         const json = await res.json().catch(() => ({}));
@@ -339,16 +342,17 @@ export default function BlockApprovalPage() {
   useEffect(() => {
     if (!currentUser) return;
     if (loading || !editable || pipelineStarted || checks.length === 0) return;
-  
-    const currentRole = currentUser.role;
-  
+
+    const user = currentUser;
+    const currentRole: Role = user.role;
+
     if (status === "approved" || status === "published") {
       setChecks((prev) => prev.map((item) => ({ ...item, state: "approved" })));
       setPipelineStarted(true);
       return;
     }
-  
-    if (status === "rejected") {
+
+    if (status === "changes_requested") {
       setChecks((prev) =>
         prev.map((item, index) => ({
           ...item,
@@ -358,17 +362,17 @@ export default function BlockApprovalPage() {
       setPipelineStarted(true);
       return;
     }
-  
+
     setPipelineStarted(true);
-  
+
     const autoCheckCount = Math.min(GOVERNANCE_CHECKS.length, checks.length);
     const runningDuration = 1200;
     const gapDuration = 260;
-  
+
     for (let i = 0; i < autoCheckCount; i += 1) {
       const startAt = i * (runningDuration + gapDuration);
       const finishAt = startAt + runningDuration;
-  
+
       const startTimer = window.setTimeout(() => {
         setChecks((prev) =>
           prev.map((item, index) =>
@@ -380,7 +384,7 @@ export default function BlockApprovalPage() {
           )
         );
       }, startAt);
-  
+
       const finishTimer = window.setTimeout(() => {
         setChecks((prev) =>
           prev.map((item, index) =>
@@ -392,12 +396,12 @@ export default function BlockApprovalPage() {
           )
         );
       }, finishAt);
-  
+
       runTimeoutsRef.current.push(startTimer, finishTimer);
     }
-  
+
     const afterAutomatedChecksAt = autoCheckCount * (runningDuration + gapDuration);
-  
+
     if (showInternalReview) {
       const finalTimer = window.setTimeout(() => {
         setChecks((prev) =>
@@ -408,7 +412,7 @@ export default function BlockApprovalPage() {
           })
         );
       }, afterAutomatedChecksAt);
-  
+
       runTimeoutsRef.current.push(finalTimer);
     } else {
       const finalTimer = window.setTimeout(async () => {
@@ -418,9 +422,9 @@ export default function BlockApprovalPage() {
               index < autoCheckCount ? { ...item, state: "approved" } : item
             )
           );
-  
+
           await updateStatus("approved");
-  
+
           if (!redirectedRef.current) {
             redirectedRef.current = true;
             router.replace(`/blocks/${id}/deploy?role=${currentRole}`);
@@ -429,7 +433,7 @@ export default function BlockApprovalPage() {
           console.error("Auto-approve failed:", error);
         }
       }, afterAutomatedChecksAt + 250);
-  
+
       runTimeoutsRef.current.push(finalTimer);
     }
   }, [
@@ -477,7 +481,9 @@ export default function BlockApprovalPage() {
   async function updateStatus(nextStatus: BlockStatus) {
     if (!currentUser) return;
 
-    const res = await fetch(`/api/blocks/${id}?role=${currentUser.role}`, {
+    const user = currentUser;
+
+    const res = await fetch(`/api/blocks/${id}?role=${user.role}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus }),
@@ -519,7 +525,7 @@ export default function BlockApprovalPage() {
 
     try {
       setIsRejecting(true);
-      await updateStatus("rejected");
+      await updateStatus("changes_requested");
 
       setChecks((prev) =>
         prev.map((item, index) => ({
@@ -529,7 +535,7 @@ export default function BlockApprovalPage() {
       );
     } catch (error) {
       console.error("Reject failed:", error);
-      alert("Failed to reject block");
+      alert("Failed to request changes");
     } finally {
       setIsRejecting(false);
     }
@@ -548,8 +554,8 @@ export default function BlockApprovalPage() {
       ? "Approved"
       : status === "published"
         ? "Published"
-        : status === "rejected"
-          ? "Rejected"
+        : status === "changes_requested"
+          ? "Changes Requested"
           : internalReviewWaiting
             ? "Awaiting Internal Review"
             : "AI Checks Running";
@@ -557,7 +563,7 @@ export default function BlockApprovalPage() {
   const statusColorClass =
     status === "approved" || status === "published"
       ? "text-emerald-600"
-      : status === "rejected"
+      : status === "changes_requested"
         ? "text-rose-600"
         : internalReviewWaiting
           ? "text-amber-600"
@@ -596,7 +602,7 @@ export default function BlockApprovalPage() {
   const userCanReject =
     !!currentUser &&
     showInternalReview &&
-    canRejectBlock(currentUser, permissionBlock);
+    canRequestChanges(currentUser, permissionBlock);
 
   if (sessionLoading || !currentUser || loading) {
     return (
@@ -705,7 +711,7 @@ export default function BlockApprovalPage() {
                           disabled={!manualReviewReady || isRejecting}
                           className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-100 px-4 text-[13px] font-semibold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isRejecting ? "Rejecting..." : "Reject"}
+                          {isRejecting ? "Requesting changes..." : "Request Changes"}
                         </button>
                       )}
                     </div>
@@ -720,7 +726,7 @@ export default function BlockApprovalPage() {
 
                   {showInternalReview && !userCanApprove && !userCanReject && (
                     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                      Your role can view this approval workflow, but cannot approve or reject this block.
+                      Your role can view this approval workflow, but cannot approve or request changes on this block.
                     </div>
                   )}
                 </div>
@@ -855,7 +861,7 @@ export default function BlockApprovalPage() {
                       disabled={!manualReviewReady || isRejecting}
                       className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {isRejecting ? "Rejecting..." : "Reject"}
+                      {isRejecting ? "Requesting changes..." : "Request Changes"}
                     </button>
                   )}
 
