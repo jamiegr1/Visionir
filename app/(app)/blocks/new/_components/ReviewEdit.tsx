@@ -4,7 +4,6 @@ import type { GovernanceResult } from "@/lib/brand-governance";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Accent, ValuePoint, BlockData } from "@/lib/types";
-import Image from "next/image";
 
 type Governance = GovernanceResult | null;
 
@@ -45,6 +44,14 @@ export type ReviewEditProps = {
   canEdit?: boolean;
   canSubmit?: boolean;
   canPublish?: boolean;
+
+  // New props for page-builder flow
+  mode?: "standard" | "page_builder";
+  onBack?: () => void;
+  backLabel?: string;
+  onPrimaryAction?: () => void;
+  primaryActionLabel?: string;
+  primaryActionDisabled?: boolean;
 };
 
 const ACCENT_STYLES: Record<
@@ -89,28 +96,6 @@ const ACCENT_STYLES: Record<
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
-}
-
-function NavIcon({
-  active = false,
-  children,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={cx(
-        "flex h-11 w-11 items-center justify-center rounded-xl transition",
-        active
-          ? "bg-[#eef3ff] text-[#5b7cff] shadow-sm"
-          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function ImproveButton({
@@ -244,6 +229,12 @@ export default function ReviewEdit({
   canEdit = true,
   canSubmit = true,
   canPublish = false,
+  mode = "standard",
+  onBack,
+  backLabel = "Back",
+  onPrimaryAction,
+  primaryActionLabel = "Done",
+  primaryActionDisabled = false,
 }: ReviewEditProps) {
   const [loadingField, setLoadingField] = useState<string | null>(null);
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -261,6 +252,8 @@ export default function ReviewEdit({
     if (!governance) return "Brand Compliance: Pending";
     return `Brand Compliance: ${governance.score}% ✓`;
   }, [governance]);
+
+  const isPageBuilderMode = mode === "page_builder";
 
   function markFieldImproved(key: string) {
     setFlashFields((prev) => ({ ...prev, [key]: true }));
@@ -442,7 +435,6 @@ export default function ReviewEdit({
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
       <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-
         <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-slate-200 px-6 py-6">
@@ -451,6 +443,11 @@ export default function ReviewEdit({
                   <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
                     Refine with AI
                   </h2>
+                  {isPageBuilderMode ? (
+                    <p className="mt-1 text-sm text-slate-500">
+                      Make direct text and imagery edits, or request broader structural changes.
+                    </p>
+                  ) : null}
                 </div>
 
                 <button
@@ -826,53 +823,54 @@ export default function ReviewEdit({
         <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-  <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
-  <HistoryButton
-  label="Undo"
-  disabled={!canUndo}
-  onClick={onUndo}
->
-  <svg
-    className="h-[15px] w-[15px]"
-    viewBox="0 0 20 20"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M8 5 3.5 10 8 15" />
-    <path d="M4 10h7.25c3.18 0 5.75 2.57 5.75 5.75" />
-  </svg>
-</HistoryButton>
+              <div className="flex items-center gap-4">
+                <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
+                  <HistoryButton label="Undo" disabled={!canUndo} onClick={onUndo}>
+                    <svg
+                      className="h-[15px] w-[15px]"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M8 5 3.5 10 8 15" />
+                      <path d="M4 10h7.25c3.18 0 5.75 2.57 5.75 5.75" />
+                    </svg>
+                  </HistoryButton>
 
-<div className="h-6 w-px bg-[#e7edf6]" />
+                  <div className="h-6 w-px bg-[#e7edf6]" />
 
-<HistoryButton
-  label="Redo"
-  disabled={!canRedo}
-  onClick={onRedo}
->
-  <svg
-    className="h-[15px] w-[15px]"
-    viewBox="0 0 20 20"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M12 5 16.5 10 12 15" />
-    <path d="M16 10H8.75A5.75 5.75 0 0 0 3 15.75" />
-  </svg>
-</HistoryButton>
-  </div>
+                  <HistoryButton label="Redo" disabled={!canRedo} onClick={onRedo}>
+                    <svg
+                      className="h-[15px] w-[15px]"
+                      viewBox="0 0 20 20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.9"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M12 5 16.5 10 12 15" />
+                      <path d="M16 10H8.75A5.75 5.75 0 0 0 3 15.75" />
+                    </svg>
+                  </HistoryButton>
+                </div>
 
-  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-    Create Block • Step 3 of 3 - Review & Edit
-  </h1>
-</div>
+                <div>
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    {isPageBuilderMode
+                      ? "Edit Block for Page Builder"
+                      : "Create Block • Step 3 of 3 - Review & Edit"}
+                  </h1>
+                  {isPageBuilderMode ? (
+                    <p className="mt-1 text-sm text-slate-500">
+                      Refine this block for the selected page section.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
 
               <div className="flex items-center gap-2">
                 <button
@@ -987,7 +985,17 @@ export default function ReviewEdit({
               </div>
 
               <div className="flex items-center gap-3">
-                {canEdit && onSaveDraft && (
+                {onBack ? (
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    {backLabel}
+                  </button>
+                ) : null}
+
+                {canEdit && onSaveDraft && !isPageBuilderMode && (
                   <button
                     type="button"
                     onClick={onSaveDraft}
@@ -1006,6 +1014,17 @@ export default function ReviewEdit({
                     {submitLabel}
                   </button>
                 )}
+
+                {onPrimaryAction ? (
+                  <button
+                    type="button"
+                    onClick={onPrimaryAction}
+                    disabled={primaryActionDisabled}
+                    className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {primaryActionLabel}
+                  </button>
+                ) : null}
 
                 {canPublish && onPublish && (
                   <button

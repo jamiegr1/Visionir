@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -11,12 +12,17 @@ import {
   Pencil,
   Plus,
   Save,
- Send,
+  Send,
   ShieldCheck,
   Sparkles,
   Trash2,
   XCircle,
+  Search,
+  Blocks,
+  ChevronRight,
+  Library,
 } from "lucide-react";
+import { makePreviewHtml } from "@/lib/preview";
 import type {
   PageRecord,
   PageStatus,
@@ -228,15 +234,18 @@ function Panel({
   icon,
   children,
   className,
+  id,
 }: {
   title: string;
   subtitle?: string;
   icon: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  id?: string;
 }) {
   return (
     <section
+      id={id}
       className={cx(
         "rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6",
         className
@@ -278,14 +287,21 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cx(
-        "inline-flex h-11 items-center gap-2 rounded-2xl px-4 text-sm font-medium transition",
+        "group inline-flex h-[72px] min-w-[132px] items-center justify-center gap-2 rounded-[22px] px-6 text-sm font-semibold transition-all duration-200",
         active
           ? "bg-[#5b7cff] text-white shadow-[0_12px_28px_rgba(91,124,255,0.22)]"
-          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+          : "border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-1 hover:scale-[1.02] hover:border-[#cfd8f6] hover:bg-[#f8faff] hover:text-slate-900 hover:shadow-[0_14px_30px_rgba(15,23,42,0.10)]"
       )}
     >
-      {icon}
-      {label}
+      <span
+        className={cx(
+          "transition-transform duration-200",
+          !active && "group-hover:scale-110"
+        )}
+      >
+        {icon}
+      </span>
+      <span>{label}</span>
     </button>
   );
 }
@@ -364,7 +380,7 @@ function RuleRow({
   );
 }
 
-function SectionSummaryCard({
+function SectionRailCard({
   section,
   index,
   isSelected,
@@ -375,77 +391,50 @@ function SectionSummaryCard({
   isSelected: boolean;
   onClick: () => void;
 }) {
-  const allowedCount = section.allowedComponentIds.length;
-  const blockCount = section.blockIds.length;
-
   return (
     <button
       type="button"
       onClick={onClick}
       className={cx(
-        "w-full rounded-[24px] border p-4 text-left transition",
+        "w-full rounded-[22px] border px-4 py-4 text-left transition",
         isSelected
           ? "border-[#cfd8f6] bg-[#f7f9ff] shadow-[0_12px_28px_rgba(91,124,255,0.08)]"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/70"
+          : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50"
       )}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-              {index + 1}
-            </span>
-
-            <h3 className="truncate text-[16px] font-semibold text-slate-900">
-              {section.label}
-            </h3>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className={cx(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+              isSelected ? "bg-[#5b7cff] text-white" : "bg-slate-100 text-slate-600"
+            )}
+          >
+            {index + 1}
           </div>
 
-          <p className="mt-2 text-sm leading-6 text-slate-500">
-            Template key: {section.key}
-          </p>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {section.label}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              {section.blockIds.length > 0
+                ? `${section.blockIds.length} attached`
+                : "No blocks attached"}
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Badge tone={section.required ? "emerald" : "slate"}>
-            {section.required ? "Required" : "Optional"}
-          </Badge>
-
-          <Badge tone={section.completed ? "emerald" : "slate"}>
-            {section.completed ? "Complete" : "Incomplete"}
-          </Badge>
-
-          {section.canSkip ? <Badge tone="blue">Can skip</Badge> : null}
-        </div>
+        <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-slate-300" />
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Allowed blocks
-          </p>
-          <p className="mt-1.5 text-sm font-medium text-slate-900">
-            {allowedCount}
-          </p>
-        </div>
-
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Attached blocks
-          </p>
-          <p className="mt-1.5 text-sm font-medium text-slate-900">
-            {blockCount}
-          </p>
-        </div>
-
-        <div className="rounded-[18px] border border-slate-200 bg-slate-50 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Default block
-          </p>
-          <p className="mt-1.5 truncate text-sm font-medium text-slate-900">
-            {section.defaultComponentId || "—"}
-          </p>
-        </div>
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Badge tone={section.required ? "emerald" : "slate"}>
+          {section.required ? "Required" : "Optional"}
+        </Badge>
+        <Badge tone={section.completed ? "emerald" : "amber"}>
+          {section.completed ? "Complete" : "Needs content"}
+        </Badge>
       </div>
     </button>
   );
@@ -463,14 +452,17 @@ function AttachedBlockCard({
   isRemoving: boolean;
 }) {
   return (
-    <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-4">
+    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-900">
-            {getBlockName(block)}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="truncate text-sm font-semibold text-slate-900">
+              {getBlockName(block)}
+            </p>
+          </div>
           <p className="mt-1 truncate text-xs text-slate-500">
-            {getBlockComponentType(block) || "Unknown component"} · {formatDate(block.updatedAt)}
+            {getBlockComponentType(block) || "Unknown component"} · Updated{" "}
+            {formatDate(block.updatedAt)}
           </p>
         </div>
 
@@ -488,7 +480,7 @@ function AttachedBlockCard({
         <button
           type="button"
           onClick={onEdit}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
         >
           <Pencil className="h-4 w-4" />
           Edit
@@ -520,14 +512,15 @@ function ExistingBlockPickerCard({
   isAttaching: boolean;
 }) {
   return (
-    <div className="rounded-[20px] border border-slate-200 bg-white p-4">
+    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">
             {getBlockName(block)}
           </p>
           <p className="mt-1 truncate text-xs text-slate-500">
-            {getBlockComponentType(block) || "Unknown component"} · {formatDate(block.updatedAt)}
+            {getBlockComponentType(block) || "Unknown component"} · Updated{" "}
+            {formatDate(block.updatedAt)}
           </p>
         </div>
 
@@ -541,7 +534,7 @@ function ExistingBlockPickerCard({
         </span>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={onAttach}
@@ -555,9 +548,110 @@ function ExistingBlockPickerCard({
           )}
         >
           <Plus className="h-4 w-4" />
-          {isAttached ? "Attached" : isAttaching ? "Attaching..." : "Attach block"}
+          {isAttached ? "Attached" : isAttaching ? "Attaching..." : "Attach"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function SectionPreviewFrame({ html }: { html: string }) {
+  const [contentHeight, setContentHeight] = useState(260);
+  const [contentWidth, setContentWidth] = useState(1280);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const updateContainerWidth = () => {
+      setContainerWidth(element.clientWidth);
+    };
+
+    updateContainerWidth();
+
+    const observer = new ResizeObserver(() => {
+      updateContainerWidth();
+    });
+
+    observer.observe(element);
+
+    return () => observer.disconnect();
+  }, []);
+
+  const scale =
+    containerWidth > 0 && contentWidth > 0
+      ? Math.min(1, containerWidth / contentWidth)
+      : 1;
+
+  const scaledHeight = Math.max(Math.ceil(contentHeight * scale), 260);
+
+  function measureIframe() {
+    try {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
+
+      const body = doc.body;
+      const htmlEl = doc.documentElement;
+
+      const nextWidth = Math.max(
+        body?.scrollWidth || 0,
+        body?.offsetWidth || 0,
+        body?.clientWidth || 0,
+        htmlEl?.scrollWidth || 0,
+        htmlEl?.offsetWidth || 0,
+        htmlEl?.clientWidth || 0,
+        1280
+      );
+
+      const nextHeight = Math.max(
+        body?.scrollHeight || 0,
+        body?.offsetHeight || 0,
+        body?.clientHeight || 0,
+        htmlEl?.scrollHeight || 0,
+        htmlEl?.offsetHeight || 0,
+        htmlEl?.clientHeight || 0,
+        260
+      );
+
+      setContentWidth(nextWidth);
+      setContentHeight(nextHeight);
+    } catch (error) {
+      console.error("Failed to size preview iframe:", error);
+    }
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full overflow-hidden bg-white"
+      style={{ height: `${scaledHeight}px` }}
+    >
+      <iframe
+        ref={iframeRef}
+        title="Section preview"
+        srcDoc={html}
+        className="block border-0 bg-white"
+        style={{
+          width: `${contentWidth}px`,
+          height: `${contentHeight}px`,
+          transform: `scale(${scale})`,
+          transformOrigin: "top left",
+        }}
+        scrolling="no"
+        onLoad={() => {
+          measureIframe();
+          window.setTimeout(measureIframe, 50);
+          window.setTimeout(measureIframe, 150);
+          window.setTimeout(measureIframe, 300);
+        }}
+      />
     </div>
   );
 }
@@ -582,10 +676,10 @@ export default function PageDetailPage() {
   const [isActing, setIsActing] = useState(false);
   const [attachLoadingBlockId, setAttachLoadingBlockId] = useState<string | null>(null);
   const [removeLoadingBlockId, setRemoveLoadingBlockId] = useState<string | null>(null);
-  const [showBlockPicker, setShowBlockPicker] = useState(false);
 
   const [activeTab, setActiveTab] = useState<PageTab>("sections");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
+  const [existingBlockQuery, setExistingBlockQuery] = useState("");
 
   const [page, setPage] = useState<PageRecord | null>(null);
   const [pageName, setPageName] = useState("");
@@ -669,6 +763,10 @@ export default function PageDetailPage() {
     });
   }, [sortedSections]);
 
+  useEffect(() => {
+    setExistingBlockQuery("");
+  }, [selectedSectionId]);
+
   const selectedSection =
     sortedSections.find((section) => section.sectionId === selectedSectionId) ?? null;
 
@@ -686,9 +784,82 @@ export default function PageDetailPage() {
 
     return allBlocks.filter((block) => {
       const componentType = getBlockComponentType(block);
-      return componentType ? allowed.has(componentType) : false;
+      const status = block.status || "";
+
+      const isReusable =
+        status === "approved" ||
+        status === "published" ||
+        status === "completed" ||
+        status === "deployed";
+
+      return componentType ? allowed.has(componentType) && isReusable : false;
     });
   }, [selectedSection, allBlocks]);
+
+  const filteredAvailableBlocks = useMemo(() => {
+    const q = existingBlockQuery.trim().toLowerCase();
+    if (!q) return availableBlocksForSelectedSection;
+
+    return availableBlocksForSelectedSection.filter((block) => {
+      const name = getBlockName(block).toLowerCase();
+      const type = getBlockComponentType(block).toLowerCase();
+      const status = (block.status || "").toLowerCase();
+
+      return name.includes(q) || type.includes(q) || status.includes(q);
+    });
+  }, [availableBlocksForSelectedSection, existingBlockQuery]);
+
+  function buildSectionPreviewHtml(section: PageTemplateSectionInstance) {
+    const matchedBlocks = section.blockIds
+      .map((blockId) => allBlocks.find((block) => block.id === blockId))
+      .filter((block): block is ApiBlockRecord => Boolean(block?.data));
+  
+    if (matchedBlocks.length === 0) {
+      return "";
+    }
+  
+    if (matchedBlocks.length === 1) {
+      return makePreviewHtml(matchedBlocks[0].data as any);
+    }
+  
+    const firstBlockHtml = makePreviewHtml(matchedBlocks[0].data as any);
+  
+    const headMatch = firstBlockHtml.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+    const extractedHead = headMatch ? headMatch[1] : "";
+  
+    const blockBodies = matchedBlocks
+      .map((block) => {
+        const html = makePreviewHtml(block.data as any);
+        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        return bodyMatch ? bodyMatch[1] : html;
+      })
+      .join("");
+  
+    return `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          ${extractedHead}
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+            }
+  
+            .page-preview-stack > * + * {
+              margin-top: 24px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="page-preview-stack" style="width:max-content; min-width:100%;">
+            ${blockBodies}
+          </div>
+        </body>
+      </html>
+    `;
+  }
 
   async function refreshPage() {
     const res = await fetch(`/api/pages/${id}?role=${role}`, {
@@ -805,7 +976,7 @@ export default function PageDetailPage() {
       }
 
       await refreshPage();
-      setShowBlockPicker(false);
+      await refreshBlocks();
     } catch (error) {
       console.error(error);
       alert(error instanceof Error ? error.message : "Failed to attach block.");
@@ -848,25 +1019,29 @@ export default function PageDetailPage() {
 
   function handleGenerateBlock() {
     if (!selectedSection || !page) return;
-  
+
     const allowed = selectedSection.allowedComponentIds || [];
-  
+
     if (allowed.length === 0) {
       alert("This section does not have any allowed block types.");
       return;
     }
-    
+
     const params = new URLSearchParams({
       role,
       pageId: page.id,
       sectionId: selectedSection.sectionId,
       allowed: allowed.join(","),
+      pageName: page.name,
+      sectionLabel: selectedSection.label,
+      sectionKey: selectedSection.key,
+      returnTo: `/pages/${page.id}?role=${role}&sectionId=${selectedSection.sectionId}`,
     });
-  
+
     if (selectedSection.defaultComponentId) {
       params.set("defaultComponentId", selectedSection.defaultComponentId);
     }
-  
+
     router.push(`/blocks/new?${params.toString()}`);
   }
 
@@ -911,15 +1086,15 @@ export default function PageDetailPage() {
 
   return (
     <div className="min-h-[calc(100dvh-72px)] bg-[#f5f7fb] text-slate-900">
-      <div className="mx-auto max-w-[1680px] px-6 py-8">
-        <section className="rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)] lg:p-7">
-          <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
+      <div className="mx-auto max-w-[1740px] px-6 py-6">
+        <section className="rounded-[28px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="mb-4 flex flex-wrap items-center gap-3">
+              <div className="mb-3 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   onClick={() => router.push(`/pages?role=${role}`)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back to Pages
@@ -932,31 +1107,24 @@ export default function PageDetailPage() {
                 Page Workspace
               </p>
 
-              <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
+              <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
                 {page.name}
               </h1>
 
-              <p className="mt-3 max-w-[920px] text-sm leading-7 text-slate-500">
+              <p className="mt-2 max-w-[820px] text-sm leading-6 text-slate-500">
                 This page inherits its structure from the{" "}
                 <span className="font-medium text-slate-700">{page.templateName}</span>{" "}
                 template.
               </p>
-
-              <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[980px]">
-                <OverviewCard label="Template" value={page.templateName} />
-                <OverviewCard label="Sections" value={`${sortedSections.length}`} />
-                <OverviewCard label="Completed" value={`${completedSections.length}`} />
-                <OverviewCard label="Blocks" value={`${totalAttachedBlocks}`} />
-              </div>
             </div>
 
-            <div className="flex w-full max-w-[860px] flex-col gap-3">
-              <div className="flex flex-wrap items-center gap-3 2xl:justify-end">
+            <div className="flex w-full max-w-[860px] flex-col gap-3 xl:items-end">
+              <div className="flex flex-wrap items-center gap-3 xl:justify-end">
                 <button
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" />
                   {isSaving ? "Saving..." : "Save Page"}
@@ -969,7 +1137,7 @@ export default function PageDetailPage() {
                     type="button"
                     onClick={() => handleWorkflowAction("submit")}
                     disabled={isActing}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-5 text-sm font-medium text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-violet-200 bg-violet-50 px-5 text-sm font-medium text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <Send className="h-4 w-4" />
                     {isActing ? "Submitting..." : "Submit"}
@@ -983,7 +1151,7 @@ export default function PageDetailPage() {
                       type="button"
                       onClick={() => handleWorkflowAction("approve")}
                       disabled={isActing}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-5 text-sm font-medium text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <ShieldCheck className="h-4 w-4" />
                       {isActing ? "Approving..." : "Approve"}
@@ -993,7 +1161,7 @@ export default function PageDetailPage() {
                       type="button"
                       onClick={() => handleWorkflowAction("reject")}
                       disabled={isActing}
-                      className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 text-sm font-medium text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <XCircle className="h-4 w-4" />
                       {isActing ? "Rejecting..." : "Reject"}
@@ -1006,7 +1174,7 @@ export default function PageDetailPage() {
                     type="button"
                     onClick={() => handleWorkflowAction("publish")}
                     disabled={isActing}
-                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     {isActing ? "Publishing..." : "Publish"}
@@ -1016,7 +1184,7 @@ export default function PageDetailPage() {
                 <button
                   type="button"
                   onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <LayoutTemplate className="h-4 w-4" />
                   View Template
@@ -1026,29 +1194,38 @@ export default function PageDetailPage() {
           </div>
         </section>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <TabButton
-            active={activeTab === "overview"}
-            onClick={() => setActiveTab("overview")}
-            icon={<Pencil className="h-4 w-4" />}
-            label="Overview"
-          />
-          <TabButton
-            active={activeTab === "sections"}
-            onClick={() => setActiveTab("sections")}
-            icon={<FileText className="h-4 w-4" />}
-            label="Sections"
-          />
-          <TabButton
-            active={activeTab === "preview"}
-            onClick={() => setActiveTab("preview")}
-            icon={<Eye className="h-4 w-4" />}
-            label="Preview"
-          />
+        <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
+          <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <OverviewCard label="Template" value={page.templateName} />
+            <OverviewCard label="Sections" value={`${sortedSections.length}`} />
+            <OverviewCard label="Completed" value={`${completedSections.length}`} />
+            <OverviewCard label="Blocks" value={`${totalAttachedBlocks}`} />
+          </div>
+
+          <div className="flex flex-wrap items-stretch gap-3 xl:ml-4 xl:self-start">
+            <TabButton
+              active={activeTab === "overview"}
+              onClick={() => setActiveTab("overview")}
+              icon={<Pencil className="h-4 w-4" />}
+              label="Overview"
+            />
+            <TabButton
+              active={activeTab === "sections"}
+              onClick={() => setActiveTab("sections")}
+              icon={<FileText className="h-4 w-4" />}
+              label="Sections"
+            />
+            <TabButton
+              active={activeTab === "preview"}
+              onClick={() => setActiveTab("preview")}
+              icon={<Eye className="h-4 w-4" />}
+              label="Preview"
+            />
+          </div>
         </div>
 
         {activeTab === "overview" ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+          <div className="mt-4 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
             <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
                 title="Page Metadata"
@@ -1123,9 +1300,7 @@ export default function PageDetailPage() {
                 icon={<LayoutTemplate className="h-5 w-5" />}
               >
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {page.templateName}
-                  </p>
+                  <p className="text-sm font-semibold text-slate-900">{page.templateName}</p>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
                     This page inherits its approved section structure and allowed block
                     types from the template.
@@ -1137,12 +1312,13 @@ export default function PageDetailPage() {
         ) : null}
 
         {activeTab === "sections" ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_420px]">
-            <main className="min-w-0">
+          <div className="mt-4 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
+            <aside className="space-y-6">
               <Panel
                 title="Page Sections"
-                subtitle="Work through the page section by section using the structure inherited from the template."
+                subtitle="Select a section to work on it."
                 icon={<FileText className="h-5 w-5" />}
+                className="xl:sticky xl:top-6"
               >
                 {sortedSections.length === 0 ? (
                   <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center">
@@ -1154,9 +1330,9 @@ export default function PageDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {sortedSections.map((section, index) => (
-                      <SectionSummaryCard
+                      <SectionRailCard
                         key={section.sectionId}
                         section={section}
                         index={index}
@@ -1167,36 +1343,176 @@ export default function PageDetailPage() {
                   </div>
                 )}
               </Panel>
+            </aside>
+
+            <main className="min-w-0 space-y-6">
+              {!selectedSection ? (
+                <Panel
+                  title="Section Workspace"
+                  subtitle="Select a section from the left to begin."
+                  icon={<Blocks className="h-5 w-5" />}
+                >
+                  <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-14 text-center">
+                    <p className="text-sm font-medium text-slate-700">
+                      Select a section to manage its blocks
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Once selected, you will be able to generate a new block or reuse an
+                      approved one from the library below.
+                    </p>
+                  </div>
+                </Panel>
+              ) : (
+                <>
+                  <Panel
+                    title={selectedSection.label}
+                    subtitle="Generate a new governed block for this section, or choose one from the approved block library below."
+                    icon={<Blocks className="h-5 w-5" />}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={selectedSection.required ? "emerald" : "slate"}>
+                        {selectedSection.required ? "Required" : "Optional"}
+                      </Badge>
+                      <Badge tone={selectedSection.completed ? "emerald" : "amber"}>
+                        {selectedSection.completed ? "Complete" : "Needs content"}
+                      </Badge>
+                    </div>
+
+                    <div className="mt-6 grid gap-4 sm:grid-cols-4">
+                      <OverviewCard
+                        label="Attached blocks"
+                        value={`${selectedSection.blockIds.length}`}
+                      />
+                      <OverviewCard
+                        label="Allowed types"
+                        value={`${selectedSection.allowedComponentIds.length}`}
+                      />
+                      <OverviewCard
+                        label="Default type"
+                        value={selectedSection.defaultComponentId || "—"}
+                      />
+                      <OverviewCard
+                        label="Instances"
+                        value={`${selectedSection.minInstances}–${selectedSection.maxInstances}`}
+                      />
+                    </div>
+                  </Panel>
+
+                  <Panel
+                    title="Attached blocks"
+                    subtitle="These blocks are already assigned to this section."
+                    icon={<CheckCircle2 className="h-5 w-5" />}
+                  >
+                    {attachedBlocksForSelectedSection.length > 0 ? (
+                      <div className="grid gap-4 xl:grid-cols-2">
+                        {attachedBlocksForSelectedSection.map((block) => (
+                          <AttachedBlockCard
+                            key={block.id}
+                            block={block}
+                            onEdit={() =>
+                              router.push(
+                                `/blocks/${block.id}/review?role=${role}&returnTo=${encodeURIComponent(
+                                  `/pages/${page.id}?role=${role}&sectionId=${selectedSection.sectionId}`
+                                )}`
+                              )
+                            }
+                            onRemove={() => handleRemoveBlock(block.id)}
+                            isRemoving={removeLoadingBlockId === block.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-10 text-center">
+                        <p className="text-sm font-medium text-slate-700">
+                          No blocks attached yet
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          Start by generating a new governed block, or choose one from the
+                          approved block library below.
+                        </p>
+
+                        <div className="mt-5 flex flex-wrap justify-center gap-3">
+                          <button
+                            type="button"
+                            onClick={handleGenerateBlock}
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                          >
+                            <Sparkles className="h-4 w-4" />
+                            Generate Block
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </Panel>
+
+                  <Panel
+                    id="approved-block-library"
+                    title="Approved block library"
+                    subtitle="Choose from compatible approved blocks already in your library, then adapt them for this section."
+                    icon={<Library className="h-5 w-5" />}
+                  >
+                    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="relative w-full sm:max-w-[340px]">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input
+                          value={existingBlockQuery}
+                          onChange={(e) => setExistingBlockQuery(e.target.value)}
+                          placeholder="Search approved compatible blocks"
+                          className="h-11 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
+                        />
+                      </div>
+
+                      <div className="text-sm text-slate-500">
+                        {filteredAvailableBlocks.length} matching block
+                        {filteredAvailableBlocks.length === 1 ? "" : "s"}
+                      </div>
+                    </div>
+
+                    {blocksLoading ? (
+                      <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center text-sm text-slate-500">
+                        Loading blocks…
+                      </div>
+                    ) : filteredAvailableBlocks.length > 0 ? (
+                      <div className="grid gap-4 xl:grid-cols-2">
+                        {filteredAvailableBlocks.map((block) => (
+                          <ExistingBlockPickerCard
+                            key={block.id}
+                            block={block}
+                            onAttach={() => handleAttachBlock(block.id)}
+                            isAttached={selectedSection.blockIds.includes(block.id)}
+                            isAttaching={attachLoadingBlockId === block.id}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center">
+                        <p className="text-sm font-medium text-slate-700">
+                          No approved blocks match this section
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          This section currently allows{" "}
+                          {selectedSection.allowedComponentIds.length > 0
+                            ? selectedSection.allowedComponentIds.join(", ")
+                            : "no block types"}
+                          . Generate a new governed block for this section, or broaden the
+                          allowed block types in the template if needed.
+                        </p>
+                      </div>
+                    )}
+                  </Panel>
+                </>
+              )}
             </main>
 
-            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <aside className="space-y-6">
               <Panel
-                title="Selected Section"
-                subtitle="Generate, attach, edit and remove blocks inside this section."
+                title="Section rules"
+                subtitle="The guardrails inherited from the template."
                 icon={<LayoutTemplate className="h-5 w-5" />}
+                className="xl:sticky xl:top-6"
               >
                 {selectedSection ? (
                   <div className="space-y-4">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                          {selectedSection.label}
-                        </h3>
-
-                        <Badge tone={selectedSection.required ? "emerald" : "slate"}>
-                          {selectedSection.required ? "Required" : "Optional"}
-                        </Badge>
-
-                        <Badge tone={selectedSection.completed ? "emerald" : "slate"}>
-                          {selectedSection.completed ? "Complete" : "Incomplete"}
-                        </Badge>
-                      </div>
-
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Template key: {selectedSection.key}
-                      </p>
-                    </div>
-
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
                       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                         Section signals
@@ -1231,33 +1547,17 @@ export default function PageDetailPage() {
                         value={selectedSection.defaultComponentId || "—"}
                       />
                       <RuleRow
-                        label="Allowed blocks"
+                        label="Allowed types"
                         value={`${selectedSection.allowedComponentIds.length}`}
                       />
                       <RuleRow
                         label="Attached blocks"
                         value={`${selectedSection.blockIds.length}`}
                       />
-                    </div>
-
-                    <div className="grid gap-3 sm:grid-cols-2">
-                    <button
-  type="button"
-  onClick={handleGenerateBlock}
-  className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-4 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
->
-  <Sparkles className="h-4 w-4" />
-  Generate Block
-</button>
-
-                      <button
-                        type="button"
-                        onClick={() => setShowBlockPicker((current) => !current)}
-                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        <Plus className="h-4 w-4" />
-                        {showBlockPicker ? "Hide Existing Blocks" : "Add Existing Block"}
-                      </button>
+                      <RuleRow
+                        label="Completed"
+                        value={selectedSection.completed ? "Yes" : "No"}
+                      />
                     </div>
 
                     <div className="rounded-[22px] border border-slate-200 bg-white p-4">
@@ -1280,72 +1580,6 @@ export default function PageDetailPage() {
                         )}
                       </div>
                     </div>
-
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                          Attached blocks
-                        </p>
-                        <span className="text-xs text-slate-400">
-                          {attachedBlocksForSelectedSection.length} attached
-                        </span>
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        {attachedBlocksForSelectedSection.length > 0 ? (
-                          attachedBlocksForSelectedSection.map((block) => (
-                            <AttachedBlockCard
-                              key={block.id}
-                              block={block}
-                              onEdit={() =>
-                                router.push(`/blocks/${block.id}/details?role=${role}`)
-                              }
-                              onRemove={() => handleRemoveBlock(block.id)}
-                              isRemoving={removeLoadingBlockId === block.id}
-                            />
-                          ))
-                        ) : (
-                          <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                            No blocks attached to this section yet.
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {showBlockPicker ? (
-                      <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                            Existing matching blocks
-                          </p>
-                          <span className="text-xs text-slate-400">
-                            {availableBlocksForSelectedSection.length} available
-                          </span>
-                        </div>
-
-                        <div className="mt-4 space-y-3">
-                          {blocksLoading ? (
-                            <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                              Loading blocks…
-                            </div>
-                          ) : availableBlocksForSelectedSection.length > 0 ? (
-                            availableBlocksForSelectedSection.map((block) => (
-                              <ExistingBlockPickerCard
-                                key={block.id}
-                                block={block}
-                                onAttach={() => handleAttachBlock(block.id)}
-                                isAttached={selectedSection.blockIds.includes(block.id)}
-                                isAttaching={attachLoadingBlockId === block.id}
-                              />
-                            ))
-                          ) : (
-                            <div className="rounded-[18px] border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
-                              No existing blocks match this section’s allowed block types.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : null}
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500">Select a section to inspect it.</p>
@@ -1356,11 +1590,11 @@ export default function PageDetailPage() {
         ) : null}
 
         {activeTab === "preview" ? (
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_380px]">
+          <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_380px]">
             <main className="min-w-0">
               <Panel
                 title="Page Preview"
-                subtitle="A simple first-pass preview showing the page structure and completion state."
+                subtitle="A composed preview showing the real attached blocks inside each page section."
                 icon={<Eye className="h-5 w-5" />}
               >
                 {sortedSections.length === 0 ? (
@@ -1373,49 +1607,57 @@ export default function PageDetailPage() {
                     </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {sortedSections.map((section, index) => (
-                      <div
-                        key={section.sectionId}
-                        className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
-                      >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
-                              {index + 1}
-                            </span>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-900">
-                                {section.label}
-                              </p>
-                              <p className="text-xs text-slate-500">
-                                {section.required ? "Required section" : "Optional section"}
-                              </p>
+                  <div className="space-y-5">
+                    {sortedSections.map((section, index) => {
+                      const previewHtml = buildSectionPreviewHtml(section);
+
+                      return (
+                        <div
+                          key={section.sectionId}
+                          className="rounded-[24px] border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-white px-2 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                                {index + 1}
+                              </span>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-900">
+                                  {section.label}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {section.required ? "Required section" : "Optional section"}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              <Badge tone={section.required ? "emerald" : "slate"}>
+                                {section.required ? "Required" : "Optional"}
+                              </Badge>
+                              <Badge tone={section.completed ? "emerald" : "slate"}>
+                                {section.completed ? "Complete" : "Incomplete"}
+                              </Badge>
                             </div>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
-                            <Badge tone={section.required ? "emerald" : "slate"}>
-                              {section.required ? "Required" : "Optional"}
-                            </Badge>
-                            <Badge tone={section.completed ? "emerald" : "slate"}>
-                              {section.completed ? "Complete" : "Incomplete"}
-                            </Badge>
+                          <div className="mt-4 overflow-hidden rounded-[20px] border border-slate-200 bg-white">
+                            {previewHtml ? (
+                              <SectionPreviewFrame html={previewHtml} />
+                            ) : (
+                              <div className="px-4 py-8 text-center">
+                                <p className="text-sm font-medium text-slate-700">
+                                  No blocks attached yet
+                                </p>
+                                <p className="mt-1 text-sm text-slate-500">
+                                  Attach or generate blocks for this section to preview it.
+                                </p>
+                              </div>
+                            )}
                           </div>
                         </div>
-
-                        <div className="mt-4 rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
-                          <p className="text-sm font-medium text-slate-700">
-                            {section.defaultComponentId || "Representative block preview"}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {section.blockIds.length > 0
-                              ? `${section.blockIds.length} block(s) attached to this section`
-                              : "No blocks attached yet"}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </Panel>
@@ -1424,34 +1666,37 @@ export default function PageDetailPage() {
             <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
                 title="Preview Guidance"
-                subtitle="A base for richer page rendering later."
+                subtitle="A real page-building preview based on attached blocks."
                 icon={<Sparkles className="h-5 w-5" />}
               >
                 <div className="space-y-3">
                   <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      Structure-first
+                      Real attached content
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      This preview currently shows the page structure inherited from the template.
+                      Each section now renders the actual attached blocks rather than a
+                      placeholder card.
                     </p>
                   </div>
 
                   <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      Block-aware
+                      Section by section
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      You can later extend this to render real attached blocks inside each section.
+                      This helps you validate the page composition before moving to a full
+                      page-wide preview later.
                     </p>
                   </div>
 
                   <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
                     <p className="text-sm font-semibold text-slate-900">
-                      Completion visible
+                      Ready for next stage
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      This already shows which sections are complete and which still need work.
+                      The next improvement would be a single full-page iframe combining all
+                      sections into one continuous preview.
                     </p>
                   </div>
                 </div>

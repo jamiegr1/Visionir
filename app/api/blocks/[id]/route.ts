@@ -10,6 +10,58 @@ import {
 } from "@/lib/permissions";
 import type { BlockData, BlockStatus } from "@/lib/types";
 
+type PatchBody = {
+  data?: BlockData;
+  status?: BlockStatus;
+  editMode?: "standard" | "page_builder";
+  requiresApproval?: boolean;
+};
+
+function resolveNextStatus(params: {
+  existingStatus: BlockStatus;
+  requestedStatus?: BlockStatus;
+  isDataUpdate: boolean;
+  editMode: "standard" | "page_builder";
+  requiresApproval: boolean;
+}): BlockStatus {
+  const {
+    existingStatus,
+    requestedStatus,
+    isDataUpdate,
+    editMode,
+    requiresApproval,
+  } = params;
+
+  if (requestedStatus) {
+    return requestedStatus;
+  }
+
+  if (!isDataUpdate) {
+    return existingStatus;
+  }
+
+  if (editMode === "page_builder") {
+    if (requiresApproval) {
+      return "pending_approval";
+    }
+
+    if (
+      existingStatus === "approved" ||
+      existingStatus === "published"
+    ) {
+      return "approved";
+    }
+
+    return existingStatus === "pending_approval" ? "draft" : existingStatus;
+  }
+
+  if (requiresApproval) {
+    return "pending_approval";
+  }
+
+  return existingStatus;
+}
+
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -47,13 +99,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Block not found" }, { status: 404 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as {
-    data?: BlockData;
-    status?: BlockStatus;
-  };
+  const body = (await req.json().catch(() => ({}))) as PatchBody;
 
-  const nextStatus = body.status ?? existing.status;
   const isDataUpdate = typeof body.data !== "undefined";
+  const editMode = body.editMode ?? "standard";
+  const requiresApproval = body.requiresApproval ?? false;
+
+  const nextStatus = resolveNextStatus({
+    existingStatus: existing.status,
+    requestedStatus: body.status,
+    isDataUpdate,
+    editMode,
+    requiresApproval,
+  });
 
   let allowed = false;
 
@@ -82,19 +140,33 @@ export async function PATCH(
     status: nextStatus,
     updatedByUserId: currentUser.id,
     updatedAt: now,
+
     approvedByUserId:
-      nextStatus === "approved" ? currentUser.id : existing.approvedByUserId,
+      nextStatus === "approved"
+        ? existing.approvedByUserId ?? currentUser.id
+        : existing.approvedByUserId,
+
     rejectedByUserId:
       nextStatus === "rejected" ? currentUser.id : existing.rejectedByUserId,
+
     publishedByUserId:
       nextStatus === "published" ? currentUser.id : existing.publishedByUserId,
-    approvedAt: nextStatus === "approved" ? now : existing.approvedAt,
+
+    approvedAt:
+      nextStatus === "approved"
+        ? existing.approvedAt ?? now
+        : existing.approvedAt,
+
     rejectedAt: nextStatus === "rejected" ? now : existing.rejectedAt,
+
     publishedAt: nextStatus === "published" ? now : existing.publishedAt,
   });
 
   if (!updated) {
-    return NextResponse.json({ error: "Failed to update block" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update block" },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ block: updated }, { status: 200 });

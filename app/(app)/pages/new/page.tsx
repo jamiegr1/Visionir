@@ -11,6 +11,8 @@ import {
   Plus,
   Search,
   Sparkles,
+  ChevronRight,
+  Wand2,
 } from "lucide-react";
 
 type Role = "creator" | "approver" | "admin";
@@ -95,9 +97,7 @@ function FieldLabel({
       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
         {children}
       </span>
-      {hint ? (
-        <p className="mt-1 text-xs leading-5 text-slate-500">{hint}</p>
-      ) : null}
+      {hint ? <p className="mt-1 text-xs leading-5 text-slate-500">{hint}</p> : null}
     </label>
   );
 }
@@ -143,9 +143,7 @@ function SectionHeader({
         <h2 className="text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
           {title}
         </h2>
-        {subtitle ? (
-          <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
-        ) : null}
+        {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
       </div>
 
       {right}
@@ -244,7 +242,7 @@ function TemplateCard({
           )}
         >
           {selected ? "Selected" : "Choose"}
-          <ArrowRight className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
         </span>
       </div>
     </button>
@@ -283,6 +281,42 @@ function MetaRow({
       <p className="max-w-[62%] break-words text-right text-sm leading-6 text-slate-700">
         {value}
       </p>
+    </div>
+  );
+}
+
+function StepCard({
+  index,
+  title,
+  text,
+  active,
+}: {
+  index: number;
+  title: string;
+  text: string;
+  active?: boolean;
+}) {
+  return (
+    <div
+      className={cx(
+        "rounded-[22px] border px-4 py-4",
+        active ? "border-[#cfd8f6] bg-[#f7f9ff]" : "border-slate-200 bg-white"
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={cx(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+            active ? "bg-[#5b7cff] text-white" : "bg-slate-100 text-slate-600"
+          )}
+        >
+          {index}
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-slate-900">{title}</p>
+          <p className="mt-1 text-sm leading-6 text-slate-500">{text}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -425,7 +459,7 @@ export default function NewPagePage() {
               <div className="mb-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates?role=${role}`)}
+                  onClick={() => router.push(`/pages?role=${role}`)}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -433,17 +467,17 @@ export default function NewPagePage() {
                 </button>
 
                 <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                  Page Creation
+                  Page Setup
                 </p>
               </div>
 
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
-                Create a page from a governed template
+                Create a new page from a governed template
               </h1>
 
               <p className="mt-2 max-w-[880px] text-sm leading-6 text-slate-500">
-                Choose the right page blueprint first, then create a new page that
-                inherits the approved structure.
+                Choose the right template first, create the page, then move into the page
+                builder to assign blocks section by section.
               </p>
             </div>
 
@@ -455,17 +489,17 @@ export default function NewPagePage() {
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Plus className="h-4 w-4" />
-                {isCreatingPage ? "Creating Page..." : "Create Page"}
+                {isCreatingPage ? "Creating Page..." : "Create & Open Builder"}
               </button>
 
               <p className="text-sm text-slate-500">
-                Start with structure first. Refine content after creation.
+                Template first. Section block assignment comes next.
               </p>
             </div>
           </div>
         </section>
 
-        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_400px]">
+        <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_420px]">
           <main className="min-w-0 space-y-6">
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
               <SectionHeader
@@ -530,8 +564,9 @@ export default function NewPagePage() {
                   New page details
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Give the new page a clear identity. The selected template will handle
-                  the structure.
+                  Give the page a clear identity now. After creation, the builder should
+                  guide users section by section to add existing blocks or generate new
+                  ones.
                 </p>
               </div>
 
@@ -578,9 +613,7 @@ export default function NewPagePage() {
 
               {!selectedTemplate ? (
                 <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center">
-                  <p className="text-sm font-medium text-slate-700">
-                    No template selected
-                  </p>
+                  <p className="text-sm font-medium text-slate-700">No template selected</p>
                   <p className="mt-1 text-sm text-slate-500">
                     Choose a template to continue.
                   </p>
@@ -609,10 +642,7 @@ export default function NewPagePage() {
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-                    <MiniStat
-                      label="Sections"
-                      value={selectedTemplate.sectionCount ?? 0}
-                    />
+                    <MiniStat label="Sections" value={selectedTemplate.sectionCount ?? 0} />
                     <MiniStat
                       label="Required"
                       value={selectedTemplate.requiredSectionCount ?? 0}
@@ -621,10 +651,7 @@ export default function NewPagePage() {
                       label="Category"
                       value={selectedTemplate.category || "custom"}
                     />
-                    <MiniStat
-                      label="Version"
-                      value={`v${selectedTemplate.version ?? 1}`}
-                    />
+                    <MiniStat value={`v${selectedTemplate.version ?? 1}`} label="Version" />
                   </div>
 
                   <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
@@ -638,10 +665,7 @@ export default function NewPagePage() {
                         label="Published"
                         value={formatDate(selectedTemplate.publishedAt)}
                       />
-                      <MetaRow
-                        label="Updated"
-                        value={formatDate(selectedTemplate.updatedAt)}
-                      />
+                      <MetaRow label="Updated" value={formatDate(selectedTemplate.updatedAt)} />
                     </div>
                   </div>
                 </div>
@@ -654,36 +678,44 @@ export default function NewPagePage() {
               </div>
 
               <h3 className="mt-4 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                How this flow works
+                What happens next
               </h3>
 
               <div className="mt-4 space-y-3">
-                {[
-                  {
-                    title: "1. Choose the template",
-                    text: "Start from an approved page structure rather than building from scratch.",
-                  },
-                  {
-                    title: "2. Create the page",
-                    text: "The new page inherits the governed blueprint and section logic.",
-                  },
-                  {
-                    title: "3. Refine content next",
-                    text: "After creation, editors can complete the page within the template guardrails.",
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="rounded-[20px] border border-slate-200 bg-white px-4 py-4"
-                  >
+                <StepCard
+                  index={1}
+                  title="Choose the template"
+                  text="Start from an approved page structure instead of building from scratch."
+                  active
+                />
+                <StepCard
+                  index={2}
+                  title="Create the page"
+                  text="A real page instance is created from that governed structure."
+                />
+                <StepCard
+                  index={3}
+                  title="Build section by section"
+                  text="Inside the page builder, users should click Hero, Content, CTA and then choose or generate blocks for each section."
+                />
+              </div>
+
+              <div className="mt-5 rounded-[22px] border border-slate-200 bg-white p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff]">
+                    <Wand2 className="h-4 w-4" />
+                  </div>
+                  <div>
                     <p className="text-sm font-semibold text-slate-900">
-                      {item.title}
+                      Better block UX belongs in the builder
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      {item.text}
+                      This setup screen should stay simple. The real improvement should
+                      happen on the page detail builder where section-level block assignment
+                      happens.
                     </p>
                   </div>
-                ))}
+                </div>
               </div>
 
               <button
@@ -693,7 +725,7 @@ export default function NewPagePage() {
                 className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <FileText className="h-4 w-4" />
-                {isCreatingPage ? "Creating Page..." : "Create Page"}
+                {isCreatingPage ? "Creating Page..." : "Create & Open Builder"}
               </button>
             </section>
           </aside>

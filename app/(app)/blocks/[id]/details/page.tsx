@@ -587,6 +587,8 @@ export default function BlockDetailPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const returnTo = searchParams.get("returnTo");
+
   const [loading, setLoading] = useState(true);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -757,8 +759,12 @@ export default function BlockDetailPage() {
         throw new Error(json?.error || "Failed to duplicate block");
       }
 
+      const nextReturnTo = returnTo
+        ? `&returnTo=${encodeURIComponent(returnTo)}`
+        : "";
+
       router.push(
-        `/blocks/${json.block.id}/details?role=${role}&refresh=${Date.now()}`
+        `/blocks/${json.block.id}/details?role=${role}&refresh=${Date.now()}${nextReturnTo}`
       );
     } catch (error) {
       console.error("Failed to duplicate block:", error);
@@ -770,25 +776,40 @@ export default function BlockDetailPage() {
     }
   }
 
+  function handleBack() {
+    if (returnTo) {
+      router.push(returnTo);
+      return;
+    }
+
+    router.push(`/blocks?role=${role}`);
+  }
+
+  function withReturnTo(path: string) {
+    if (!returnTo) return path;
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}returnTo=${encodeURIComponent(returnTo)}`;
+  }
+
   function handlePrimaryAction() {
     switch (status) {
       case "pending_approval":
       case "in_review":
-        router.push(`/blocks/${id}/approval?role=${role}`);
+        router.push(withReturnTo(`/blocks/${id}/approval?role=${role}`));
         break;
       case "approved":
-        router.push(`/blocks/${id}/deploy?role=${role}`);
+        router.push(withReturnTo(`/blocks/${id}/deploy?role=${role}`));
         break;
       case "published":
       case "deployed":
       case "completed":
-        router.push(`/blocks/${id}/deploy/embed?role=${role}`);
+        router.push(withReturnTo(`/blocks/${id}/deploy/embed?role=${role}`));
         break;
       case "rejected":
       case "draft":
       case "generating":
       default:
-        router.push(`/blocks/${id}/review?role=${role}`);
+        router.push(withReturnTo(`/blocks/${id}/review?role=${role}`));
         break;
     }
   }
@@ -838,11 +859,11 @@ export default function BlockDetailPage() {
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/blocks?role=${role}`)}
+                  onClick={handleBack}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
-                  Back to Library
+                  {returnTo ? "Back to Page" : "Back to Library"}
                 </button>
 
                 <span
@@ -1103,7 +1124,7 @@ export default function BlockDetailPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      router.push(`/blocks/${id}/review?role=${role}`)
+                      router.push(withReturnTo(`/blocks/${id}/review?role=${role}`))
                     }
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >
@@ -1115,7 +1136,7 @@ export default function BlockDetailPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        router.push(`/blocks/${id}/approval?role=${role}`)
+                        router.push(withReturnTo(`/blocks/${id}/approval?role=${role}`))
                       }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
@@ -1130,7 +1151,7 @@ export default function BlockDetailPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        router.push(`/blocks/${id}/deploy?role=${role}`)
+                        router.push(withReturnTo(`/blocks/${id}/deploy?role=${role}`))
                       }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
@@ -1242,7 +1263,9 @@ export default function BlockDetailPage() {
                       <button
                         type="button"
                         onClick={() =>
-                          router.push(`/blocks/${id}/deploy/embed?role=${role}`)
+                          router.push(
+                            withReturnTo(`/blocks/${id}/deploy/embed?role=${role}`)
+                          )
                         }
                         className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                       >

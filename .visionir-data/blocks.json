@@ -4040,17 +4040,17 @@
         {
           "title": "Independent and UKAS-accredited",
           "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-          "accent": "blue"
+          "accent": "purple"
         },
         {
           "title": "Holistic technical support",
           "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-          "accent": "green"
+          "accent": "purple"
         },
         {
           "title": "Local auditors, practical insight",
           "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-          "accent": "orange"
+          "accent": "purple"
         },
         {
           "title": "Scalable enterprise assurance",
@@ -4088,9 +4088,9 @@
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:25:58.907Z",
     "rejectedAt": null,
-    "publishedAt": "2026-03-26T17:26:02.054Z",
+    "publishedAt": "2026-04-14T17:19:35.627Z",
     "createdAt": "2026-03-26T17:25:45.339Z",
-    "updatedAt": "2026-03-26T17:26:02.054Z"
+    "updatedAt": "2026-04-14T17:19:35.627Z"
   },
   {
     "id": "58e4a21e-b1a1-4e4a-b927-b9326ec67b77",
@@ -4623,10 +4623,75 @@
     "id": "fa2edbaa-3c18-415a-a6d2-39452db35f19",
     "data": {
       "componentType": "hero-standard",
-      "headline": "Website Development Service Page — Hero",
-      "eyebrow": "Hero",
+      "headline": "Title updated",
+      "eyebrow": "Test For website develo3seqwdq3dw3edw3edpment service page",
       "body": "Draft content for the Hero section.",
-      "ctaText": "Learn more"
+      "ctaText": "Learn more",
+      "subheading": "This will be the updated sub heading for the hero section"
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": "user-1",
+    "rejectedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": "2026-04-14T15:25:03.007Z",
+    "rejectedAt": null,
+    "publishedAt": null,
+    "createdAt": "2026-04-13T20:18:33.123Z",
+    "updatedAt": "2026-04-14T17:21:54.038Z"
+  },
+  {
+    "id": "ff106d79-224f-4674-b255-f219ba56d708",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Us",
+      "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
+      "imageUrl": "/farmer.jpg",
+      "valuePoints": [
+        {
+          "title": "Independent and UKAS-accredited",
+          "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
+          "accent": "blue"
+        },
+        {
+          "title": "Holistic technical support",
+          "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
+          "accent": "green"
+        },
+        {
+          "title": "Local auditors, practical insight",
+          "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
+          "accent": "orange"
+        },
+        {
+          "title": "Scalable enterprise assurance",
+          "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero-standard"
     },
     "status": "draft",
     "createdByUserId": "user-1",
@@ -4639,7 +4704,7 @@
     "approvedAt": null,
     "rejectedAt": null,
     "publishedAt": null,
-    "createdAt": "2026-04-13T20:18:33.123Z",
-    "updatedAt": "2026-04-13T20:18:33.123Z"
+    "createdAt": "2026-04-14T17:24:31.759Z",
+    "updatedAt": "2026-04-14T17:24:41.120Z"
   }
 ]

@@ -103,6 +103,8 @@ type HistorySnapshot = {
   aiImprovedFields: Record<string, boolean>;
 };
 
+type EditMode = "standard" | "page_builder";
+
 export default function BlockReviewPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -115,11 +117,22 @@ export default function BlockReviewPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const editMode = useMemo<EditMode>(() => {
+    return searchParams.get("editMode") === "page_builder"
+      ? "page_builder"
+      : "standard";
+  }, [searchParams]);
+
+  const returnTo = useMemo(() => searchParams.get("returnTo") || "", [searchParams]);
+
+  const isPageBuilderEdit = editMode === "page_builder" || Boolean(returnTo);
+
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [describe, setDescribe] = useState("");
   const [changeLog, setChangeLog] = useState<ChangeLogItem[]>([]);
   const [pendingPatchExists, setPendingPatchExists] = useState(false);
+  const [requiresApproval, setRequiresApproval] = useState(false);
   const [aiImprovedFields, setAiImprovedFields] = useState<Record<string, boolean>>(
     {}
   );
@@ -148,6 +161,7 @@ export default function BlockReviewPage() {
         }
 
         const loaded = json.block.data as BlockData;
+        const currentStatus = String(json?.block?.status || "");
 
         setEditable(loaded);
         setAiImprovedFields({});
@@ -155,7 +169,8 @@ export default function BlockReviewPage() {
         previousAiImprovedRef.current = {};
         setUndoStack([]);
         setRedoStack([]);
-        setPendingPatchExists(json?.block?.status === "pending_approval");
+        setPendingPatchExists(currentStatus === "pending_approval");
+        setRequiresApproval(currentStatus === "pending_approval");
         isInitialisingRef.current = true;
       } catch (error) {
         console.error("Failed to load review page:", error);
@@ -308,6 +323,8 @@ export default function BlockReviewPage() {
       body: JSON.stringify({
         data: editable,
         ...(nextStatus ? { status: nextStatus } : {}),
+        editMode: isPageBuilderEdit ? "page_builder" : "standard",
+        requiresApproval,
       }),
     });
 
@@ -386,6 +403,7 @@ export default function BlockReviewPage() {
       if (!patched) return;
 
       setEditable(patched);
+      setRequiresApproval(true);
 
       setChangeLog((prev) => [
         {
@@ -451,8 +469,34 @@ export default function BlockReviewPage() {
     }
   }
 
+  async function handlePrimaryPageBuilderAction() {
+    try {
+      if (requiresApproval) {
+        await saveBlock("pending_approval");
+        router.push(`/blocks/${id}/approval?role=${role}`);
+        return;
+      }
+
+      await saveBlock();
+
+      if (returnTo) {
+        router.push(returnTo);
+        return;
+      }
+
+      router.push(`/pages?role=${role}`);
+    } catch (error) {
+      console.error("Failed to finish page-builder edit:", error);
+    }
+  }
+
   async function handleSubmitApproval() {
     try {
+      if (isPageBuilderEdit) {
+        await handlePrimaryPageBuilderAction();
+        return;
+      }
+
       await saveBlock("pending_approval");
       router.push(`/blocks/${id}/approval?role=${role}`);
     } catch (error) {
@@ -478,28 +522,55 @@ export default function BlockReviewPage() {
 
   return (
     <ReviewEdit
-      editable={editable}
-      setEditable={setEditable}
-      previewDoc={previewDoc}
-      describe={describe}
-      setDescribe={setDescribe}
-      improveField={improveField}
-      requestDescribeChanges={requestDescribeChanges}
-      pendingPatchExists={pendingPatchExists}
-      governance={governance}
-      onSaveDraft={handleSaveDraft}
-      onSubmitApproval={handleSubmitApproval}
-      onUndo={handleUndo}
-      onRedo={handleRedo}
-      canUndo={undoStack.length > 0}
-      canRedo={redoStack.length > 0}
-      aiImprovedFields={aiImprovedFields}
-      onResetAiImproved={handleResetAiImproved}
-      submitLabel="Submit for Approval"
-      changeLog={changeLog}
-      canEdit={!pendingPatchExists}
-      canSubmit={!pendingPatchExists}
-      canPublish={false}
-    />
+    editable={editable}
+    setEditable={setEditable}
+    previewDoc={previewDoc}
+    describe={describe}
+    setDescribe={setDescribe}
+    improveField={improveField}
+    requestDescribeChanges={requestDescribeChanges}
+    pendingPatchExists={pendingPatchExists}
+    governance={governance}
+  
+    // MODE
+    mode={isPageBuilderEdit ? "page_builder" : "standard"}
+  
+    // BACK BUTTON (only in page builder)
+    onBack={
+      isPageBuilderEdit && returnTo
+        ? () => router.push(returnTo)
+        : undefined
+    }
+    backLabel="Back to Page"
+  
+    // PRIMARY ACTION (this is the key change)
+    onPrimaryAction={
+      isPageBuilderEdit ? handlePrimaryPageBuilderAction : undefined
+    }
+    primaryActionLabel={
+      requiresApproval ? "Submit for Approval" : "Use This Block"
+    }
+    primaryActionDisabled={pendingPatchExists}
+  
+    // STANDARD FLOW (unchanged)
+    onSaveDraft={isPageBuilderEdit ? undefined : handleSaveDraft}
+    onSubmitApproval={!isPageBuilderEdit ? handleSubmitApproval : undefined}
+  
+    // HISTORY
+    onUndo={handleUndo}
+    onRedo={handleRedo}
+    canUndo={undoStack.length > 0}
+    canRedo={redoStack.length > 0}
+  
+    // AI STATE
+    aiImprovedFields={aiImprovedFields}
+    onResetAiImproved={handleResetAiImproved}
+  
+    // UI
+    changeLog={changeLog}
+    canEdit={!pendingPatchExists}
+    canSubmit={!pendingPatchExists}
+    canPublish={false}
+  />
   );
 }

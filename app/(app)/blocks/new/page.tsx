@@ -6,6 +6,7 @@ import Generating from "./_components/Generating";
 import type { BlockData } from "@/lib/types";
 import { hasPermission, type Role } from "@/lib/permissions";
 import { COMPONENT_OPTIONS } from "@/lib/component-options";
+import type { PageRecord, PageTemplateSectionInstance } from "@/lib/template-types";
 
 type Step = "context" | "instructions" | "generating";
 type ImageSourceMode = "none" | "upload" | "gallery";
@@ -49,12 +50,52 @@ function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
+function prettifyLabel(value: string) {
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function buildDefaultPrompt(params: {
+  sectionLabel?: string;
+  pageName?: string;
+  templateName?: string;
+  promptHint?: string;
+  helpText?: string;
+  componentName?: string;
+}) {
+  const {
+    sectionLabel,
+    pageName,
+    templateName,
+    promptHint,
+    helpText,
+    componentName,
+  } = params;
+
+  return [
+    `Create a ${sectionLabel || "page"} block${
+      componentName ? ` using the ${componentName} pattern` : ""
+    }.`,
+    pageName ? `This is for the page "${pageName}".` : "",
+    templateName ? `The page uses the "${templateName}" template.` : "",
+    promptHint ? `Section objective: ${promptHint}` : "",
+    helpText ? `Editor guidance: ${helpText}` : "",
+    "Keep the output clear, structured, and aligned with brand governance.",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
 function TopBar({
   title,
   stepLabel,
+  onBack,
 }: {
   title: string;
   stepLabel: string;
+  onBack?: () => void;
 }) {
   return (
     <div className="sticky top-0 z-40 shrink-0 border-b border-[#e8ebf3] bg-[#f6f7fb]/95 px-8 py-4 backdrop-blur-md">
@@ -62,6 +103,7 @@ function TopBar({
         <div className="flex items-center gap-4">
           <button
             type="button"
+            onClick={onBack}
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#edf0f6] bg-white text-[#98a1ba] transition hover:text-slate-700"
           >
             <svg
@@ -71,7 +113,7 @@ function TopBar({
               stroke="currentColor"
               strokeWidth="1.8"
             >
-              <path d="M5 7h14M5 12h14M5 17h14" />
+              <path d="M15 18 9 12l6-6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </button>
 
@@ -100,21 +142,6 @@ function TopBar({
             >
               <circle cx="11" cy="11" r="6" />
               <path d="m20 20-3.5-3.5" strokeLinecap="round" />
-            </svg>
-          </button>
-
-          <button
-            type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#edf0f6] bg-white text-[#98a1ba] transition hover:text-slate-700"
-          >
-            <svg
-              className="h-[16px] w-[16px]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M12 5v14M5 12h14" strokeLinecap="round" />
             </svg>
           </button>
         </div>
@@ -157,9 +184,7 @@ function ProgressHeader({
           />
         </div>
 
-        <span className="text-[12px] font-medium text-[#98a1ba]">
-          {percent}%
-        </span>
+        <span className="text-[12px] font-medium text-[#98a1ba]">{percent}%</span>
       </div>
     </div>
   );
@@ -335,9 +360,7 @@ function ImageSourceSelector({
         )}
       >
         <div>
-          <div className="text-[13px] font-semibold text-[#20263a]">
-            No Image
-          </div>
+          <div className="text-[13px] font-semibold text-[#20263a]">No Image</div>
 
           <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">
             Generate this block without an accompanying image.
@@ -436,8 +459,7 @@ function ImageSourceSelector({
           </div>
 
           <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">
-            Automatically select the most suitable image from your brand
-            gallery.
+            Automatically select the most suitable image from your brand gallery.
           </p>
         </div>
 
@@ -450,6 +472,88 @@ function ImageSourceSelector({
           )}
         />
       </button>
+    </div>
+  );
+}
+
+function ContextBanner({
+  pageName,
+  templateName,
+  sectionLabel,
+  sectionKey,
+  promptHint,
+  helpText,
+}: {
+  pageName: string;
+  templateName: string;
+  sectionLabel: string;
+  sectionKey: string;
+  promptHint?: string;
+  helpText?: string;
+}) {
+  return (
+    <div className="mb-5 rounded-[22px] border border-[#dbe5ff] bg-[#f6f8ff] px-5 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-[#e8edff] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-[#4b63d7]">
+          Page context
+        </span>
+      </div>
+
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
+            Page
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-[#20263a]">{pageName}</p>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
+            Template
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-[#20263a]">
+            {templateName}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
+            Section
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-[#20263a]">
+            {sectionLabel}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
+            Section Key
+          </p>
+          <p className="mt-1 text-[14px] font-semibold text-[#20263a]">{sectionKey}</p>
+        </div>
+      </div>
+
+      {promptHint || helpText ? (
+        <div className="mt-4 rounded-[18px] border border-[#e4e9f7] bg-white px-4 py-4">
+          {promptHint ? (
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                Section Objective
+              </p>
+              <p className="mt-1 text-[13px] leading-6 text-[#46506b]">{promptHint}</p>
+            </div>
+          ) : null}
+
+          {helpText ? (
+            <div className={cx(promptHint && "mt-3")}>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                Editor Guidance
+              </p>
+              <p className="mt-1 text-[13px] leading-6 text-[#46506b]">{helpText}</p>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -476,7 +580,7 @@ export default function NewBlockPage() {
   const pageId = searchParams.get("pageId") || "";
   const sectionId = searchParams.get("sectionId") || "";
 
-  const allowedComponentIds = useMemo(() => {
+  const rawAllowedComponentIds = useMemo(() => {
     const raw = searchParams.get("allowed");
     if (!raw) return null;
 
@@ -486,7 +590,51 @@ export default function NewBlockPage() {
       .filter(Boolean);
   }, [searchParams]);
 
-  const defaultComponentId = searchParams.get("defaultComponentId");
+  const defaultComponentId = searchParams.get("defaultComponentId") || "";
+  const returnTo = searchParams.get("returnTo") || "";
+
+  const [pageContextLoading, setPageContextLoading] = useState(false);
+  const [pageContextError, setPageContextError] = useState<string | null>(null);
+  const [pageRecord, setPageRecord] = useState<PageRecord | null>(null);
+  const [sectionContext, setSectionContext] =
+    useState<PageTemplateSectionInstance | null>(null);
+
+  const sectionMeta = useMemo(() => {
+    if (!sectionContext) {
+      return {
+        promptHint: "",
+        helpText: "",
+      };
+    }
+
+    const candidate = sectionContext as PageTemplateSectionInstance & {
+      promptHint?: string;
+      helpText?: string;
+      ai?: {
+        promptHint?: string;
+      };
+    };
+
+    return {
+      promptHint: candidate.promptHint || candidate.ai?.promptHint || "",
+      helpText: candidate.helpText || "",
+    };
+  }, [sectionContext]);
+
+  const resolvedSectionLabel = sectionContext?.label || "";
+  const resolvedSectionKey = sectionContext?.key || "";
+  const resolvedPromptHint = sectionMeta.promptHint;
+  const resolvedHelpText = sectionMeta.helpText;
+
+  const allowedComponentIds = useMemo(() => {
+    if (sectionContext?.allowedComponentIds?.length) {
+      return sectionContext.allowedComponentIds;
+    }
+    return rawAllowedComponentIds;
+  }, [sectionContext, rawAllowedComponentIds]);
+
+  const resolvedDefaultComponentId =
+    sectionContext?.defaultComponentId || defaultComponentId || "";
 
   const availableBlockTypes = useMemo(() => {
     if (!allowedComponentIds || allowedComponentIds.length === 0) {
@@ -519,6 +667,112 @@ export default function NewBlockPage() {
   const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
+    async function loadContext() {
+      if (!pageId || !sectionId) return;
+
+      try {
+        setPageContextLoading(true);
+        setPageContextError(null);
+
+        const res = await fetch(`/api/pages/${pageId}?role=${role}`, {
+          cache: "no-store",
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        if (!res.ok || !json?.page) {
+          throw new Error("Failed to load page context.");
+        }
+
+        const nextPage = json.page as PageRecord;
+        const nextSection =
+          nextPage.sections?.find((section) => section.sectionId === sectionId) || null;
+
+        setPageRecord(nextPage);
+        setSectionContext(nextSection);
+
+        if (!nextSection) {
+          throw new Error("Could not find the selected section on this page.");
+        }
+      } catch (e: any) {
+        console.error(e);
+        setPageContextError(e?.message || "Failed to load generation context.");
+      } finally {
+        setPageContextLoading(false);
+      }
+    }
+
+    void loadContext();
+  }, [pageId, sectionId, role]);
+
+  useEffect(() => {
+    if (availableBlockTypes.length === 0) return;
+
+    if (
+      resolvedDefaultComponentId &&
+      availableBlockTypes.some((item) => item.id === resolvedDefaultComponentId)
+    ) {
+      setBlockType(resolvedDefaultComponentId);
+      return;
+    }
+
+    setBlockType((current) => {
+      if (current && availableBlockTypes.some((item) => item.id === current)) {
+        return current;
+      }
+
+      return availableBlockTypes[0]?.id || "";
+    });
+  }, [availableBlockTypes, resolvedDefaultComponentId]);
+
+  useEffect(() => {
+    if (!sectionContext && !pageRecord) return;
+
+    const selectedType =
+      availableBlockTypes.find((item) => item.id === resolvedDefaultComponentId) ||
+      availableBlockTypes[0] ||
+      null;
+
+    if (sectionContext) {
+      setBlockName((current) =>
+        current === "Why Choose Us" || !current.trim()
+          ? sectionContext.label || prettifyLabel(sectionContext.key) || "New Block"
+          : current
+      );
+
+      setLocation((current) =>
+        current === "Food, Feed & Agriculture" || !current.trim()
+          ? pageRecord?.name || pageRecord?.templateName || "Page Section"
+          : current
+      );
+
+      setPrompt((current) => {
+        const isStillDefault =
+          current.includes('Create a "Why Choose Us" content block') ||
+          !current.trim();
+
+        if (!isStillDefault) return current;
+
+        return buildDefaultPrompt({
+          sectionLabel: sectionContext.label,
+          pageName: pageRecord?.name,
+          templateName: pageRecord?.templateName,
+          promptHint: resolvedPromptHint,
+          helpText: resolvedHelpText,
+          componentName: selectedType?.name,
+        });
+      });
+    }
+  }, [
+    sectionContext,
+    pageRecord,
+    availableBlockTypes,
+    resolvedDefaultComponentId,
+    resolvedPromptHint,
+    resolvedHelpText,
+  ]);
+
+  useEffect(() => {
     if (step !== "generating") return;
 
     const start = performance.now();
@@ -528,10 +782,7 @@ export default function NewBlockPage() {
 
     const interval = window.setInterval(() => {
       const elapsed = performance.now() - start;
-      const rawProgress = Math.min(
-        (elapsed / MIN_GENERATION_TIME_MS) * 100,
-        99
-      );
+      const rawProgress = Math.min((elapsed / MIN_GENERATION_TIME_MS) * 100, 99);
 
       setProgress(rawProgress);
 
@@ -553,25 +804,20 @@ export default function NewBlockPage() {
     return () => window.clearInterval(interval);
   }, [step]);
 
-  useEffect(() => {
-    if (availableBlockTypes.length === 0) return;
-
-    if (
-      defaultComponentId &&
-      availableBlockTypes.some((item) => item.id === defaultComponentId)
-    ) {
-      setBlockType(defaultComponentId);
+  function handleCancel() {
+    if (returnTo) {
+      router.push(returnTo);
       return;
     }
 
-    setBlockType((current) => {
-      if (current && availableBlockTypes.some((item) => item.id === current)) {
-        return current;
-      }
+    if (pageId) {
+      const sectionParam = sectionId ? `&sectionId=${sectionId}` : "";
+      router.push(`/pages/${pageId}?role=${role}${sectionParam}`);
+      return;
+    }
 
-      return availableBlockTypes[0]?.id || "";
-    });
-  }, [availableBlockTypes, defaultComponentId]);
+    router.push(`/?role=${role}`);
+  }
 
   function handleContinue() {
     setError(null);
@@ -623,8 +869,24 @@ Image Source: ${
               : "Provided Brand Image"
             : "Visionir Brand Gallery Selection"
       }
+${pageRecord ? `Page Name: ${pageRecord.name}` : ""}
+${pageRecord ? `Template Name: ${pageRecord.templateName}` : ""}
 ${pageId ? `Page ID: ${pageId}` : ""}
 ${sectionId ? `Section ID: ${sectionId}` : ""}
+${resolvedSectionLabel ? `Section Label: ${resolvedSectionLabel}` : ""}
+${resolvedSectionKey ? `Section Key: ${resolvedSectionKey}` : ""}
+${resolvedPromptHint ? `Section Prompt Hint: ${resolvedPromptHint}` : ""}
+${resolvedHelpText ? `Section Help Text: ${resolvedHelpText}` : ""}
+${
+  sectionContext?.allowedComponentIds?.length
+    ? `Allowed Component Types: ${sectionContext.allowedComponentIds.join(", ")}`
+    : ""
+}
+${
+  sectionContext?.defaultComponentId
+    ? `Recommended Default Component Type: ${sectionContext.defaultComponentId}`
+    : ""
+}
 
 Generation Request:
 ${prompt}
@@ -657,6 +919,12 @@ ${prompt}
             data: {
               ...generateJson.blockData,
               componentType: blockType,
+              pageId: pageId || undefined,
+              pageName: pageRecord?.name || undefined,
+              sectionId: sectionId || undefined,
+              sectionLabel: resolvedSectionLabel || undefined,
+              sectionKey: resolvedSectionKey || undefined,
+              templateName: pageRecord?.templateName || undefined,
             },
             status: "draft",
           }),
@@ -686,7 +954,8 @@ ${prompt}
 
           if (!attachRes.ok) {
             throw new Error(
-              attachJson?.error || "Block was created but could not be attached to the page."
+              attachJson?.error ||
+                "Block was created but could not be attached to the page."
             );
           }
 
@@ -706,7 +975,13 @@ ${prompt}
 
       window.setTimeout(() => {
         if (result.attachedToPage && pageId) {
-          router.push(`/pages/${pageId}?role=${role}`);
+          if (returnTo) {
+            router.push(returnTo);
+            return;
+          }
+
+          const sectionParam = sectionId ? `&sectionId=${sectionId}` : "";
+          router.push(`/pages/${pageId}?role=${role}${sectionParam}`);
           return;
         }
 
@@ -739,7 +1014,7 @@ ${prompt}
   if (step === "generating") {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
-        <TopBar title="Generating" stepLabel="Step 3 of 3" />
+        <TopBar title="Generating" stepLabel="Step 3 of 3" onBack={handleCancel} />
 
         <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
           <Generating progress={progress} label={progressLabel} />
@@ -748,22 +1023,52 @@ ${prompt}
     );
   }
 
+  const contextMode = Boolean(pageId && sectionId && sectionContext);
+
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
       <TopBar
-        title="Create Block"
+        title={contextMode ? `Generate for ${resolvedSectionLabel}` : "Create Block"}
         stepLabel={step === "context" ? "Step 1 of 3" : "Step 2 of 3"}
+        onBack={handleCancel}
       />
 
       <div className="flex flex-1 items-center justify-center overflow-auto px-8 py-6">
-        <div className="mx-auto w-full max-w-[900px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+        <div className="mx-auto w-full max-w-[980px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
           {step === "context" ? (
             <>
               <ProgressHeader
                 currentStep={1}
                 title="Block Context"
-                subtitle="Define the core block details before moving into generation instructions."
+                subtitle={
+                  contextMode
+                    ? "This generator has been pre-configured using the selected page section."
+                    : "Define the core block details before moving into generation instructions."
+                }
               />
+
+              {pageContextLoading ? (
+                <div className="mb-5 rounded-[22px] border border-dashed border-[#d9dfef] bg-[#fafbff] px-5 py-8 text-center text-sm text-[#7d859d]">
+                  Loading page and section context…
+                </div>
+              ) : null}
+
+              {pageContextError ? (
+                <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {pageContextError}
+                </div>
+              ) : null}
+
+              {contextMode ? (
+                <ContextBanner
+                  pageName={pageRecord?.name || ""}
+                  templateName={pageRecord?.templateName || ""}
+                  sectionLabel={resolvedSectionLabel}
+                  sectionKey={resolvedSectionKey}
+                  promptHint={resolvedPromptHint}
+                  helpText={resolvedHelpText}
+                />
+              ) : null}
 
               <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
                 <FormRow label="Block Name">
@@ -796,7 +1101,10 @@ ${prompt}
                   )}
                 </FormRow>
 
-                <FormRow label="Where will this block be used">
+                <FormRow
+                  label="Where will this block be used"
+                  helper={contextMode ? "Pre-filled from page context" : undefined}
+                >
                   <TextInput
                     value={location}
                     onChange={setLocation}
@@ -831,11 +1139,7 @@ ${prompt}
               <div className="mt-5 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={() =>
-                    pageId
-                      ? router.push(`/pages/${pageId}?role=${role}`)
-                      : router.push(`/?role=${role}`)
-                  }
+                  onClick={handleCancel}
                   className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
                 >
                   Cancel
@@ -844,9 +1148,7 @@ ${prompt}
                 <button
                   type="button"
                   onClick={handleContinue}
-                  disabled={
-                    !blockName.trim() || !blockType.trim() || !location.trim()
-                  }
+                  disabled={!blockName.trim() || !blockType.trim() || !location.trim()}
                   className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Continue
@@ -858,8 +1160,23 @@ ${prompt}
               <ProgressHeader
                 currentStep={2}
                 title="AI Instructions"
-                subtitle="Provide the generation prompt and review the governance controls applied to the output."
+                subtitle={
+                  contextMode
+                    ? "Review the section-aware prompt and refine the content request."
+                    : "Provide the generation prompt and review the governance controls applied to the output."
+                }
               />
+
+              {contextMode ? (
+                <ContextBanner
+                  pageName={pageRecord?.name || ""}
+                  templateName={pageRecord?.templateName || ""}
+                  sectionLabel={resolvedSectionLabel}
+                  sectionKey={resolvedSectionKey}
+                  promptHint={resolvedPromptHint}
+                  helpText={resolvedHelpText}
+                />
+              ) : null}
 
               <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
                 <FormRow label="AI Prompt" multiline helper="Required">
@@ -867,7 +1184,7 @@ ${prompt}
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Describe the content block you want to create..."
-                    className="min-h-[140px] w-full rounded-xl border border-[#e3e7f2] bg-[#fafbff] px-4 py-3 text-[14px] leading-[1.7] text-[#2c3348] outline-none transition placeholder:text-[#b6bdd2] hover:border-[#d2d8ea] focus:border-[#5b7cff] focus:bg-white focus:shadow-[0_0_0_4px_rgba(91,124,255,0.08)]"
+                    className="min-h-[160px] w-full rounded-xl border border-[#e3e7f2] bg-[#fafbff] px-4 py-3 text-[14px] leading-[1.7] text-[#2c3348] outline-none transition placeholder:text-[#b6bdd2] hover:border-[#d2d8ea] focus:border-[#5b7cff] focus:bg-white focus:shadow-[0_0_0_4px_rgba(91,124,255,0.08)]"
                   />
                 </FormRow>
               </div>
@@ -877,11 +1194,11 @@ ${prompt}
                   Governance & Output Controls
                 </h3>
                 <p className="mt-2 text-[13px] text-[#7d859d]">
-                  All generated blocks are validated against organisational
-                  design, accessibility, performance, and content standards.
+                  All generated blocks are validated against organisational design,
+                  accessibility, performance, and content standards.
                 </p>
 
-                <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-4">
+                <div className="mt-4 grid grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
                   {governanceChecks.map((item) => (
                     <div key={item} className="flex min-w-0 items-center gap-3">
                       <span className="relative h-[18px] w-[18px] shrink-0 rounded-full bg-[#5b7cff]">
@@ -914,7 +1231,7 @@ ${prompt}
                   type="button"
                   onClick={handleGenerate}
                   disabled={isGenerating || !prompt.trim() || !blockType.trim()}
-                  className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="min-w-[190px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isGenerating
                     ? "Generating..."

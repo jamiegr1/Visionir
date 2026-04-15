@@ -96,23 +96,30 @@ export default function Sidebar() {
     if (href === "/dashboard") {
       return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
     }
-
-    if (href === "/blocks/new") return pathname === "/blocks/new";
-
-    if (href === "/blocks") {
-      return pathname === "/blocks" || pathname.startsWith("/blocks/");
+  
+    if (href === "/blocks/new") {
+      return pathname === "/blocks/new";
     }
-
-    if (href === "/brand") return pathname === "/brand";
-
+  
+    if (href === "/blocks") {
+      return (
+        pathname === "/blocks" ||
+        (pathname.startsWith("/blocks/") && !pathname.startsWith("/blocks/new"))
+      );
+    }
+  
+    if (href === "/brand") {
+      return pathname === "/brand";
+    }
+  
     if (href === "/templates") {
       return pathname === "/templates" || pathname.startsWith("/templates/");
     }
-
+  
     if (href === "/pages") {
       return pathname === "/pages" || pathname.startsWith("/pages/");
     }
-
+  
     return pathname === href || pathname.startsWith(`${href}/`);
   };
 
