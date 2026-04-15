@@ -1,19 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   LayoutDashboard,
   Sparkles,
   Blocks,
   Palette,
   LayoutTemplate,
-  FileText, // ✅ added for Pages
+  FileText,
+  ClipboardCheck,
   Settings,
 } from "lucide-react";
+import type { Role } from "@/lib/permissions";
+import { hasPermission } from "@/lib/permissions";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
+}
+
+function isRole(value: string | null): value is Role {
+  return value === "creator" || value === "approver" || value === "admin";
 }
 
 type NavItemProps = {
@@ -58,69 +65,99 @@ function NavItem({ href, label, icon, active = false }: NavItemProps) {
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const role = isRole(searchParams.get("role")) ? searchParams.get("role") : "admin";
+  const resolvedRole = role as Role;
+
+  const canAccessApprovals =
+    hasPermission(resolvedRole, "block.approve") ||
+    hasPermission(resolvedRole, "page.approve");
 
   const navItems = [
     {
-      href: "/dashboard",
+      href: `/dashboard?role=${resolvedRole}`,
+      match: "/dashboard",
       label: "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/blocks/new",
+      href: `/blocks/new?role=${resolvedRole}`,
+      match: "/blocks/new",
       label: "Generate Block",
       icon: <Sparkles className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/blocks",
+      href: `/blocks?role=${resolvedRole}`,
+      match: "/blocks",
       label: "Block Library",
       icon: <Blocks className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/brand",
+      href: `/brand?role=${resolvedRole}`,
+      match: "/brand",
       label: "Brand System",
       icon: <Palette className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/templates",
+      href: `/templates?role=${resolvedRole}`,
+      match: "/templates",
       label: "Templates",
       icon: <LayoutTemplate className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: "/pages", // ✅ NEW
+      href: `/pages?role=${resolvedRole}`,
+      match: "/pages",
       label: "Pages",
-      icon: <FileText className="h-5 w-5" strokeWidth={1.9} />, // ✅ NEW
+      icon: <FileText className="h-5 w-5" strokeWidth={1.9} />,
     },
+    ...(canAccessApprovals
+      ? [
+          {
+            href: `/approvals?role=${resolvedRole}`,
+            match: "/approvals",
+            label: "Approvals",
+            icon: <ClipboardCheck className="h-5 w-5" strokeWidth={1.9} />,
+          },
+        ]
+      : []),
   ];
 
   const isActive = (href: string) => {
-    if (href === "/dashboard") {
+    const match = navItems.find((item) => item.href === href)?.match ?? href;
+
+    if (match === "/dashboard") {
       return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
     }
-  
-    if (href === "/blocks/new") {
+
+    if (match === "/blocks/new") {
       return pathname === "/blocks/new";
     }
-  
-    if (href === "/blocks") {
+
+    if (match === "/blocks") {
       return (
         pathname === "/blocks" ||
         (pathname.startsWith("/blocks/") && !pathname.startsWith("/blocks/new"))
       );
     }
-  
-    if (href === "/brand") {
+
+    if (match === "/brand") {
       return pathname === "/brand";
     }
-  
-    if (href === "/templates") {
+
+    if (match === "/templates") {
       return pathname === "/templates" || pathname.startsWith("/templates/");
     }
-  
-    if (href === "/pages") {
+
+    if (match === "/pages") {
       return pathname === "/pages" || pathname.startsWith("/pages/");
     }
-  
-    return pathname === href || pathname.startsWith(`${href}/`);
+
+    if (match === "/approvals") {
+      return pathname === "/approvals" || pathname.startsWith("/approvals/");
+    }
+
+    return pathname === match || pathname.startsWith(`${match}/`);
   };
 
   return (
@@ -128,16 +165,17 @@ export default function Sidebar() {
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
       <Link
-  href="/dashboard"
-  prefetch={false}
-  className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
-  aria-label="Visionir dashboard"
->
-  <img
-    src="/mediascout-white-logo.png"
-    alt="Mediascout"
-    className="h-[46px] w-[46px] object-cover rounded-lg"  />
-</Link>
+        href={`/dashboard?role=${resolvedRole}`}
+        prefetch={false}
+        className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
+        aria-label="Visionir dashboard"
+      >
+        <img
+          src="/mediascout-white-logo.png"
+          alt="Mediascout"
+          className="h-[46px] w-[46px] rounded-lg object-cover"
+        />
+      </Link>
 
       <nav className="flex flex-1 flex-col items-center gap-3">
         {navItems.map((item) => (
@@ -153,7 +191,7 @@ export default function Sidebar() {
 
       <div className="mt-4 flex flex-col items-center gap-3">
         <NavItem
-          href="/settings"
+          href={`/settings?role=${resolvedRole}`}
           label="Settings"
           icon={<Settings className="h-5 w-5" strokeWidth={1.9} />}
           active={pathname === "/settings" || pathname.startsWith("/settings/")}

@@ -433,11 +433,11 @@
     "templateName": "Website Development Service",
     "name": "Website Development Service Page",
     "slug": "web-development-page",
-    "status": "in_progress",
+    "status": "published",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "createdAt": "2026-04-13T16:01:43.448Z",
-    "updatedAt": "2026-04-14T17:21:48.969Z",
+    "updatedAt": "2026-04-15T07:41:32.245Z",
     "sections": [
       {
         "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",

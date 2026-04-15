@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
 import {
@@ -28,28 +27,6 @@ function cx(...classes: Array<string | false | null | undefined>) {
 
 function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
-}
-
-function NavIcon({
-  active = false,
-  children,
-}: {
-  active?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      className={cx(
-        "flex h-11 w-11 items-center justify-center rounded-xl transition",
-        active
-          ? "bg-[#eef3ff] text-[#5b7cff] shadow-sm"
-          : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-      )}
-    >
-      {children}
-    </button>
-  );
 }
 
 function StatusPill({
@@ -226,6 +203,7 @@ function mapApiStatusToBlockStatus(value: unknown): BlockStatus {
 
 export default function BlockApprovalPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const role = useMemo<Role>(() => {
@@ -246,7 +224,7 @@ export default function BlockApprovalPage() {
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [status, setStatus] = useState<BlockStatus>("draft");
-  const [createdByUserId, setCreatedByUserId] = useState("user-1");
+  const [, setCreatedByUserId] = useState("user-1");
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
@@ -482,6 +460,10 @@ export default function BlockApprovalPage() {
       setChecks((prev) =>
         prev.map((item) => ({ ...item, state: "approved" }))
       );
+
+      window.setTimeout(() => {
+        router.push(`/approvals?role=${role}`);
+      }, 500);
     } catch (error) {
       console.error("Approve failed:", error);
       alert("Failed to approve block");
@@ -501,6 +483,10 @@ export default function BlockApprovalPage() {
           state: index === prev.length - 1 ? "rejected" : "approved",
         }))
       );
+
+      window.setTimeout(() => {
+        router.push(`/approvals?role=${role}`);
+      }, 500);
     } catch (error) {
       console.error("Reject failed:", error);
       alert("Failed to reject block");
@@ -548,18 +534,18 @@ export default function BlockApprovalPage() {
   const previewHeight =
     viewport === "mobile" ? 1180 : viewport === "tablet" ? 1220 : 560;
 
-    const manualReviewReady =
+  const manualReviewReady =
     currentUser.role === "admin"
       ? status === "pending_approval"
       : checks[checks.length - 1]?.state === "waiting" &&
         status === "pending_approval";
 
-        const userCanReviewByRole =
-        hasPermission(currentUser.role, "block.approve") ||
-        hasPermission(currentUser.role, "block.reject");
-    
-      const userCanApprove = hasPermission(currentUser.role, "block.approve");
-      const userCanReject = hasPermission(currentUser.role, "block.reject");
+  const userCanReviewByRole =
+    hasPermission(currentUser.role, "block.approve") ||
+    hasPermission(currentUser.role, "block.reject");
+
+  const userCanApprove = hasPermission(currentUser.role, "block.approve");
+  const userCanReject = hasPermission(currentUser.role, "block.reject");
 
   if (loading) {
     return (
@@ -580,114 +566,6 @@ export default function BlockApprovalPage() {
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
       <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-        <aside className="flex w-[74px] shrink-0 flex-col items-center border-r border-slate-200 bg-white py-5">
-          <div className="mb-8 flex items-center justify-center">
-            <div className="relative h-10 w-10">
-              <Image
-                src="/visionirlogo.png"
-                alt="Visionir"
-                fill
-                priority
-                className="object-contain"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-1 flex-col items-center gap-3">
-            <NavIcon active>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="4" width="16" height="16" rx="4" />
-                <path d="M8 12h8M12 8v8" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M4 7h16M7 4v16" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <rect x="4" y="5" width="16" height="14" rx="3" />
-                <path d="M8 9h8M8 13h5" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M7 3v4M17 3v4M4 9h16" />
-                <rect x="4" y="5" width="16" height="15" rx="3" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="8" r="3.5" />
-                <path d="M5 20a7 7 0 0 1 14 0" />
-              </svg>
-            </NavIcon>
-
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <path d="M5 7h14M5 12h14M5 17h8" />
-              </svg>
-            </NavIcon>
-          </div>
-
-          <div className="mt-4">
-            <NavIcon>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 2-3 4" />
-                <path d="M12 17h.01" />
-              </svg>
-            </NavIcon>
-          </div>
-        </aside>
-
         <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-slate-200 px-5 py-5">

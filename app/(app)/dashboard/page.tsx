@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { BlockData } from "@/lib/types";
 import type { Role } from "@/lib/permissions";
+import { hasPermission } from "@/lib/permissions";
 import { evaluateBlockGovernance } from "@/lib/brand-governance";
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -519,6 +520,13 @@ export default function DashboardPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const canAccessApprovals = useMemo(
+    () =>
+      hasPermission(role, "block.approve") ||
+      hasPermission(role, "page.approve"),
+    [role]
+  );
+
   const refreshKey = searchParams.get("refresh") ?? "";
 
   const [loading, setLoading] = useState(true);
@@ -748,58 +756,79 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col px-7 py-5">
-          <div className="rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f9fd_100%)] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-  <div className="mb-3 flex items-center gap-2">
-    <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#4f6fff] ring-1 ring-slate-200">
-      <Sparkles className="h-4 w-4" />
-    </div>
-    <div>
-      <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
-      <p className="text-xs text-slate-500">
-        Start the next governed workflow.
-      </p>
-    </div>
-  </div>
+            <div className="rounded-[24px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f7f9fd_100%)] p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-white text-[#4f6fff] ring-1 ring-slate-200">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">Quick Actions</p>
+                  <p className="text-xs text-slate-500">
+                    Start the next governed workflow.
+                  </p>
+                </div>
+              </div>
 
-  <div className="grid gap-3">
-  <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-3">
-  <div className="grid gap-2">
-    <button
-      type="button"
-      onClick={() => router.push(`/templates/new?role=${role}`)}
-      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
-        <LayoutTemplate className="h-4 w-4" />
-      </div>
-      <span className="text-sm font-medium text-slate-900">Create Template</span>
-    </button>
+              <div className="grid gap-3">
+                <div className="rounded-[20px] border border-slate-200 bg-slate-50 p-3">
+                  <div className="grid gap-2">
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/templates/new?role=${role}`)}
+                      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                        <LayoutTemplate className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-900">
+                        Create Template
+                      </span>
+                    </button>
 
-    <button
-      type="button"
-      onClick={() => router.push(`/pages/new?role=${role}`)}
-      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
-        <FileText className="h-4 w-4" />
-      </div>
-      <span className="text-sm font-medium text-slate-900">Create Page</span>
-    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/pages/new?role=${role}`)}
+                      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                        <FileText className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-900">
+                        Create Page
+                      </span>
+                    </button>
 
-    <button
-      type="button"
-      onClick={() => router.push(`/blocks/new?role=${role}`)}
-      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
-    >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
-        <Blocks className="h-4 w-4" />
-      </div>
-      <span className="text-sm font-medium text-slate-900">Generate Block</span>
-    </button>
-  </div>
-</div>
-  </div>
-</div>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/blocks/new?role=${role}`)}
+                      className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                        <Blocks className="h-4 w-4" />
+                      </div>
+                      <span className="text-sm font-medium text-slate-900">
+                        Generate Block
+                      </span>
+                    </button>
+
+                    {canAccessApprovals ? (
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/approvals?role=${role}`)}
+                        className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                          <ClipboardCheck className="h-4 w-4" />
+                        </div>
+                        <span className="text-sm font-medium text-slate-900">
+                          Open Approvals
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="mt-auto pt-6">
               <div className="rounded-[28px] border border-slate-200 bg-[#f8fafe] px-5 py-5 shadow-[0_10px_26px_rgba(15,23,42,0.03)]">
@@ -1016,10 +1045,16 @@ export default function DashboardPage() {
 
                   <button
                     type="button"
-                    onClick={() => router.push(`/pages?role=${role}`)}
+                    onClick={() =>
+                      router.push(
+                        canAccessApprovals
+                          ? `/approvals?role=${role}`
+                          : `/pages?role=${role}`
+                      )
+                    }
                     className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                   >
-                    Open Workspace
+                    {canAccessApprovals ? "Open Approvals" : "Open Workspace"}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>

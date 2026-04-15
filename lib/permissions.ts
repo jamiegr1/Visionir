@@ -269,3 +269,10 @@ export function canPublishPage(user: UserLike, page: PageLike) {
     page.status === "approved"
   );
 }
+
+export function canAccessApprovals(user: UserLike) {
+  return (
+    hasPermission(user.role, "block.approve") ||
+    hasPermission(user.role, "page.approve")
+  );
+}

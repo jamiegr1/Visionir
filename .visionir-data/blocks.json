@@ -930,19 +930,19 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
-    "approvedByUserId": null,
+    "approvedByUserId": "user-1",
     "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:58:04.015Z",
-    "approvedAt": null,
+    "approvedAt": "2026-04-15T08:43:13.660Z",
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-17T08:58:04.015Z",
-    "updatedAt": "2026-03-17T08:58:04.015Z"
+    "updatedAt": "2026-04-15T08:43:13.660Z"
   },
   {
     "id": "73801cec-bec1-4c47-a370-7b069f842e64",
@@ -993,19 +993,19 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
-    "approvedByUserId": null,
+    "approvedByUserId": "user-1",
     "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T09:00:04.728Z",
-    "approvedAt": null,
+    "approvedAt": "2026-04-15T09:02:33.324Z",
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-17T09:00:04.728Z",
-    "updatedAt": "2026-03-17T09:00:04.728Z"
+    "updatedAt": "2026-04-15T09:02:33.324Z"
   },
   {
     "id": "2feaf48c-4335-4d6c-933a-3a15bb06927a",
@@ -1245,19 +1245,19 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
-    "approvedByUserId": null,
+    "approvedByUserId": "user-1",
     "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
-    "approvedAt": null,
+    "approvedAt": "2026-04-15T09:02:28.367Z",
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-17T09:23:08.160Z",
-    "updatedAt": "2026-03-17T09:23:33.626Z"
+    "updatedAt": "2026-04-15T09:02:28.367Z"
   },
   {
     "id": "1672c35a-dd9b-4eb2-8abb-f86b0f739236",
@@ -3007,19 +3007,19 @@
         }
       }
     },
-    "status": "pending_approval",
+    "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
-    "approvedByUserId": null,
+    "approvedByUserId": "user-1",
     "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
-    "approvedAt": null,
+    "approvedAt": "2026-04-15T08:37:33.159Z",
     "rejectedAt": null,
     "publishedAt": null,
     "createdAt": "2026-03-24T21:28:28.045Z",
-    "updatedAt": "2026-03-24T21:31:35.749Z"
+    "updatedAt": "2026-04-15T08:37:33.159Z"
   },
   {
     "id": "0f1f337c-ffab-493d-a106-a673a46bc560",
