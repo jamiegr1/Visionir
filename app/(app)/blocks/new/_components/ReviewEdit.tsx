@@ -114,6 +114,90 @@ function formatFieldLabel(field: string) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function formatComponentLabel(value?: string) {
+  if (!value) return "—";
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function isHeroComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("hero");
+}
+
+function isValueGridComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return (
+    value.includes("value") ||
+    value.includes("benefit") ||
+    value.includes("feature")
+  );
+}
+
+function isTestimonialComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("testimonial") || value.includes("quote");
+}
+
+function isCtaComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return (
+    value.includes("cta") ||
+    value.includes("contact") ||
+    value.includes("conversion")
+  );
+}
+
+function isStatsComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("stats");
+}
+
+function isLogoComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("logo") || value.includes("trust");
+}
+
+function isFaqComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("faq");
+}
+
+function getValuePointSectionLabel(componentType?: string) {
+  if (isStatsComponent(componentType)) return "Stats / Metric Cards";
+  if (isLogoComponent(componentType)) return "Logo / Trust Items";
+  if (isFaqComponent(componentType)) return "FAQ Items";
+  if (isTestimonialComponent(componentType)) return "Supporting Content";
+  if (isCtaComponent(componentType)) return "Supporting Points";
+  if (isValueGridComponent(componentType)) return "Value Points";
+  if (isHeroComponent(componentType)) return "Supporting Value Points";
+  return "Structured Items";
+}
+
+function getValuePointItemLabel(componentType: string | undefined, index: number) {
+  if (isStatsComponent(componentType)) return `Stat ${index + 1}`;
+  if (isLogoComponent(componentType)) return `Logo Item ${index + 1}`;
+  if (isFaqComponent(componentType)) return `FAQ Item ${index + 1}`;
+  if (isTestimonialComponent(componentType)) return `Support Item ${index + 1}`;
+  return `Value Point ${index + 1}`;
+}
+
+function getValuePointTitleLabel(componentType?: string) {
+  if (isStatsComponent(componentType)) return "Value";
+  if (isLogoComponent(componentType)) return "Name";
+  if (isFaqComponent(componentType)) return "Question";
+  if (isTestimonialComponent(componentType)) return "Label";
+  return "Title";
+}
+
+function getValuePointTextLabel(componentType?: string) {
+  if (isStatsComponent(componentType)) return "Description";
+  if (isLogoComponent(componentType)) return "Supporting Copy";
+  if (isFaqComponent(componentType)) return "Answer";
+  if (isTestimonialComponent(componentType)) return "Copy";
+  return "Copy";
+}
+
 function ImproveButton({
   busy,
   improved,
@@ -277,6 +361,41 @@ export default function ReviewEdit({
       !!changesRequestedInfo.requestedAt ||
       !!changesRequestedInfo.requestedBy ||
       (changesRequestedInfo.fields?.length ?? 0) > 0);
+
+  const selectedComponentTypeLabel = useMemo(
+    () => formatComponentLabel(editable.componentType),
+    [editable.componentType]
+  );
+
+  const selectedComponentVariantLabel = useMemo(
+    () =>
+      editable.componentVariant
+        ? formatComponentLabel(editable.componentVariant)
+        : "Default",
+    [editable.componentVariant]
+  );
+
+  const hasGenerationContext = Boolean(
+    editable.componentType ||
+      editable.componentVariant ||
+      editable.pageName ||
+      editable.templateName ||
+      editable.sectionLabel
+  );
+
+  const componentType = editable.componentType;
+  const valuePointSectionLabel = useMemo(
+    () => getValuePointSectionLabel(componentType),
+    [componentType]
+  );
+  const valuePointTitleLabel = useMemo(
+    () => getValuePointTitleLabel(componentType),
+    [componentType]
+  );
+  const valuePointTextLabel = useMemo(
+    () => getValuePointTextLabel(componentType),
+    [componentType]
+  );
 
   function markFieldImproved(key: string) {
     setFlashFields((prev) => ({ ...prev, [key]: true }));
@@ -485,6 +604,90 @@ export default function ReviewEdit({
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5 pr-3">
+              {hasGenerationContext ? (
+                <section className="mb-8">
+                  <div className="rounded-3xl border border-[#dbe5ff] bg-[linear-gradient(180deg,#f8faff_0%,#f3f7ff_100%)] p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+                    <div className="mb-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
+                        Generation Context
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        This is the selected structure and page context used when this
+                        block was generated.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3">
+                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Block Type
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-800">
+                          {selectedComponentTypeLabel}
+                        </p>
+                      </div>
+
+                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                          Variant
+                        </p>
+                        <p className="mt-1 text-sm font-medium text-slate-800">
+                          {selectedComponentVariantLabel}
+                        </p>
+                      </div>
+
+                      {editable.pageName || editable.templateName ? (
+                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Page
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {editable.pageName || "—"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Template
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {editable.templateName || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {editable.sectionLabel || editable.sectionKey ? (
+                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Section
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {editable.sectionLabel || "—"}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                                Section Key
+                              </p>
+                              <p className="mt-1 text-sm text-slate-800">
+                                {editable.sectionKey || "—"}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </section>
+              ) : null}
+
               {hasChangesRequestedInfo ? (
                 <section className="mb-8">
                   <div className="rounded-3xl border border-rose-200 bg-[linear-gradient(180deg,#fff7f8_0%,#fff1f2_100%)] p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
@@ -602,7 +805,7 @@ export default function ReviewEdit({
 
               <section className="mb-8">
                 <h3 className="mb-4 text-[15px] font-semibold text-slate-900">
-                  Content
+                  Core Content
                 </h3>
 
                 <div className="space-y-4">
@@ -724,13 +927,13 @@ export default function ReviewEdit({
 
               <section className="mb-8">
                 <h3 className="mb-4 text-[15px] font-semibold text-slate-900">
-                  Value Points
+                  {valuePointSectionLabel}
                 </h3>
 
                 <div className="space-y-4">
                   {valuePoints.length === 0 ? (
                     <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-400">
-                      No value points available for this block yet.
+                      No structured items are available for this block yet.
                     </div>
                   ) : (
                     valuePoints.map((point, index) => {
@@ -756,7 +959,7 @@ export default function ReviewEdit({
                           <div className="mb-4 flex items-center gap-2">
                             <span className={cx("h-2.5 w-2.5 rounded-full", accent.dot)} />
                             <span className="text-sm font-medium text-slate-800">
-                              Value Point {index + 1}
+                              {getValuePointItemLabel(componentType, index)}
                             </span>
                           </div>
 
@@ -764,7 +967,7 @@ export default function ReviewEdit({
                             <div className="rounded-2xl transition-all duration-300">
                               <div className="mb-2 flex items-center justify-between gap-3">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                  Title
+                                  {valuePointTitleLabel}
                                 </label>
                                 <ImproveButton
                                   busy={loadingField === improveKeyTitle}
@@ -799,7 +1002,7 @@ export default function ReviewEdit({
                             <div className="rounded-2xl transition-all duration-300">
                               <div className="mb-2 flex items-center justify-between gap-3">
                                 <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                  Copy
+                                  {valuePointTextLabel}
                                 </label>
                                 <ImproveButton
                                   busy={loadingField === improveKeyText}
@@ -1006,7 +1209,12 @@ export default function ReviewEdit({
                     <p className="mt-1 text-sm text-slate-500">
                       Refine this block for the selected page section.
                     </p>
-                  ) : null}
+                  ) : (
+                    <p className="mt-1 text-sm text-slate-500">
+                      Review the generated structure, refine content, and confirm the
+                      final output before moving forward.
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -138,6 +138,15 @@ function getStatusPillClass(status: string) {
   }
 }
 
+function formatComponentLabel(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
 function getBlockName(data: BlockData | null, id: string) {
   const headline =
     typeof data?.headline === "string" ? data.headline.trim() : "";
@@ -150,13 +159,13 @@ function getBlockName(data: BlockData | null, id: string) {
 }
 
 function getComponentName(data: BlockData | null): string {
-  if (!data) return "Hero Standard";
+  if (!data?.componentType) return "—";
+  return formatComponentLabel(data.componentType);
+}
 
-  const componentType = (data as Record<string, unknown>)["componentType"];
-
-  return typeof componentType === "string" && componentType.trim()
-    ? componentType
-    : "Hero Standard";
+function getVariantName(data: BlockData | null): string {
+  if (!data?.componentVariant) return "Default";
+  return formatComponentLabel(data.componentVariant);
 }
 
 function getOwnerName(block: ApiBlockRecord) {
@@ -644,6 +653,7 @@ export default function BlockDetailPage() {
   const data = block?.data ?? null;
   const blockName = getBlockName(data, id);
   const componentName = getComponentName(data);
+  const componentVariant = getVariantName(data);
   const status = block?.status || "draft";
 
   const governance = useMemo(() => {
@@ -754,6 +764,30 @@ export default function BlockDetailPage() {
         typeof design?.cardStyle === "string" && design.cardStyle.trim()
           ? design.cardStyle
           : "soft",
+      componentType:
+        typeof data?.componentType === "string" && data.componentType.trim()
+          ? formatComponentLabel(data.componentType)
+          : "—",
+      componentVariant:
+        typeof data?.componentVariant === "string" && data.componentVariant.trim()
+          ? formatComponentLabel(data.componentVariant)
+          : "Default",
+      pageName:
+        typeof data?.pageName === "string" && data.pageName.trim()
+          ? data.pageName
+          : "—",
+      templateName:
+        typeof data?.templateName === "string" && data.templateName.trim()
+          ? data.templateName
+          : "—",
+      sectionLabel:
+        typeof data?.sectionLabel === "string" && data.sectionLabel.trim()
+          ? data.sectionLabel
+          : "—",
+      sectionKey:
+        typeof data?.sectionKey === "string" && data.sectionKey.trim()
+          ? data.sectionKey
+          : "—",
     };
   }, [data]);
 
@@ -956,7 +990,7 @@ export default function BlockDetailPage() {
 
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[920px]">
                 <StatTile label="Component" value={componentName} />
-                <StatTile label="Owner" value={getOwnerName(block)} />
+                <StatTile label="Variant" value={componentVariant} />
                 <StatTile
                   label="Updated"
                   value={relativeUpdatedLabel(block.updatedAt)}
@@ -1248,8 +1282,33 @@ export default function BlockDetailPage() {
               <div>
                 <MetaRow label="Block ID" value={block.id} />
                 <MetaRow label="Component" value={componentName} />
+                <MetaRow label="Variant" value={componentVariant} />
                 <MetaRow label="Status" value={getStatusLabel(status)} />
                 <MetaRow label="Created By" value={getOwnerName(block)} />
+                <MetaRow
+                  label="Page"
+                  value={
+                    typeof data.pageName === "string" && data.pageName.trim()
+                      ? data.pageName
+                      : "—"
+                  }
+                />
+                <MetaRow
+                  label="Template"
+                  value={
+                    typeof data.templateName === "string" && data.templateName.trim()
+                      ? data.templateName
+                      : "—"
+                  }
+                />
+                <MetaRow
+                  label="Section"
+                  value={
+                    typeof data.sectionLabel === "string" && data.sectionLabel.trim()
+                      ? data.sectionLabel
+                      : "—"
+                  }
+                />
                 <MetaRow
                   label="Approved By"
                   value={getUserLabel(block.approvedByUserId)}
@@ -1390,6 +1449,54 @@ export default function BlockDetailPage() {
                 icon={<FileText className="h-5 w-5" />}
               >
                 <div className="grid gap-4 lg:grid-cols-2">
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Block Type
+                    </p>
+                    <p className="mt-2.5 text-sm font-medium text-slate-900">
+                      {contentSummary.componentType}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Variant
+                    </p>
+                    <p className="mt-2.5 text-sm font-medium text-slate-900">
+                      {contentSummary.componentVariant}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Page
+                    </p>
+                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
+                      {contentSummary.pageName}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Template
+                    </p>
+                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
+                      {contentSummary.templateName}
+                    </p>
+                  </div>
+
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      Section
+                    </p>
+                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
+                      {contentSummary.sectionLabel}
+                      {contentSummary.sectionKey !== "—"
+                        ? ` (${contentSummary.sectionKey})`
+                        : ""}
+                    </p>
+                  </div>
+
                   <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
                       Eyebrow

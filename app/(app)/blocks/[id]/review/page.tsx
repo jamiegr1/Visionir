@@ -55,6 +55,39 @@ function isEqualBlockData(a: BlockData | null, b: BlockData | null) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function isStatsComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("stats");
+}
+
+function isLogoComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("logo") || value.includes("trust");
+}
+
+function isFaqComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("faq");
+}
+
+function isTestimonialComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("testimonial") || value.includes("quote");
+}
+
+function getRepeaterTitleLabel(componentType?: string) {
+  if (isStatsComponent(componentType)) return "Value";
+  if (isLogoComponent(componentType)) return "Name";
+  if (isFaqComponent(componentType)) return "Question";
+  if (isTestimonialComponent(componentType)) return "Label";
+  return "Title";
+}
+
+function getRepeaterTextLabel(componentType?: string) {
+  if (isStatsComponent(componentType)) return "Description";
+  if (isLogoComponent(componentType)) return "Supporting Copy";
+  if (isFaqComponent(componentType)) return "Answer";
+  return "Copy";
+}
+
 function getFirstDiff(
   prev: BlockData,
   next: BlockData
@@ -63,6 +96,11 @@ function getFirstDiff(
     { key: "eyebrow", label: "Eyebrow" },
     { key: "headline", label: "Primary Headline" },
     { key: "subheading", label: "Subheading" },
+    { key: "componentType", label: "Block Type" },
+    { key: "componentVariant", label: "Block Variant" },
+    { key: "pageName", label: "Page Name" },
+    { key: "templateName", label: "Template Name" },
+    { key: "sectionLabel", label: "Section Label" },
   ];
 
   for (const field of rootFields) {
@@ -78,6 +116,8 @@ function getFirstDiff(
     }
   }
 
+  const componentType = next.componentType || prev.componentType;
+
   const prevPoints = prev.valuePoints ?? [];
   const nextPoints = next.valuePoints ?? [];
   const maxLength = Math.max(prevPoints.length, nextPoints.length);
@@ -90,7 +130,7 @@ function getFirstDiff(
     const nextTitle = String(nextPoint?.title ?? "");
     if (prevTitle !== nextTitle) {
       return {
-        label: `Value Point ${i + 1} Title`,
+        label: `Item ${i + 1} ${getRepeaterTitleLabel(componentType)}`,
         from: prevTitle,
         to: nextTitle,
       };
@@ -100,7 +140,7 @@ function getFirstDiff(
     const nextText = String(nextPoint?.text ?? "");
     if (prevText !== nextText) {
       return {
-        label: `Value Point ${i + 1} Copy`,
+        label: `Item ${i + 1} ${getRepeaterTextLabel(componentType)}`,
         from: prevText,
         to: nextText,
       };
@@ -110,7 +150,7 @@ function getFirstDiff(
     const nextAccent = String(nextPoint?.accent ?? "");
     if (prevAccent !== nextAccent) {
       return {
-        label: `Value Point ${i + 1} Accent`,
+        label: `Item ${i + 1} Accent`,
         from: prevAccent,
         to: nextAccent,
       };
@@ -204,10 +244,11 @@ export default function BlockReviewPage() {
         setBlockRecord(loadedBlock);
         setEditable(loaded);
         setAiImprovedFields({});
-        previousEditableRef.current = cloneBlockData(loaded);
-        previousAiImprovedRef.current = {};
         setUndoStack([]);
         setRedoStack([]);
+        setChangeLog([]);
+        previousEditableRef.current = cloneBlockData(loaded);
+        previousAiImprovedRef.current = {};
         setPendingPatchExists(currentStatus === "pending_approval");
         setRequiresApproval(
           currentStatus === "pending_approval" ||
@@ -402,6 +443,13 @@ export default function BlockReviewPage() {
         nextApiStatus === "pending_approval" ||
           nextApiStatus === "changes_requested"
       );
+
+      if (nextBlock.data) {
+        const nextData = nextBlock.data;
+        setEditable(nextData);
+        previousEditableRef.current = cloneBlockData(nextData);
+        previousAiImprovedRef.current = cloneAiMap(aiImprovedFields);
+      }
     }
   }
 
@@ -422,6 +470,8 @@ export default function BlockReviewPage() {
         body: JSON.stringify({
           field,
           text: source,
+          componentType: editable?.componentType,
+          componentVariant: editable?.componentVariant,
         }),
       });
 
@@ -456,6 +506,8 @@ export default function BlockReviewPage() {
         body: JSON.stringify({
           instructions: describe,
           blockData: editable,
+          componentType: editable.componentType,
+          componentVariant: editable.componentVariant,
         }),
       });
 

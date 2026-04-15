@@ -18,6 +18,18 @@ type PatchBody = {
   changesRequestedFields?: string[];
 };
 
+function isValidBlockStatus(value: unknown): value is BlockStatus {
+  return (
+    value === "draft" ||
+    value === "pending_approval" ||
+    value === "in_review" ||
+    value === "changes_requested" ||
+    value === "approved" ||
+    value === "published" ||
+    value === "archived"
+  );
+}
+
 function resolveNextStatus(params: {
   existingStatus: BlockStatus;
   requestedStatus?: BlockStatus;
@@ -113,10 +125,11 @@ export async function PATCH(
   const isDataUpdate = typeof body.data !== "undefined";
   const editMode = body.editMode ?? "standard";
   const requiresApproval = body.requiresApproval ?? false;
+  const requestedStatus = isValidBlockStatus(body.status) ? body.status : undefined;
 
   const nextStatus = resolveNextStatus({
     existingStatus: existing.status,
-    requestedStatus: body.status,
+    requestedStatus,
     isDataUpdate,
     editMode,
     requiresApproval,
@@ -142,8 +155,16 @@ export async function PATCH(
 
   const now = new Date().toISOString();
 
+  const nextData =
+    typeof body.data !== "undefined"
+      ? {
+          ...existing.data,
+          ...body.data,
+        }
+      : existing.data;
+
   const updated = await updateBlock(id, {
-    data: body.data ?? existing.data,
+    data: nextData,
     status: nextStatus,
     updatedByUserId: currentUser.id,
     updatedAt: now,
@@ -151,7 +172,9 @@ export async function PATCH(
     approvedByUserId:
       nextStatus === "approved"
         ? existing.approvedByUserId ?? currentUser.id
-        : existing.approvedByUserId,
+        : nextStatus === "draft" || nextStatus === "pending_approval"
+          ? existing.approvedByUserId
+          : existing.approvedByUserId,
 
     publishedByUserId:
       nextStatus === "published" ? currentUser.id : existing.publishedByUserId,
@@ -163,24 +186,34 @@ export async function PATCH(
 
     publishedAt: nextStatus === "published" ? now : existing.publishedAt,
 
+    submittedByUserId:
+      nextStatus === "pending_approval"
+        ? existing.submittedByUserId ?? currentUser.id
+        : existing.submittedByUserId ?? null,
+
+    submittedAt:
+      nextStatus === "pending_approval"
+        ? existing.submittedAt ?? now
+        : existing.submittedAt ?? null,
+
     changesRequestedByUserId:
       nextStatus === "changes_requested"
         ? currentUser.id
-        : nextStatus === "approved"
+        : nextStatus === "approved" || nextStatus === "pending_approval"
           ? null
           : existing.changesRequestedByUserId ?? null,
 
     changesRequestedAt:
       nextStatus === "changes_requested"
         ? now
-        : nextStatus === "approved"
+        : nextStatus === "approved" || nextStatus === "pending_approval"
           ? null
           : existing.changesRequestedAt ?? null,
 
     changesRequestedNotes:
       nextStatus === "changes_requested"
         ? body.changesRequestedNotes?.trim() || null
-        : nextStatus === "approved"
+        : nextStatus === "approved" || nextStatus === "pending_approval"
           ? null
           : typeof body.changesRequestedNotes !== "undefined"
             ? body.changesRequestedNotes?.trim() || null
@@ -191,7 +224,7 @@ export async function PATCH(
         ? Array.isArray(body.changesRequestedFields)
           ? body.changesRequestedFields
           : []
-        : nextStatus === "approved"
+        : nextStatus === "approved" || nextStatus === "pending_approval"
           ? null
           : Array.isArray(body.changesRequestedFields)
             ? body.changesRequestedFields

@@ -16,6 +16,10 @@ function isValidBlockStatus(value: unknown): value is BlockStatus {
   );
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export async function GET(req: Request) {
   try {
     const currentUser = getMockCurrentUser(req);
@@ -54,21 +58,57 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const data = body?.data;
+    const rawData = body?.data;
 
     const requestedStatus = body?.status;
     const status: BlockStatus = isValidBlockStatus(requestedStatus)
       ? requestedStatus
       : "draft";
 
-    if (!data) {
+    if (!isObject(rawData)) {
       return NextResponse.json(
-        { error: "Missing block data." },
+        { error: "Missing or invalid block data." },
         { status: 400 }
       );
     }
 
     const now = new Date().toISOString();
+
+    const data = {
+      ...rawData,
+      componentType:
+        typeof rawData.componentType === "string" && rawData.componentType.trim()
+          ? rawData.componentType.trim()
+          : undefined,
+      componentVariant:
+        typeof rawData.componentVariant === "string" && rawData.componentVariant.trim()
+          ? rawData.componentVariant.trim()
+          : undefined,
+      pageId:
+        typeof rawData.pageId === "string" && rawData.pageId.trim()
+          ? rawData.pageId.trim()
+          : undefined,
+      pageName:
+        typeof rawData.pageName === "string" && rawData.pageName.trim()
+          ? rawData.pageName.trim()
+          : undefined,
+      sectionId:
+        typeof rawData.sectionId === "string" && rawData.sectionId.trim()
+          ? rawData.sectionId.trim()
+          : undefined,
+      sectionLabel:
+        typeof rawData.sectionLabel === "string" && rawData.sectionLabel.trim()
+          ? rawData.sectionLabel.trim()
+          : undefined,
+      sectionKey:
+        typeof rawData.sectionKey === "string" && rawData.sectionKey.trim()
+          ? rawData.sectionKey.trim()
+          : undefined,
+      templateName:
+        typeof rawData.templateName === "string" && rawData.templateName.trim()
+          ? rawData.templateName.trim()
+          : undefined,
+    };
 
     const block = await createBlock(data, {
       status,
@@ -80,12 +120,10 @@ export async function POST(req: Request) {
       submittedAt: null,
       approvedAt: null,
       publishedAt: null,
-
       changesRequestedByUserId: null,
       changesRequestedAt: null,
       changesRequestedNotes: null,
       changesRequestedFields: null,
-
       createdAt: now,
       updatedAt: now,
     });
@@ -94,7 +132,10 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("POST /api/blocks failed:", error);
     return NextResponse.json(
-      { error: "Failed to create block." },
+      {
+        error: "Failed to create block.",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }

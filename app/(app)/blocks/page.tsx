@@ -27,6 +27,15 @@ function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
+function formatComponentLabel(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
 type ApiBlockRecord = {
   id: string;
   status?: string;
@@ -42,12 +51,16 @@ type LibraryBlock = {
   id: string;
   name: string;
   component: string;
+  variant: string;
   status: string;
   governanceScore: number | null;
   updatedAt: string | null;
   createdAt: string | null;
   owner: string;
   data: BlockData | null;
+  pageName: string;
+  templateName: string;
+  sectionLabel: string;
 };
 
 type FilterStatus =
@@ -101,13 +114,13 @@ function getBlockName(data: BlockData | null, id: string) {
 }
 
 function getComponentName(data: BlockData | null): string {
-  if (!data) return "Hero Standard";
+  if (!data?.componentType) return "—";
+  return formatComponentLabel(data.componentType);
+}
 
-  const componentType = (data as Record<string, unknown>)["componentType"];
-
-  return typeof componentType === "string" && componentType.trim()
-    ? componentType
-    : "Hero Standard";
+function getComponentVariant(data: BlockData | null): string {
+  if (!data?.componentVariant) return "Default";
+  return formatComponentLabel(data.componentVariant);
 }
 
 function getOwnerName(block: ApiBlockRecord) {
@@ -288,6 +301,14 @@ function BlockRow({
 }) {
   const router = useRouter();
 
+  const metaParts = [
+    block.component !== "—" ? block.component : null,
+    block.variant && block.variant !== "Default" ? block.variant : null,
+    block.pageName !== "—" ? block.pageName : null,
+    block.sectionLabel !== "—" ? block.sectionLabel : null,
+    `Created ${formatDate(block.createdAt)}`,
+  ].filter(Boolean);
+
   return (
     <button
       type="button"
@@ -299,7 +320,7 @@ function BlockRow({
           {block.name}
         </div>
         <div className="mt-1 truncate text-xs text-slate-500">
-          {block.component} • Created {formatDate(block.createdAt)}
+          {metaParts.join(" • ")}
         </div>
       </div>
 
@@ -358,6 +379,9 @@ function CompactBlockCard({
           </div>
           <div className="mt-1 truncate text-xs text-slate-500">
             {block.component}
+            {block.variant && block.variant !== "Default"
+              ? ` • ${block.variant}`
+              : ""}
           </div>
         </div>
 
@@ -390,10 +414,10 @@ function CompactBlockCard({
 
         <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-            Created
+            Page
           </p>
-          <p className="mt-1 text-sm text-slate-700">
-            {formatDate(block.createdAt)}
+          <p className="mt-1 truncate text-sm text-slate-700">
+            {block.pageName}
           </p>
         </div>
 
@@ -690,12 +714,27 @@ export default function BlocksPage() {
           id: block.id,
           name: getBlockName(block.data ?? null, block.id),
           component: getComponentName(block.data ?? null),
+          variant: getComponentVariant(block.data ?? null),
           status: block.status || "draft",
           governanceScore: getGovernanceScore(block.data ?? null),
           updatedAt: block.updatedAt || null,
           createdAt: block.createdAt || null,
           owner: getOwnerName(block),
           data: block.data ?? null,
+          pageName:
+            typeof block.data?.pageName === "string" && block.data.pageName.trim()
+              ? block.data.pageName
+              : "—",
+          templateName:
+            typeof block.data?.templateName === "string" &&
+            block.data.templateName.trim()
+              ? block.data.templateName
+              : "—",
+          sectionLabel:
+            typeof block.data?.sectionLabel === "string" &&
+            block.data.sectionLabel.trim()
+              ? block.data.sectionLabel
+              : "—",
         }));
 
         mapped.sort((a, b) => {
@@ -726,6 +765,10 @@ export default function BlocksPage() {
         block.name.toLowerCase().includes(q) ||
         block.owner.toLowerCase().includes(q) ||
         block.component.toLowerCase().includes(q) ||
+        block.variant.toLowerCase().includes(q) ||
+        block.pageName.toLowerCase().includes(q) ||
+        block.templateName.toLowerCase().includes(q) ||
+        block.sectionLabel.toLowerCase().includes(q) ||
         getStatusLabel(block.status).toLowerCase().includes(q)
       );
     });
@@ -913,7 +956,7 @@ export default function BlocksPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search blocks, owners, components or statuses"
+                placeholder="Search blocks, owners, types, variants, pages or statuses"
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
               />
             </div>

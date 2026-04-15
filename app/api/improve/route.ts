@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { getMockCurrentUser } from "@/lib/current-user";
 import { hasPermission } from "@/lib/permissions";
+import type { BlockData, ValuePoint } from "@/lib/types";
+
+type DescribeChangesRequestBody = {
+  instructions?: string;
+  blockData?: BlockData;
+  componentType?: string;
+  componentVariant?: string;
+};
+
+type ExtraContentItem = Record<string, unknown>;
 
 function normaliseWhitespace(text: string) {
   return text
@@ -9,80 +19,113 @@ function normaliseWhitespace(text: string) {
     .trim();
 }
 
+function sentenceCase(text: string) {
+  if (!text) return text;
+  const trimmed = normaliseWhitespace(text);
+  if (!trimmed) return trimmed;
+  return trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+}
+
 function titleCaseWords(text: string) {
-  return text
+  return normaliseWhitespace(text)
     .split(" ")
-    .map((word, index) => {
-      if (!word) return word;
-
-      const lower = word.toLowerCase();
-
-      if (index > 0 && lower.length <= 2) {
-        return lower;
-      }
-
-      return lower.charAt(0).toUpperCase() + lower.slice(1);
-    })
+    .map((word) =>
+      word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word
+    )
     .join(" ");
 }
 
-function sentenceCase(text: string) {
-  if (!text) return text;
-  return text.charAt(0).toUpperCase() + text.slice(1);
-}
-
 function preserveEndingPunctuation(original: string, next: string) {
-  const originalEndsWithPeriod = /\.\s*$/.test(original);
-  const originalEndsWithExclamation = /!\s*$/.test(original);
-  const originalEndsWithQuestion = /\?\s*$/.test(original);
+  const endsWithPeriod = /\.\s*$/.test(original);
+  const endsWithExclamation = /!\s*$/.test(original);
+  const endsWithQuestion = /\?\s*$/.test(original);
 
-  let result = next.replace(/[.!?]+\s*$/g, "").trim();
+  const result = next.replace(/[.!?]+\s*$/g, "").trim();
 
-  if (originalEndsWithExclamation) return `${result}!`;
-  if (originalEndsWithQuestion) return `${result}?`;
-  if (originalEndsWithPeriod) return `${result}.`;
+  if (endsWithExclamation) return `${result}!`;
+  if (endsWithQuestion) return `${result}?`;
+  if (endsWithPeriod) return `${result}.`;
 
   return result;
 }
 
-function shortenIfTooLong(original: string, improved: string) {
-  const cleanOriginal = original.trim();
-  const cleanImproved = improved.trim();
-
-  if (cleanImproved.length <= cleanOriginal.length + 4) {
-    return cleanImproved;
-  }
-
-  return cleanOriginal;
+function cloneBlockData(data: BlockData): BlockData {
+  return JSON.parse(JSON.stringify(data));
 }
 
-function applyPhraseReplacements(text: string) {
+function formatComponentLabel(value?: string | null) {
+  if (!value) return "";
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function includesAny(text: string, patterns: string[]) {
+  return patterns.some((pattern) => text.includes(pattern));
+}
+
+function isHeroComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("hero");
+}
+
+function isValueGridComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return (
+    value.includes("value") ||
+    value.includes("benefit") ||
+    value.includes("feature")
+  );
+}
+
+function isTestimonialComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("testimonial") || value.includes("quote");
+}
+
+function isCtaComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return (
+    value.includes("cta") ||
+    value.includes("contact") ||
+    value.includes("conversion")
+  );
+}
+
+function isStatsComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("stats");
+}
+
+function isLogoComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("logo") || value.includes("trust");
+}
+
+function isFaqComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("faq");
+}
+
+function applyEnterpriseTone(text: string) {
   const replacements: Array<[RegExp, string]> = [
-    [/\bhelp\b/gi, "support"],
-    [/\bhelps\b/gi, "supports"],
-    [/\bhelping\b/gi, "supporting"],
-    [/\bmake sure\b/gi, "ensure"],
-    [/\bmake it easy to\b/gi, "simplify"],
-    [/\beasy to use\b/gi, "intuitive"],
+    [/\bawesome\b/gi, "strong"],
+    [/\bamazing\b/gi, "strong"],
+    [/\bworld[- ]class\b/gi, "enterprise-grade"],
+    [/\bcutting[- ]edge\b/gi, "advanced"],
+    [/\bgame[- ]changing\b/gi, "high-impact"],
+    [/\bpowerful\b/gi, "robust"],
+    [/\bseamless\b/gi, "consistent"],
     [/\beasy\b/gi, "simple"],
     [/\beasier\b/gi, "simpler"],
     [/\bquick\b/gi, "fast"],
     [/\bquickly\b/gi, "efficiently"],
-    [/\bnice\b/gi, "refined"],
+    [/\bgreat\b/gi, "strong"],
     [/\bgood\b/gi, "strong"],
-    [/\bgreat\b/gi, "high-impact"],
+    [/\bhelp\b/gi, "support"],
+    [/\bhelps\b/gi, "supports"],
+    [/\bhelping\b/gi, "supporting"],
+    [/\bmake sure\b/gi, "ensure"],
     [/\bshow\b/gi, "highlight"],
     [/\bshows\b/gi, "highlights"],
-    [/\buse\b/gi, "apply"],
-    [/\buses\b/gi, "applies"],
-    [/\bget\b/gi, "gain"],
-    [/\bgets\b/gi, "gains"],
-    [/\bbuy\b/gi, "select"],
-    [/\bbig\b/gi, "strong"],
-    [/\bsmall\b/gi, "focused"],
-    [/\ba lot of\b/gi, "many"],
-    [/\bkind of\b/gi, ""],
-    [/\bsort of\b/gi, ""],
   ];
 
   let result = text;
@@ -94,213 +137,553 @@ function applyPhraseReplacements(text: string) {
   return normaliseWhitespace(result);
 }
 
-function improveEyebrow(text: string) {
-  let original = text.trim();
-  let improved = original;
+function tightenCopy(text: string) {
+  let result = text;
 
-  improved = applyPhraseReplacements(improved);
-  improved = improved.replace(/\band\b/gi, " & ");
-  improved = improved.replace(/[.!?]+$/g, "");
-  improved = titleCaseWords(normaliseWhitespace(improved));
-
-  if (improved.toLowerCase() === original.toLowerCase()) {
-    const words = original.split(" ").filter(Boolean);
-
-    if (words.length >= 2) {
-      improved = titleCaseWords(words.join(" & "));
-    } else {
-      improved = titleCaseWords(original);
-    }
-  }
-
-  improved = improved.replace(/[.!?]+$/g, "");
-  improved = shortenIfTooLong(original, improved);
-
-  return improved;
-}
-
-function improveHeadline(text: string) {
-  let original = text.trim();
-  let improved = original;
-
-  improved = applyPhraseReplacements(improved);
-
-  const transforms: Array<[RegExp, string]> = [
-    [/\bwhy choose\b\s*/i, "Why Leading Teams Choose "],
-    [/\bthe best way to\b\s*/i, "A Smarter Way to "],
-    [/\bhow to\b\s*/i, "How to "],
-    [/\bimprove\b/gi, "Enhance"],
-    [/\bmanage\b/gi, "Streamline"],
-    [/\bbuild\b/gi, "Create"],
-    [/\bget\b/gi, "Unlock"],
-    [/\bmake\b/gi, "Deliver"],
-    [/\bbetter\b/gi, "Stronger"],
-  ];
-
-  for (const [pattern, replacement] of transforms) {
-    improved = improved.replace(pattern, replacement);
-  }
-
-  improved = improved.replace(/\band\b/gi, " & ");
-
-  if (improved.toLowerCase() === original.toLowerCase()) {
-    const words = original.split(" ").filter(Boolean);
-
-    if (words.length >= 3) {
-      improved = `${words[0]} ${words[1]} Optimised`;
-    } else if (words.length === 2) {
-      improved = `${words[0]} Enhanced`;
-    } else {
-      improved = `Enhanced ${original}`;
-    }
-  }
-
-  improved = normaliseWhitespace(improved).replace(/[.]+$/g, "");
-  improved = shortenIfTooLong(original, improved);
-
-  return sentenceCase(improved);
-}
-
-function improveSubheading(text: string) {
-  let original = text.trim();
-  let improved = original;
-
-  improved = applyPhraseReplacements(improved);
-
-  const subheadingPatterns: Array<[RegExp, string]> = [
-    [/\bso that\b/gi, "to"],
+  const replacements: Array<[RegExp, string]> = [
     [/\bin order to\b/gi, "to"],
+    [/\bso that\b/gi, "to"],
+    [/\ba lot of\b/gi, "many"],
+    [/\bkind of\b/gi, ""],
+    [/\bsort of\b/gi, ""],
+    [/\breally\b/gi, ""],
+    [/\bvery\b/gi, ""],
     [/\bthat helps\b/gi, "that supports"],
     [/\bdesigned to help\b/gi, "designed to support"],
-    [/\bhigh-quality\b/gi, "strong"],
   ];
 
-  for (const [pattern, replacement] of subheadingPatterns) {
-    improved = improved.replace(pattern, replacement);
+  for (const [pattern, replacement] of replacements) {
+    result = result.replace(pattern, replacement);
   }
 
-  improved = improved.replace(/\band\b/gi, " & ");
-  improved = normaliseWhitespace(improved);
-  improved = preserveEndingPunctuation(original, improved);
+  return normaliseWhitespace(result);
+}
 
-  if (improved.toLowerCase() === original.toLowerCase()) {
-    improved = preserveEndingPunctuation(
-      original,
-      normaliseWhitespace(original.replace(/\band\b/gi, " & "))
+function makeMoreCorporate(text: string) {
+  return sentenceCase(tightenCopy(applyEnterpriseTone(text)));
+}
+
+function makeMoreConversionFocused(
+  text: string,
+  field:
+    | "headline"
+    | "subheading"
+    | "valuePointTitle"
+    | "valuePointText"
+    | "ctaLabel"
+) {
+  let result = text;
+
+  if (field === "headline") {
+    result = result
+      .replace(/\bwhy choose\b/gi, "Why Leading Teams Choose")
+      .replace(/\blearn more\b/gi, "Move Forward With Confidence");
+  }
+
+  if (field === "subheading") {
+    result = result
+      .replace(/\bwe support\b/gi, "We support organisations")
+      .replace(/\bservices\b/gi, "solutions");
+  }
+
+  if (field === "valuePointTitle") {
+    result = result
+      .replace(/\bbetter\b/gi, "Stronger")
+      .replace(/\bmore\b/gi, "Greater");
+  }
+
+  if (field === "valuePointText") {
+    result = result
+      .replace(/\bbenefits\b/gi, "outcomes")
+      .replace(/\bresults\b/gi, "commercial outcomes");
+  }
+
+  if (field === "ctaLabel") {
+    result = result
+      .replace(/\blearn more\b/gi, "Speak to an Expert")
+      .replace(/\bcontact us\b/gi, "Talk to Our Team");
+  }
+
+  return sentenceCase(normaliseWhitespace(result));
+}
+
+function adjustHeadline(text: string, instructions: string) {
+  let result = text;
+
+  if (
+    includesAny(instructions, [
+      "corporate",
+      "enterprise",
+      "professional",
+      "higher level",
+      "more strategic",
+    ])
+  ) {
+    result = makeMoreCorporate(result);
+  }
+
+  if (
+    includesAny(instructions, [
+      "conversion",
+      "convert",
+      "cta",
+      "action",
+      "commercial",
+    ])
+  ) {
+    result = makeMoreConversionFocused(result, "headline");
+  }
+
+  if (includesAny(instructions, ["shorter", "tighter", "concise"])) {
+    result = tightenCopy(result);
+  }
+
+  return sentenceCase(result).replace(/[.]+$/g, "");
+}
+
+function adjustSubheading(text: string, instructions: string) {
+  let result = text;
+
+  if (
+    includesAny(instructions, [
+      "corporate",
+      "enterprise",
+      "professional",
+      "more strategic",
+    ])
+  ) {
+    result = makeMoreCorporate(result);
+  }
+
+  if (
+    includesAny(instructions, [
+      "conversion",
+      "convert",
+      "cta",
+      "commercial",
+    ])
+  ) {
+    result = makeMoreConversionFocused(result, "subheading");
+  }
+
+  if (includesAny(instructions, ["shorter", "tighter", "concise"])) {
+    result = tightenCopy(result);
+  }
+
+  return preserveEndingPunctuation(text, sentenceCase(result));
+}
+
+function adjustEyebrow(text: string, instructions: string) {
+  let result = text;
+
+  if (
+    includesAny(instructions, [
+      "corporate",
+      "enterprise",
+      "professional",
+      "more strategic",
+    ])
+  ) {
+    result = applyEnterpriseTone(result);
+  }
+
+  result = result.replace(/\band\b/gi, " & ");
+  result = result.replace(/[.!?]+$/g, "");
+
+  return titleCaseWords(result);
+}
+
+function adjustValuePointTitle(text: string, instructions: string) {
+  let result = text;
+
+  if (
+    includesAny(instructions, [
+      "corporate",
+      "enterprise",
+      "professional",
+      "more strategic",
+    ])
+  ) {
+    result = makeMoreCorporate(result);
+  }
+
+  if (includesAny(instructions, ["conversion", "convert", "commercial"])) {
+    result = makeMoreConversionFocused(result, "valuePointTitle");
+  }
+
+  if (includesAny(instructions, ["shorter", "tighter", "concise"])) {
+    result = tightenCopy(result);
+  }
+
+  result = result.replace(/[.!?]+$/g, "");
+  return sentenceCase(result);
+}
+
+function adjustValuePointText(text: string, instructions: string) {
+  let result = text;
+
+  if (
+    includesAny(instructions, [
+      "corporate",
+      "enterprise",
+      "professional",
+      "more strategic",
+    ])
+  ) {
+    result = makeMoreCorporate(result);
+  }
+
+  if (includesAny(instructions, ["conversion", "convert", "commercial"])) {
+    result = makeMoreConversionFocused(result, "valuePointText");
+  }
+
+  if (includesAny(instructions, ["shorter", "tighter", "concise"])) {
+    result = tightenCopy(result);
+  }
+
+  return preserveEndingPunctuation(text, sentenceCase(result));
+}
+
+function getRequestedAccent(instructions: string): ValuePoint["accent"] | null {
+  if (includesAny(instructions, ["all blue", "use blue", "make it blue"])) {
+    return "blue";
+  }
+  if (includesAny(instructions, ["all green", "use green", "make it green"])) {
+    return "green";
+  }
+  if (
+    includesAny(instructions, ["all orange", "use orange", "make it orange"])
+  ) {
+    return "orange";
+  }
+  if (
+    includesAny(instructions, ["all purple", "use purple", "make it purple"])
+  ) {
+    return "purple";
+  }
+  return null;
+}
+
+function updateValuePoints(
+  valuePoints: ValuePoint[],
+  instructions: string
+): ValuePoint[] {
+  let next = Array.isArray(valuePoints) ? [...valuePoints] : [];
+
+  next = next.map((point) => ({
+    ...point,
+    title: adjustValuePointTitle(point.title ?? "", instructions),
+    text: adjustValuePointText(point.text ?? "", instructions),
+  }));
+
+  const requestedAccent = getRequestedAccent(instructions);
+  if (requestedAccent) {
+    next = next.map((point) => ({
+      ...point,
+      accent: requestedAccent,
+    }));
+  }
+
+  if (
+    includesAny(instructions, [
+      "more value points",
+      "add value point",
+      "add another value point",
+    ]) &&
+    next.length > 0 &&
+    next.length < 6
+  ) {
+    const source = next[next.length - 1];
+    next.push({
+      ...source,
+      title: "Additional Value",
+      text: "Adds another focused supporting point aligned with the block objective.",
+    });
+  }
+
+  if (
+    includesAny(instructions, [
+      "fewer value points",
+      "remove value point",
+      "reduce value points",
+    ]) &&
+    next.length > 2
+  ) {
+    next = next.slice(0, next.length - 1);
+  }
+
+  return next;
+}
+
+function updateStatsExtraContent(
+  extraContent: Record<string, unknown>,
+  instructions: string
+) {
+  const rawStats = Array.isArray(extraContent.stats) ? extraContent.stats : [];
+
+  const nextStats = rawStats
+    .filter(
+      (item): item is { label?: unknown; value?: unknown } =>
+        typeof item === "object" && item !== null
+    )
+    .map((item) => ({
+      label: adjustValuePointTitle(String(item.label ?? ""), instructions),
+      value: String(item.value ?? "").trim(),
+    }));
+
+  if (
+    includesAny(instructions, ["add stat", "more stats", "add another stat"]) &&
+    nextStats.length > 0 &&
+    nextStats.length < 4
+  ) {
+    nextStats.push({
+      label: "Additional Metric",
+      value: "100+",
+    });
+  }
+
+  if (
+    includesAny(instructions, ["fewer stats", "remove stat", "reduce stats"]) &&
+    nextStats.length > 2
+  ) {
+    nextStats.pop();
+  }
+
+  return {
+    ...extraContent,
+    stats: nextStats,
+  };
+}
+
+function updateLogosExtraContent(
+  extraContent: Record<string, unknown>,
+  instructions: string
+) {
+  const rawLogos = Array.isArray(extraContent.logos) ? extraContent.logos : [];
+
+  const nextLogos = rawLogos
+    .filter(
+      (item): item is { name?: unknown } =>
+        typeof item === "object" && item !== null
+    )
+    .map((item, index) => ({
+      name:
+        adjustValuePointTitle(String(item.name ?? `Partner ${index + 1}`), instructions) ||
+        `Partner ${index + 1}`,
+    }));
+
+  if (
+    includesAny(instructions, ["add logo", "more logos", "add another logo"]) &&
+    nextLogos.length > 0 &&
+    nextLogos.length < 6
+  ) {
+    nextLogos.push({
+      name: `Partner ${nextLogos.length + 1}`,
+    });
+  }
+
+  if (
+    includesAny(instructions, ["fewer logos", "remove logo", "reduce logos"]) &&
+    nextLogos.length > 2
+  ) {
+    nextLogos.pop();
+  }
+
+  return {
+    ...extraContent,
+    logos: nextLogos,
+  };
+}
+
+function updateTestimonialExtraContent(
+  extraContent: Record<string, unknown>,
+  instructions: string
+) {
+  const next = { ...extraContent };
+
+  if (typeof next.quote === "string") {
+    next.quote = adjustSubheading(next.quote, instructions);
+  }
+
+  if (typeof next.authorName === "string") {
+    next.authorName = titleCaseWords(next.authorName);
+  }
+
+  if (typeof next.authorRole === "string") {
+    next.authorRole = adjustValuePointTitle(next.authorRole, instructions);
+  }
+
+  if (typeof next.company === "string") {
+    next.company = titleCaseWords(next.company);
+  }
+
+  return next;
+}
+
+function updateCtaExtraContent(
+  extraContent: Record<string, unknown>,
+  instructions: string
+) {
+  const next = { ...extraContent };
+
+  if (typeof next.primaryCtaLabel === "string") {
+    next.primaryCtaLabel = makeMoreConversionFocused(
+      next.primaryCtaLabel,
+      "ctaLabel"
+    ).replace(/[.]+$/g, "");
+  }
+
+  if (typeof next.secondaryCtaLabel === "string") {
+    next.secondaryCtaLabel = makeMoreConversionFocused(
+      next.secondaryCtaLabel,
+      "ctaLabel"
+    ).replace(/[.]+$/g, "");
+  }
+
+  if (
+    includesAny(instructions, [
+      "single cta",
+      "one cta",
+      "remove secondary cta",
+      "primary only",
+    ])
+  ) {
+    next.secondaryCtaLabel = "";
+    next.secondaryCtaUrl = "";
+  }
+
+  return next;
+}
+
+function applyInstructionDrivenChanges(
+  blockData: BlockData,
+  instructions: string,
+  componentType?: string,
+  componentVariant?: string
+): BlockData {
+  const next = cloneBlockData(blockData);
+  const normalisedInstructions = normaliseWhitespace(instructions).toLowerCase();
+  const resolvedComponentType = componentType || next.componentType || "";
+  const resolvedComponentVariant = componentVariant || next.componentVariant || "";
+
+  if (!normalisedInstructions) {
+    return next;
+  }
+
+  next.componentType = next.componentType || resolvedComponentType || undefined;
+  next.componentVariant =
+    next.componentVariant || resolvedComponentVariant || undefined;
+
+  next.eyebrow = adjustEyebrow(next.eyebrow ?? "", normalisedInstructions);
+  next.headline = adjustHeadline(next.headline ?? "", normalisedInstructions);
+  next.subheading = adjustSubheading(
+    next.subheading ?? "",
+    normalisedInstructions
+  );
+
+  if (
+    isHeroComponent(resolvedComponentType) ||
+    isValueGridComponent(resolvedComponentType) ||
+    !resolvedComponentType
+  ) {
+    next.valuePoints = updateValuePoints(
+      next.valuePoints ?? [],
+      normalisedInstructions
     );
   }
 
-  improved = shortenIfTooLong(original, improved);
-
-  return sentenceCase(improved);
-}
-
-function improveValuePointTitle(text: string) {
-  let original = text.trim();
-  let improved = original;
-
-  improved = applyPhraseReplacements(improved);
-
-  const transforms: Array<[RegExp, string]> = [
-    [/\bmore control\b/gi, "Greater Control"],
-    [/\bbetter visibility\b/gi, "Clearer Visibility"],
-    [/\bfast setup\b/gi, "Faster Setup"],
-    [/\beasy management\b/gi, "Simplified Management"],
-    [/\bdata insights\b/gi, "Actionable Insights"],
-    [/\bbetter results\b/gi, "Stronger Results"],
-    [/\bmore efficient\b/gi, "Greater Efficiency"],
-    [/\bteam collaboration\b/gi, "Stronger Collaboration"],
-    [/\bbrand consistency\b/gi, "Consistent Branding"],
-    [/\bcontent control\b/gi, "Stronger Control"],
-  ];
-
-  for (const [pattern, replacement] of transforms) {
-    improved = improved.replace(pattern, replacement);
-  }
-
-  improved = improved.replace(/\band\b/gi, " & ");
-
-  if (improved.toLowerCase() === original.toLowerCase()) {
-    const words = original.split(" ").filter(Boolean);
-
-    if (words.length >= 2) {
-      improved = `${words[0]} Optimisation`;
-    } else {
-      improved = `Enhanced ${original}`;
-    }
-  }
-
-  improved = normaliseWhitespace(improved).replace(/[.!?]+$/g, "");
-  improved = shortenIfTooLong(original, improved);
-
-  return sentenceCase(improved);
-}
-
-function improveValuePointText(text: string) {
-  let original = text.trim();
-  let improved = original;
-
-  improved = applyPhraseReplacements(improved);
-
-  const bodyPatterns: Array<[RegExp, string]> = [
-    [/\bwe help\b/gi, "We support"],
-    [/\bit helps\b/gi, "It supports"],
-    [/\bthis helps\b/gi, "This supports"],
-    [/\bmake decisions\b/gi, "make informed decisions"],
-    [/\bmore efficiently\b/gi, "more effectively"],
-  ];
-
-  for (const [pattern, replacement] of bodyPatterns) {
-    improved = improved.replace(pattern, replacement);
-  }
-
-  improved = improved.replace(/\band\b/gi, " & ");
-  improved = normaliseWhitespace(improved);
-  improved = preserveEndingPunctuation(original, improved);
-
-  if (improved.toLowerCase() === original.toLowerCase()) {
-    improved = preserveEndingPunctuation(
-      original,
-      normaliseWhitespace(original.replace(/\band\b/gi, " & "))
+  if (isStatsComponent(resolvedComponentType)) {
+    next.extraContent = updateStatsExtraContent(
+      ((next.extraContent as Record<string, unknown>) || {}),
+      normalisedInstructions
     );
   }
 
-  improved = shortenIfTooLong(original, improved);
-
-  return sentenceCase(improved);
-}
-
-function improveMockText(field: string, text: string) {
-  const cleaned = normaliseWhitespace(text);
-  if (!cleaned) return cleaned;
-
-  const fieldKey = field.toLowerCase();
-
-  if (fieldKey.includes("eyebrow")) {
-    return improveEyebrow(cleaned);
+  if (isLogoComponent(resolvedComponentType)) {
+    next.extraContent = updateLogosExtraContent(
+      ((next.extraContent as Record<string, unknown>) || {}),
+      normalisedInstructions
+    );
   }
 
-  if (fieldKey.includes("headline")) {
-    return improveHeadline(cleaned);
+  if (isTestimonialComponent(resolvedComponentType)) {
+    next.extraContent = updateTestimonialExtraContent(
+      ((next.extraContent as Record<string, unknown>) || {}),
+      normalisedInstructions
+    );
   }
 
-  if (fieldKey.includes("subheading")) {
-    return improveSubheading(cleaned);
+  if (isCtaComponent(resolvedComponentType)) {
+    next.extraContent = updateCtaExtraContent(
+      ((next.extraContent as Record<string, unknown>) || {}),
+      normalisedInstructions
+    );
   }
 
-  if (fieldKey.includes("valuepointtitle")) {
-    return improveValuePointTitle(cleaned);
+  if (
+    includesAny(normalisedInstructions, ["centered", "centre", "center"]) &&
+    next.design
+  ) {
+    next.design.layout = "stacked";
+    next.design.headingAlign = "center";
   }
 
-  if (fieldKey.includes("valuepointtext")) {
-    return improveValuePointText(cleaned);
+  if (
+    includesAny(normalisedInstructions, [
+      "left align",
+      "left-aligned",
+      "split layout",
+    ]) &&
+    next.design
+  ) {
+    next.design.layout = "split";
+    next.design.headingAlign = "left";
   }
 
-  let improved = applyPhraseReplacements(cleaned);
-  improved = preserveEndingPunctuation(cleaned, improved);
-  improved = shortenIfTooLong(cleaned, improved);
+  if (
+    includesAny(normalisedInstructions, [
+      "more corporate",
+      "more enterprise",
+      "enterprise style",
+    ]) &&
+    next.design
+  ) {
+    next.design.theme = "enterprise";
+    next.design.cardStyle = "soft";
+    next.design.shadow = "soft";
+  }
 
-  return improved.trim();
+  if (includesAny(normalisedInstructions, ["lighter", "light theme"]) && next.design) {
+    next.design.theme = "light";
+  }
+
+  if (includesAny(normalisedInstructions, ["softer", "soft theme"]) && next.design) {
+    next.design.theme = "soft";
+  }
+
+  if (includesAny(normalisedInstructions, ["outline cards", "outlined cards"]) && next.design) {
+    next.design.cardStyle = "outline";
+  }
+
+  if (includesAny(normalisedInstructions, ["filled cards", "stronger cards"]) && next.design) {
+    next.design.cardStyle = "filled";
+  }
+
+  if (
+    includesAny(normalisedInstructions, ["less shadow", "remove shadow"]) &&
+    next.design
+  ) {
+    next.design.shadow = "none";
+  }
+
+  if (
+    includesAny(normalisedInstructions, ["more shadow", "strong shadow"]) &&
+    next.design
+  ) {
+    next.design.shadow = "strong";
+  }
+
+  return next;
 }
 
 export async function POST(req: Request) {
@@ -315,31 +698,51 @@ export async function POST(req: Request) {
       )
     ) {
       return NextResponse.json(
-        { error: "You do not have permission to improve block content." },
+        { error: "You do not have permission to apply block changes." },
         { status: 403 }
       );
     }
 
-    const body = await req.json().catch(() => null);
+    const body = (await req.json().catch(() => null)) as DescribeChangesRequestBody | null;
 
-    const field = typeof body?.field === "string" ? body.field.trim() : "";
-    const text = typeof body?.text === "string" ? body.text.trim() : "";
+    const instructions =
+      typeof body?.instructions === "string" ? body.instructions.trim() : "";
+    const blockData = body?.blockData;
+    const componentType =
+      typeof body?.componentType === "string" ? body.componentType.trim() : "";
+    const componentVariant =
+      typeof body?.componentVariant === "string"
+        ? body.componentVariant.trim()
+        : "";
 
-    if (!field || !text) {
+    if (!instructions || !blockData) {
       return NextResponse.json(
-        { error: "Missing required field or text." },
+        { error: "Missing required instructions or blockData." },
         { status: 400 }
       );
     }
 
-    const improved = improveMockText(field, text);
+    const nextBlockData = applyInstructionDrivenChanges(
+      blockData,
+      instructions,
+      componentType,
+      componentVariant
+    );
 
-    return NextResponse.json({ improved });
+    return NextResponse.json({
+      ok: true,
+      blockData: nextBlockData,
+      meta: {
+        componentType: formatComponentLabel(componentType || blockData.componentType) || null,
+        componentVariant:
+          formatComponentLabel(componentVariant || blockData.componentVariant) || null,
+      },
+    });
   } catch (error) {
-    console.error("Improve route failed:", error);
+    console.error("Describe changes route failed:", error);
 
     return NextResponse.json(
-      { error: "Failed to improve field." },
+      { error: "Failed to apply describe changes." },
       { status: 500 }
     );
   }

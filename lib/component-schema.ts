@@ -132,12 +132,22 @@ export type ComponentField = {
   children?: ComponentField[];
 };
 
+export type ComponentPreview = {
+  key?: string;
+  label?: string;
+  style?: "wireframe" | "editorial" | "dashboard" | "minimal";
+  aspectRatio?: "wide" | "standard" | "tall" | "auto";
+};
+
 export type ComponentVariant = {
   id: string;
   label: string;
   description?: string;
   allowedLayouts?: string[];
   allowedBackgrounds?: string[];
+  preview?: ComponentPreview;
+  useCaseLabel?: string;
+  badges?: string[];
   deprecated?: boolean;
   deprecatedReason?: string;
 };
@@ -209,6 +219,9 @@ export type ComponentSchema = {
 
   ownerTeam?: string;
   tags?: string[];
+  preview?: ComponentPreview;
+  useCaseLabel?: string;
+  badges?: string[];
 
   variants: ComponentVariant[];
   fields: ComponentField[];

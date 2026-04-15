@@ -33,6 +33,15 @@ function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
+function formatComponentLabel(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
 type ApiBlockRecord = {
   id: string;
   status?: string;
@@ -48,12 +57,16 @@ type DashboardBlock = {
   id: string;
   name: string;
   component: string;
+  variant: string;
   status: string;
   governanceScore: number | null;
   updatedAt: string | null;
   createdAt: string | null;
   owner: string;
   data: BlockData | null;
+  pageName: string;
+  templateName: string;
+  sectionLabel: string;
 };
 
 type TemplateSummary = {
@@ -150,13 +163,13 @@ function getBlockName(data: BlockData | null, id: string) {
 }
 
 function getComponentName(data: BlockData | null): string {
-  if (!data) return "Hero Standard";
+  if (!data?.componentType) return "—";
+  return formatComponentLabel(data.componentType);
+}
 
-  const componentType = (data as Record<string, unknown>)["componentType"];
-
-  return typeof componentType === "string" && componentType.trim()
-    ? componentType
-    : "Hero Standard";
+function getComponentVariant(data: BlockData | null): string {
+  if (!data?.componentVariant) return "Default";
+  return formatComponentLabel(data.componentVariant);
 }
 
 function getOwnerName(block: ApiBlockRecord) {
@@ -188,8 +201,8 @@ function getBlockStatusLabel(status: string) {
       return "Approved";
     case "published":
       return "Published";
-      case "changes_requested":
-        return "Changes Requested";
+    case "changes_requested":
+      return "Changes Requested";
     case "deploying":
       return "Deploying";
     case "deployed":
@@ -211,8 +224,8 @@ function getBlockStatusPillClass(status: string) {
     case "pending_approval":
     case "in_review":
       return "bg-amber-50 text-amber-700 ring-amber-100";
-      case "changes_requested":
-        return "bg-rose-50 text-rose-700 ring-rose-100";
+    case "changes_requested":
+      return "bg-rose-50 text-rose-700 ring-rose-100";
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
   }
@@ -226,8 +239,8 @@ function getPageStatusLabel(status: PageStatus) {
       return "Pending Approval";
     case "approved":
       return "Approved";
-   case "changes_requested":
-  return "Changes Requested";
+    case "changes_requested":
+      return "Changes Requested";
     case "published":
       return "Published";
     case "archived":
@@ -247,7 +260,7 @@ function getPageStatusPillClass(status: PageStatus) {
     case "approved":
       return "bg-sky-50 text-sky-700 ring-sky-100";
     case "changes_requested":
-  return "bg-rose-50 text-rose-700 ring-rose-100";
+      return "bg-rose-50 text-rose-700 ring-rose-100";
     case "published":
       return "bg-emerald-50 text-emerald-700 ring-emerald-100";
     case "archived":
@@ -390,6 +403,13 @@ function RecentBlockRow({
 }) {
   const router = useRouter();
 
+  const secondaryLineParts = [
+    block.component !== "—" ? block.component : null,
+    block.variant && block.variant !== "Default" ? block.variant : null,
+    block.pageName !== "—" ? block.pageName : null,
+    relativeUpdatedLabel(block.updatedAt),
+  ].filter(Boolean);
+
   return (
     <div
       onClick={() => router.push(`/blocks/${block.id}/details?role=${role}`)}
@@ -404,7 +424,7 @@ function RecentBlockRow({
           {block.name}
         </div>
         <div className="mt-1 truncate text-xs text-slate-500">
-          {block.component} • {relativeUpdatedLabel(block.updatedAt)}
+          {secondaryLineParts.join(" • ")}
         </div>
       </div>
 
@@ -568,12 +588,27 @@ export default function DashboardPage() {
           id: block.id,
           name: getBlockName(block.data ?? null, block.id),
           component: getComponentName(block.data ?? null),
+          variant: getComponentVariant(block.data ?? null),
           status: block.status || "draft",
           governanceScore: getGovernanceScore(block.data ?? null),
           updatedAt: block.updatedAt || null,
           createdAt: block.createdAt || null,
           owner: getOwnerName(block),
           data: block.data ?? null,
+          pageName:
+            typeof block.data?.pageName === "string" && block.data.pageName.trim()
+              ? block.data.pageName
+              : "—",
+          templateName:
+            typeof block.data?.templateName === "string" &&
+            block.data.templateName.trim()
+              ? block.data.templateName
+              : "—",
+          sectionLabel:
+            typeof block.data?.sectionLabel === "string" &&
+            block.data.sectionLabel.trim()
+              ? block.data.sectionLabel
+              : "—",
         }));
 
         mappedBlocks.sort((a, b) => {
@@ -627,6 +662,10 @@ export default function DashboardPage() {
         block.name.toLowerCase().includes(q) ||
         block.owner.toLowerCase().includes(q) ||
         block.component.toLowerCase().includes(q) ||
+        block.variant.toLowerCase().includes(q) ||
+        block.pageName.toLowerCase().includes(q) ||
+        block.templateName.toLowerCase().includes(q) ||
+        block.sectionLabel.toLowerCase().includes(q) ||
         getBlockStatusLabel(block.status).toLowerCase().includes(q)
       );
     });
@@ -712,9 +751,7 @@ export default function DashboardPage() {
           "pending_approval",
           "approved",
           "changes_requested",
-        ].includes(
-          page.status
-        )
+        ].includes(page.status)
       ).length,
       publishedTemplates: templates.filter((t) => t.status === "published").length,
       draftTemplates: templates.filter((t) => t.status === "draft").length,
@@ -872,7 +909,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                    <span>Changes Requested</span>
+                      <span>Changes Requested</span>
                       <span className="font-semibold text-slate-900">
                         {totals.blockedBlocks}
                       </span>
