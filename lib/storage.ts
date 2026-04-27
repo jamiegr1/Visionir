@@ -27,9 +27,11 @@ function normaliseBlockData(data: unknown): BlockData {
     headline: typeof safeData.headline === "string" ? safeData.headline : "",
     subheading: typeof safeData.subheading === "string" ? safeData.subheading : "",
     imageUrl: typeof safeData.imageUrl === "string" ? safeData.imageUrl : undefined,
+
     valuePoints: Array.isArray(safeData.valuePoints)
       ? (safeData.valuePoints as BlockData["valuePoints"])
       : [],
+
     design: isObject(safeData.design)
       ? (safeData.design as BlockData["design"])
       : {
@@ -51,12 +53,15 @@ function normaliseBlockData(data: unknown): BlockData {
             purple: "#8b5cf6",
           },
         },
+
     componentType:
       typeof safeData.componentType === "string" ? safeData.componentType : undefined,
+
     componentVariant:
       typeof safeData.componentVariant === "string"
         ? safeData.componentVariant
         : undefined,
+
     pageId: typeof safeData.pageId === "string" ? safeData.pageId : undefined,
     pageName: typeof safeData.pageName === "string" ? safeData.pageName : undefined,
     sectionId:
@@ -67,6 +72,29 @@ function normaliseBlockData(data: unknown): BlockData {
       typeof safeData.sectionKey === "string" ? safeData.sectionKey : undefined,
     templateName:
       typeof safeData.templateName === "string" ? safeData.templateName : undefined,
+
+    generatedFromPrompt:
+      typeof safeData.generatedFromPrompt === "string"
+        ? safeData.generatedFromPrompt
+        : undefined,
+
+    contentLength:
+      safeData.contentLength === "Short" ||
+      safeData.contentLength === "Standard" ||
+      safeData.contentLength === "Detailed"
+        ? safeData.contentLength
+        : undefined,
+
+    imageSourceMode:
+      safeData.imageSourceMode === "none" ||
+      safeData.imageSourceMode === "upload" ||
+      safeData.imageSourceMode === "gallery"
+        ? safeData.imageSourceMode
+        : undefined,
+
+    extraContent: isObject(safeData.extraContent)
+      ? (safeData.extraContent as BlockData["extraContent"])
+      : undefined,
   };
 }
 

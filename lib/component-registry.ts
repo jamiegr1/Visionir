@@ -3,10 +3,10 @@ import type { ComponentSchema } from "@/lib/component-schema";
 const now = new Date().toISOString();
 
 const basePermissions = {
-  canView: ["creator", "approver", "admin"] as const,
-  canEdit: ["creator", "approver", "admin"] as const,
-  canApprove: ["approver", "admin"] as const,
-  canPublish: ["admin"] as const,
+  canView: ["creator", "approver", "admin"],
+  canEdit: ["creator", "approver", "admin"],
+  canApprove: ["approver", "admin"],
+  canPublish: ["admin"],
 };
 
 const editableAiRule = {

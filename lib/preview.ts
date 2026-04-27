@@ -1,4 +1,15 @@
-import type { Accent, BlockData } from "@/lib/types";
+import type {
+  Accent,
+  BlockData,
+  BlockExtraContent,
+  ContactFormExtraContent,
+  CtaExtraContent,
+  FaqExtraContent,
+  LogoCloudExtraContent,
+  RichTextExtraContent,
+  StatsBandExtraContent,
+  TestimonialExtraContent,
+} from "@/lib/types";
 
 const ACCENT_BORDER: Record<Accent, string> = {
   blue: "#2f6df6",
@@ -18,10 +29,14 @@ function escapeHtml(value: string) {
     .replace(/'/g, "&#39;");
 }
 
-function resolvePreviewImageUrl(imageUrl?: string) {
+function resolvePreviewImageUrl(data: BlockData) {
+  if (data.imageSourceMode === "none") {
+    return undefined;
+  }
+
   const raw =
-    typeof imageUrl === "string" && imageUrl.trim()
-      ? imageUrl.trim()
+    typeof data.imageUrl === "string" && data.imageUrl.trim()
+      ? data.imageUrl.trim()
       : DEFAULT_BLOCK_IMAGE;
 
   if (/^https?:\/\//i.test(raw)) {
@@ -52,11 +67,12 @@ function isTestimonialComponent(componentType?: string) {
 
 function isCtaComponent(componentType?: string) {
   const value = (componentType || "").toLowerCase();
-  return (
-    value.includes("cta") ||
-    value.includes("contact") ||
-    value.includes("conversion")
-  );
+  return value.includes("cta");
+}
+
+function isContactComponent(componentType?: string) {
+  const value = (componentType || "").toLowerCase();
+  return value.includes("contact");
 }
 
 function isStatsComponent(componentType?: string) {
@@ -72,9 +88,70 @@ function isFaqComponent(componentType?: string) {
   return (componentType || "").toLowerCase().includes("faq");
 }
 
+function isRichTextComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("rich-text");
+}
+
+function isMediaTextComponent(componentType?: string) {
+  return (componentType || "").toLowerCase().includes("media-text");
+}
+
+function asTestimonialExtraContent(
+  extraContent?: BlockExtraContent
+): TestimonialExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as TestimonialExtraContent;
+}
+
+function asCtaExtraContent(
+  extraContent?: BlockExtraContent
+): CtaExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as CtaExtraContent;
+}
+
+function asContactExtraContent(
+  extraContent?: BlockExtraContent
+): ContactFormExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as ContactFormExtraContent;
+}
+
+function asStatsExtraContent(
+  extraContent?: BlockExtraContent
+): StatsBandExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as StatsBandExtraContent;
+}
+
+function asLogoExtraContent(
+  extraContent?: BlockExtraContent
+): LogoCloudExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as LogoCloudExtraContent;
+}
+
+function asFaqExtraContent(
+  extraContent?: BlockExtraContent
+): FaqExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as FaqExtraContent;
+}
+
+function asRichTextExtraContent(
+  extraContent?: BlockExtraContent
+): RichTextExtraContent | undefined {
+  if (!extraContent) return undefined;
+  return extraContent as RichTextExtraContent;
+}
+
+function getVariant(value?: string) {
+  return (value || "").toLowerCase().trim();
+}
+
 function buildPointsHtml(points: BlockData["valuePoints"]) {
   return (points || [])
-    .slice(0, 4)
+    .slice(0, 6)
     .map((point) => {
       const border = ACCENT_BORDER[point.accent] || ACCENT_BORDER.blue;
 
@@ -88,27 +165,63 @@ function buildPointsHtml(points: BlockData["valuePoints"]) {
     .join("");
 }
 
-function buildImageHtml(imageUrl?: string) {
-  const resolvedImageUrl = resolvePreviewImageUrl(imageUrl);
+function buildImageHtml(data: BlockData) {
+  const resolvedImageUrl = resolvePreviewImageUrl(data);
+
+  if (!resolvedImageUrl) {
+    return `<div class="image-placeholder"></div>`;
+  }
+
   const safeImageUrl = escapeHtml(resolvedImageUrl);
   const safeFallbackUrl = escapeHtml(DEFAULT_BLOCK_IMAGE);
 
-  return resolvedImageUrl
-    ? `<img src="${safeImageUrl}" alt="" onerror="if(this.dataset.fallbackApplied==='true'){this.style.display='none';}else{this.dataset.fallbackApplied='true';this.src='${safeFallbackUrl}';}" />`
-    : `<div class="image-placeholder"></div>`;
+  return `<img src="${safeImageUrl}" alt="" onerror="if(this.dataset.fallbackApplied==='true'){this.style.display='none';}else{this.dataset.fallbackApplied='true';this.src='${safeFallbackUrl}';}" />`;
+}
+
+function renderSectionIntro(data: BlockData, compact = false, centered = false) {
+  return `
+    <div class="section-intro">
+      <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
+      <h1 class="headline ${compact ? "compact" : ""} ${
+    centered ? "centered" : ""
+  }">${escapeHtml(data.headline || "")}</h1>
+      <p class="subheading ${compact ? "compact" : ""} ${
+    centered ? "centered" : ""
+  }">${escapeHtml(data.subheading || "")}</p>
+    </div>
+  `;
 }
 
 function renderHeroBlock(data: BlockData) {
   const pointsHtml = buildPointsHtml(data.valuePoints || []);
-  const imageHtml = buildImageHtml(data.imageUrl);
-  const centered = data.componentVariant === "centered";
+  const imageHtml = buildImageHtml(data);
+  const variant = getVariant(data.componentVariant);
+
+  const centered = variant === "centered";
+  const stacked = variant.includes("stacked");
+  const imageLeft =
+    variant.includes("left-image") ||
+    variant.includes("image-left") ||
+    variant.includes("media-left");
+
+  const blockClass = centered
+    ? "block-centered"
+    : stacked
+      ? "block-stacked"
+      : imageLeft
+        ? "block-split-reverse"
+        : "block-split";
 
   return `
-    <section class="block ${centered ? "block-centered" : "block-split"}">
+    <section class="block ${blockClass}">
       <div class="content">
         <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-        <h1 class="headline">${escapeHtml(data.headline || "")}</h1>
-        <p class="subheading">${escapeHtml(data.subheading || "")}</p>
+        <h1 class="headline ${centered ? "centered" : ""}">${escapeHtml(
+    data.headline || ""
+  )}</h1>
+        <p class="subheading ${centered ? "centered" : ""}">${escapeHtml(
+    data.subheading || ""
+  )}</p>
         ${
           pointsHtml
             ? `
@@ -132,16 +245,19 @@ function renderHeroBlock(data: BlockData) {
 
 function renderValueGridBlock(data: BlockData) {
   const pointsHtml = buildPointsHtml(data.valuePoints || []);
+  const variant = getVariant(data.componentVariant);
+
+  const gridClass =
+    variant === "three-up"
+      ? "value-grid-cols-3"
+      : variant === "four-up"
+        ? "value-grid-cols-4"
+        : "value-grid-cols-2";
 
   return `
     <section class="value-grid-block">
-      <div class="section-intro">
-        <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-        <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
-        <p class="subheading compact">${escapeHtml(data.subheading || "")}</p>
-      </div>
-
-      <div class="value-grid">
+      ${renderSectionIntro(data, true, false)}
+      <div class="value-grid ${gridClass}">
         ${pointsHtml}
       </div>
     </section>
@@ -149,18 +265,32 @@ function renderValueGridBlock(data: BlockData) {
 }
 
 function renderTestimonialBlock(data: BlockData) {
-  const quote =
-    data.subheading?.trim() ||
-    "Trusted by organisations that value clarity, control and consistency.";
+  const extra = asTestimonialExtraContent(data.extraContent);
 
-  const authorName = data.pageName?.trim() || "Client Team";
-  const authorRole = data.sectionLabel?.trim() || "Verified Customer";
-  const company = data.templateName?.trim() || "Visionir Client";
+  const quote =
+    typeof extra?.quote === "string" && extra.quote.trim()
+      ? extra.quote.trim()
+      : data.subheading?.trim() ||
+        "Trusted by organisations that value clarity, control and consistency.";
+
+  const authorName =
+    typeof extra?.authorName === "string" && extra.authorName.trim()
+      ? extra.authorName.trim()
+      : "Client Team";
+
+  const authorRole =
+    typeof extra?.authorRole === "string" && extra.authorRole.trim()
+      ? extra.authorRole.trim()
+      : "Verified Customer";
+
+  const company =
+    typeof extra?.company === "string" && extra.company.trim()
+      ? extra.company.trim()
+      : data.templateName?.trim() || "Visionir Client";
 
   return `
     <section class="testimonial-block">
-      <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-      <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
+      ${renderSectionIntro(data, true, false)}
       <div class="testimonial-card">
         <div class="quote-mark">“</div>
         <blockquote>${escapeHtml(quote)}</blockquote>
@@ -177,8 +307,17 @@ function renderTestimonialBlock(data: BlockData) {
 }
 
 function renderCtaBlock(data: BlockData) {
-  const primaryCtaLabel = "Speak to an Expert";
-  const secondaryCtaLabel = "Learn More";
+  const extra = asCtaExtraContent(data.extraContent);
+
+  const primaryCtaLabel =
+    typeof extra?.primaryCtaLabel === "string" && extra.primaryCtaLabel.trim()
+      ? extra.primaryCtaLabel.trim()
+      : "Speak to an Expert";
+
+  const secondaryCtaLabel =
+    typeof extra?.secondaryCtaLabel === "string" && extra.secondaryCtaLabel.trim()
+      ? extra.secondaryCtaLabel.trim()
+      : "Learn More";
 
   return `
     <section class="cta-block">
@@ -196,15 +335,56 @@ function renderCtaBlock(data: BlockData) {
   `;
 }
 
+function renderContactBlock(data: BlockData) {
+  const extra = asContactExtraContent(data.extraContent);
+
+  const formTitle =
+    typeof extra?.formTitle === "string" && extra.formTitle.trim()
+      ? extra.formTitle.trim()
+      : "Start Your Enquiry";
+
+  const submitLabel =
+    typeof extra?.submitLabel === "string" && extra.submitLabel.trim()
+      ? extra.submitLabel.trim()
+      : "Submit Enquiry";
+
+  return `
+    <section class="contact-block">
+      <div class="contact-layout">
+        <div class="contact-content">
+          <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
+          <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
+          <p class="subheading compact">${escapeHtml(data.subheading || "")}</p>
+        </div>
+
+        <div class="contact-form-card">
+          <div class="form-title">${escapeHtml(formTitle)}</div>
+          <div class="form-field"></div>
+          <div class="form-field"></div>
+          <div class="form-field form-field-large"></div>
+          <button class="form-submit">${escapeHtml(submitLabel)}</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderStatsBlock(data: BlockData) {
-  const points = (data.valuePoints || []).slice(0, 4);
+  const extra = asStatsExtraContent(data.extraContent);
+  const stats = Array.isArray(extra?.stats) ? extra.stats.slice(0, 4) : [];
 
   const statsHtml =
-    points.length > 0
-      ? points
-          .map((point) => {
-            const statValue = point.title || "120+";
-            const statLabel = point.text || "Metric";
+    stats.length > 0
+      ? stats
+          .map((item) => {
+            const statValue =
+              typeof item.value === "string" && item.value.trim()
+                ? item.value.trim()
+                : "120+";
+            const statLabel =
+              typeof item.label === "string" && item.label.trim()
+                ? item.label.trim()
+                : "Metric";
 
             return `
               <article class="stat-card">
@@ -231,12 +411,7 @@ function renderStatsBlock(data: BlockData) {
 
   return `
     <section class="stats-block">
-      <div class="section-intro">
-        <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-        <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
-        <p class="subheading compact">${escapeHtml(data.subheading || "")}</p>
-      </div>
-
+      ${renderSectionIntro(data, true, false)}
       <div class="stats-grid">
         ${statsHtml}
       </div>
@@ -245,17 +420,19 @@ function renderStatsBlock(data: BlockData) {
 }
 
 function renderLogoBlock(data: BlockData) {
-  const points = (data.valuePoints || []).slice(0, 6);
+  const extra = asLogoExtraContent(data.extraContent);
+  const logos = Array.isArray(extra?.logos) ? extra.logos.slice(0, 8) : [];
 
   const logosHtml =
-    points.length > 0
-      ? points
-          .map((point) => {
-            const name = point.title || "Trusted Brand";
+    logos.length > 0
+      ? logos
+          .map((item) => {
+            const name =
+              typeof item.name === "string" && item.name.trim()
+                ? item.name.trim()
+                : "Trusted Brand";
 
-            return `
-              <div class="logo-chip">${escapeHtml(name)}</div>
-            `;
+            return `<div class="logo-chip">${escapeHtml(name)}</div>`;
           })
           .join("")
       : `
@@ -267,12 +444,7 @@ function renderLogoBlock(data: BlockData) {
 
   return `
     <section class="logo-block">
-      <div class="section-intro">
-        <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-        <h1 class="headline compact centered">${escapeHtml(data.headline || "")}</h1>
-        <p class="subheading compact centered">${escapeHtml(data.subheading || "")}</p>
-      </div>
-
+      ${renderSectionIntro(data, true, true)}
       <div class="logo-grid">
         ${logosHtml}
       </div>
@@ -281,16 +453,17 @@ function renderLogoBlock(data: BlockData) {
 }
 
 function renderFaqBlock(data: BlockData) {
-  const items = (data.valuePoints || []).slice(0, 4);
+  const extra = asFaqExtraContent(data.extraContent);
+  const faqItems = Array.isArray(extra?.faqItems) ? extra.faqItems.slice(0, 6) : [];
 
   const faqHtml =
-    items.length > 0
-      ? items
+    faqItems.length > 0
+      ? faqItems
           .map(
             (item) => `
               <article class="faq-item">
-                <h3>${escapeHtml(item.title || "Question")}</h3>
-                <p>${escapeHtml(item.text || "Answer")}</p>
+                <h3>${escapeHtml(item.question || "Question")}</h3>
+                <p>${escapeHtml(item.answer || "Answer")}</p>
               </article>
             `
           )
@@ -308,14 +481,65 @@ function renderFaqBlock(data: BlockData) {
 
   return `
     <section class="faq-block">
-      <div class="section-intro">
-        <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
-        <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
-        <p class="subheading compact">${escapeHtml(data.subheading || "")}</p>
-      </div>
-
+      ${renderSectionIntro(data, true, false)}
       <div class="faq-list">
         ${faqHtml}
+      </div>
+    </section>
+  `;
+}
+
+function renderRichTextBlock(data: BlockData) {
+  const extra = asRichTextExtraContent(data.extraContent);
+  const body =
+    typeof extra?.body === "string" && extra.body.trim()
+      ? extra.body.trim()
+      : "This section provides supporting information in a clean editorial format.";
+
+  return `
+    <section class="rich-text-block">
+      ${renderSectionIntro(data, true, false)}
+      <div class="rich-text-card">
+        <p>${escapeHtml(body)}</p>
+      </div>
+    </section>
+  `;
+}
+
+function renderMediaTextBlock(data: BlockData) {
+  const extra = asRichTextExtraContent(data.extraContent);
+  const body =
+    typeof extra?.body === "string" && extra.body.trim()
+      ? extra.body.trim()
+      : data.subheading;
+
+  const imageHtml = buildImageHtml(data);
+  const variant = getVariant(data.componentVariant);
+
+  const stacked = variant.includes("stacked");
+  const reverse =
+    variant.includes("media-left") ||
+    variant.includes("image-left") ||
+    variant.includes("left-image");
+
+  const layoutClass = stacked
+    ? "media-text-stacked"
+    : reverse
+      ? "media-text-split media-text-reverse"
+      : "media-text-split";
+
+  return `
+    <section class="media-text-block ${layoutClass}">
+      <div class="media-text-copy">
+        <p class="eyebrow">${escapeHtml(data.eyebrow || "")}</p>
+        <h1 class="headline compact">${escapeHtml(data.headline || "")}</h1>
+        <p class="subheading compact">${escapeHtml(body || "")}</p>
+      </div>
+
+      <div class="media-text-media">
+        <div class="media-card">
+          ${imageHtml}
+        </div>
       </div>
     </section>
   `;
@@ -330,6 +554,10 @@ function renderBlockByType(data: BlockData) {
 
   if (isTestimonialComponent(componentType)) {
     return renderTestimonialBlock(data);
+  }
+
+  if (isContactComponent(componentType)) {
+    return renderContactBlock(data);
   }
 
   if (isCtaComponent(componentType)) {
@@ -348,6 +576,14 @@ function renderBlockByType(data: BlockData) {
     return renderFaqBlock(data);
   }
 
+  if (isRichTextComponent(componentType)) {
+    return renderRichTextBlock(data);
+  }
+
+  if (isMediaTextComponent(componentType)) {
+    return renderMediaTextBlock(data);
+  }
+
   if (isValueGridComponent(componentType)) {
     return renderValueGridBlock(data);
   }
@@ -361,6 +597,17 @@ function renderBlockByType(data: BlockData) {
 
 export function makePreviewHtml(data: BlockData) {
   const renderedBlock = renderBlockByType(data);
+
+  const background = data.design?.background || "#ffffff";
+  const surface = data.design?.surface || "#ffffff";
+  const headingColor = data.design?.headingColor || "#0f2343";
+  const textColor = data.design?.textColor || "#44556f";
+  const eyebrowColor = data.design?.eyebrowColor || "#1d63ed";
+  const shadow = data.design?.shadow === "soft"
+    ? "0 18px 40px rgba(15, 23, 42, 0.10)"
+    : "0 24px 60px rgba(15, 23, 42, 0.16)";
+  const radius =
+    data.design?.borderRadius === "xl" ? "26px" : "18px";
 
   return `
 <!DOCTYPE html>
@@ -380,9 +627,9 @@ export function makePreviewHtml(data: BlockData) {
       padding: 0;
       width: 100%;
       min-height: 100%;
-      background: #ffffff;
+      background: ${background};
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #0f172a;
+      color: ${headingColor};
     }
 
     body {
@@ -392,7 +639,7 @@ export function makePreviewHtml(data: BlockData) {
     .block-shell {
       width: 100%;
       min-height: 100vh;
-      background: #ffffff;
+      background: ${background};
       padding: 42px 48px;
       display: flex;
       align-items: flex-start;
@@ -403,9 +650,12 @@ export function makePreviewHtml(data: BlockData) {
     .value-grid-block,
     .testimonial-block,
     .cta-block,
+    .contact-block,
     .stats-block,
     .logo-block,
-    .faq-block {
+    .faq-block,
+    .rich-text-block,
+    .media-text-block {
       width: 100%;
       max-width: 1120px;
     }
@@ -418,6 +668,23 @@ export function makePreviewHtml(data: BlockData) {
 
     .block-split {
       grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.82fr);
+    }
+
+    .block-split-reverse {
+      grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.05fr);
+    }
+
+    .block-split-reverse .media {
+      order: 1;
+    }
+
+    .block-split-reverse .content {
+      order: 2;
+    }
+
+    .block-stacked {
+      grid-template-columns: 1fr;
+      gap: 28px;
     }
 
     .block-centered {
@@ -447,7 +714,7 @@ export function makePreviewHtml(data: BlockData) {
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: #1d63ed;
+      color: ${eyebrowColor};
     }
 
     .headline {
@@ -456,7 +723,7 @@ export function makePreviewHtml(data: BlockData) {
       line-height: 1.08;
       letter-spacing: -0.035em;
       font-weight: 800;
-      color: #0f2343;
+      color: ${headingColor};
       max-width: 580px;
     }
 
@@ -476,7 +743,7 @@ export function makePreviewHtml(data: BlockData) {
       max-width: 700px;
       font-size: 16px;
       line-height: 1.7;
-      color: #44556f;
+      color: ${textColor};
     }
 
     .subheading.compact {
@@ -496,20 +763,37 @@ export function makePreviewHtml(data: BlockData) {
       border: 0;
     }
 
-    .points,
-    .value-grid {
+    .points {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 24px;
       margin-top: 30px;
     }
 
+    .value-grid {
+      display: grid;
+      gap: 24px;
+      margin-top: 30px;
+    }
+
+    .value-grid-cols-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .value-grid-cols-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .value-grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .vp-card {
       min-height: 126px;
       border: 1px solid #d9e2ec;
       border-left-width: 4px;
-      border-radius: 18px;
-      background: #ffffff;
+      border-radius: ${radius};
+      background: ${surface};
       padding: 18px 18px 16px;
       box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
     }
@@ -519,14 +803,14 @@ export function makePreviewHtml(data: BlockData) {
       font-size: 14px;
       line-height: 1.45;
       font-weight: 700;
-      color: #24364d;
+      color: ${headingColor};
     }
 
     .vp-card p {
       margin: 0;
       font-size: 13px;
       line-height: 1.75;
-      color: #5b6b81;
+      color: ${textColor};
     }
 
     .media {
@@ -535,10 +819,10 @@ export function makePreviewHtml(data: BlockData) {
 
     .media-card {
       width: 100%;
-      border-radius: 26px;
+      border-radius: ${radius};
       overflow: hidden;
       background: #f8fafc;
-      box-shadow: 0 18px 40px rgba(15, 23, 42, 0.10);
+      box-shadow: ${shadow};
       aspect-ratio: 1 / 1;
     }
 
@@ -574,8 +858,8 @@ export function makePreviewHtml(data: BlockData) {
       position: relative;
       margin-top: 28px;
       border: 1px solid #d9e2ec;
-      border-radius: 24px;
-      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      border-radius: ${radius};
+      background: linear-gradient(180deg, ${surface} 0%, #f8fbff 100%);
       padding: 34px 30px 26px;
       box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
     }
@@ -596,7 +880,7 @@ export function makePreviewHtml(data: BlockData) {
       font-size: 22px;
       line-height: 1.6;
       letter-spacing: -0.02em;
-      color: #0f2343;
+      color: ${headingColor};
     }
 
     .testimonial-meta {
@@ -622,17 +906,17 @@ export function makePreviewHtml(data: BlockData) {
     .author-name {
       font-size: 14px;
       font-weight: 700;
-      color: #0f2343;
+      color: ${headingColor};
     }
 
     .author-role {
       margin-top: 4px;
       font-size: 13px;
-      color: #64748b;
+      color: ${textColor};
     }
 
     .cta-panel {
-      border-radius: 28px;
+      border-radius: ${radius};
       padding: 40px 34px;
       background: linear-gradient(135deg, #0f2343 0%, #1d4ed8 100%);
       color: white;
@@ -685,6 +969,51 @@ export function makePreviewHtml(data: BlockData) {
       border: 1px solid rgba(255,255,255,0.18);
     }
 
+    .contact-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+      gap: 32px;
+      align-items: start;
+    }
+
+    .contact-form-card {
+      border: 1px solid #d9e2ec;
+      border-radius: ${radius};
+      background: ${surface};
+      padding: 24px;
+      box-shadow: 0 14px 32px rgba(15, 23, 42, 0.06);
+    }
+
+    .form-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: ${headingColor};
+      margin-bottom: 18px;
+    }
+
+    .form-field {
+      height: 48px;
+      border-radius: 14px;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      margin-bottom: 12px;
+    }
+
+    .form-field-large {
+      height: 110px;
+    }
+
+    .form-submit {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 14px;
+      background: #1d4ed8;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -694,8 +1023,8 @@ export function makePreviewHtml(data: BlockData) {
 
     .stat-card {
       border: 1px solid #d9e2ec;
-      border-radius: 22px;
-      background: white;
+      border-radius: ${radius};
+      background: ${surface};
       padding: 24px 22px;
       box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
     }
@@ -705,14 +1034,14 @@ export function makePreviewHtml(data: BlockData) {
       line-height: 1;
       font-weight: 800;
       letter-spacing: -0.04em;
-      color: #0f2343;
+      color: ${headingColor};
     }
 
     .stat-label {
       margin-top: 10px;
       font-size: 14px;
       line-height: 1.6;
-      color: #5b6b81;
+      color: ${textColor};
     }
 
     .logo-grid {
@@ -729,7 +1058,7 @@ export function makePreviewHtml(data: BlockData) {
       min-height: 72px;
       border: 1px solid #d9e2ec;
       border-radius: 18px;
-      background: white;
+      background: ${surface};
       padding: 12px;
       text-align: center;
       font-size: 14px;
@@ -747,7 +1076,7 @@ export function makePreviewHtml(data: BlockData) {
     .faq-item {
       border: 1px solid #d9e2ec;
       border-radius: 18px;
-      background: white;
+      background: ${surface};
       padding: 20px 20px 18px;
       box-shadow: 0 6px 18px rgba(15, 23, 42, 0.03);
     }
@@ -757,14 +1086,65 @@ export function makePreviewHtml(data: BlockData) {
       font-size: 16px;
       line-height: 1.4;
       font-weight: 700;
-      color: #24364d;
+      color: ${headingColor};
     }
 
     .faq-item p {
       margin: 0;
       font-size: 14px;
       line-height: 1.7;
-      color: #5b6b81;
+      color: ${textColor};
+    }
+
+    .rich-text-card {
+      border: 1px solid #d9e2ec;
+      border-radius: ${radius};
+      background: ${surface};
+      padding: 24px;
+      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.03);
+    }
+
+    .rich-text-card p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.8;
+      color: ${textColor};
+    }
+
+    .media-text-block {
+      display: grid;
+      gap: 32px;
+      align-items: center;
+    }
+
+    .media-text-split {
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 0.9fr);
+    }
+
+    .media-text-reverse .media-text-copy {
+      order: 2;
+    }
+
+    .media-text-reverse .media-text-media {
+      order: 1;
+    }
+
+    .media-text-stacked {
+      grid-template-columns: 1fr;
+    }
+
+    @media (max-width: 1160px) {
+      .value-grid-cols-4 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .value-grid-cols-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .logo-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
     }
 
     @media (max-width: 980px) {
@@ -772,11 +1152,21 @@ export function makePreviewHtml(data: BlockData) {
         padding: 28px;
       }
 
-      .block-split {
+      .block-split,
+      .block-split-reverse,
+      .contact-layout,
+      .media-text-split {
         grid-template-columns: 1fr;
         gap: 28px;
       }
 
+      .block-split-reverse .content,
+      .block-split-reverse .media,
+      .media-text-reverse .media-text-copy,
+      .media-text-reverse .media-text-media {
+        order: initial;
+      }
+ss
       .headline {
         max-width: none;
         font-size: 30px;

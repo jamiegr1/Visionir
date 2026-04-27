@@ -1,18 +1,108 @@
 export type Accent = "blue" | "green" | "orange" | "purple";
 
+export type ContentLength = "Short" | "Standard" | "Detailed";
+
+export type ImageSourceMode = "none" | "upload" | "gallery";
+
+export type BlockTheme = "light" | "soft" | "enterprise";
+
+export type BlockLayout = "split" | "stacked";
+
+export type BlockCardStyle = "outline" | "soft" | "filled";
+
+export type BlockHeadingAlign = "left" | "center";
+
+export type BlockBorderRadius = "md" | "lg" | "xl";
+
+export type BlockShadow = "none" | "soft" | "strong";
+
 export type ValuePoint = {
   title: string;
   text: string;
   accent: Accent;
 };
 
+export type StatItem = {
+  label: string;
+  value: string;
+  supportingText?: string;
+};
+
+export type LogoItem = {
+  name: string;
+  imageUrl?: string;
+  altText?: string;
+};
+
+export type FaqItem = {
+  question: string;
+  answer: string;
+};
+
+export type TestimonialExtraContent = {
+  quote?: string;
+  authorName?: string;
+  authorRole?: string;
+  company?: string;
+  logoUrl?: string;
+};
+
+export type CtaExtraContent = {
+  primaryCtaLabel?: string;
+  primaryCtaUrl?: string;
+  secondaryCtaLabel?: string;
+  secondaryCtaUrl?: string;
+};
+
+export type StatsBandExtraContent = {
+  stats?: StatItem[];
+};
+
+export type LogoCloudExtraContent = {
+  logos?: LogoItem[];
+};
+
+export type FaqExtraContent = {
+  faqItems?: FaqItem[];
+};
+
+export type ContactFormExtraContent = {
+  formTitle?: string;
+  submitLabel?: string;
+};
+
+export type RichTextExtraContent = {
+  body?: string;
+  intro?: string;
+  sectionHeading?: string;
+};
+
+export type GeneratedBlockMetaExtraContent = {
+  generatedBlockLabel?: string;
+  selectedVariant?: string;
+  companyName?: string;
+};
+
+export type BlockExtraContent =
+  & TestimonialExtraContent
+  & CtaExtraContent
+  & StatsBandExtraContent
+  & LogoCloudExtraContent
+  & FaqExtraContent
+  & ContactFormExtraContent
+  & RichTextExtraContent
+  & GeneratedBlockMetaExtraContent
+  & {
+    [key: string]: unknown;
+  };
+
 export type BlockDesign = {
-  theme: "light" | "soft" | "enterprise";
-  layout: "split" | "stacked";
-  cardStyle: "outline" | "soft" | "filled";
-  headingAlign: "left" | "center";
-  borderRadius: "md" | "lg" | "xl";
-  shadow: "none" | "soft" | "strong";
+  theme: BlockTheme;
+  layout: BlockLayout;
+  cardStyle: BlockCardStyle;
+  headingAlign: BlockHeadingAlign;
+  borderRadius: BlockBorderRadius;
+  shadow: BlockShadow;
   background: string;
   surface: string;
   headingColor: string;
@@ -40,8 +130,8 @@ export type BlockContextMeta = {
   templateName?: string;
 
   generatedFromPrompt?: string;
-  contentLength?: "Short" | "Standard" | "Detailed";
-  imageSourceMode?: "none" | "upload" | "gallery";
+  contentLength?: ContentLength;
+  imageSourceMode?: ImageSourceMode;
 };
 
 export type BlockData = BlockContextMeta & {
@@ -51,12 +141,7 @@ export type BlockData = BlockContextMeta & {
   imageUrl?: string;
   valuePoints: ValuePoint[];
   design: BlockDesign;
-
-  /**
-   * Flexible extension area for future component-specific data.
-   * This keeps the current model working while allowing broader block support later.
-   */
-  extraContent?: Record<string, unknown>;
+  extraContent?: BlockExtraContent;
 };
 
 export type BlockStatus =

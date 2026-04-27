@@ -64,13 +64,6 @@ function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
-function prettifyLabel(value: string) {
-  return value
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .trim();
-}
-
 function prettifyVariantLabel(value: string) {
   return value
     .replace(/[-_]+/g, " ")
@@ -308,7 +301,7 @@ function BlockTypePreview({
   const isNavigation = category === "navigation";
 
   return (
-    <div className="mb-4 rounded-[18px] border border-[#e8ecf4] bg-[#f8faff] p-4">
+    <div className="rounded-[18px] border border-[#e8ecf4] bg-[#f8faff] p-4">
       <div className="space-y-2">
         {isHero ? (
           <>
@@ -490,6 +483,9 @@ function BlockTypeGallery({
         const expanded = expandedId === option.id;
         const variants = option.variants || [];
         const hasVariants = variants.length > 0;
+        const activeVariant = selected
+          ? variants.find((variant) => variant.id === variantValue)
+          : null;
 
         return (
           <div
@@ -506,6 +502,7 @@ function BlockTypeGallery({
               onClick={() => {
                 onExpand(option.id);
                 onSelectType(option.id);
+
                 if (!hasVariants) {
                   onSelectVariant("");
                 }
@@ -518,9 +515,26 @@ function BlockTypeGallery({
                     <span className="inline-flex items-center rounded-full bg-[#eef2ff] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4b63d7]">
                       {option.category || "component"}
                     </span>
+
+                    {hasVariants ? (
+                      <span className="inline-flex items-center rounded-full bg-[#f4f6fb] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6f7a97]">
+                        {variants.length} variant{variants.length === 1 ? "" : "s"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-[#f4f6fb] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#6f7a97]">
+                        Default structure
+                      </span>
+                    )}
+
                     {selected ? (
                       <span className="inline-flex items-center rounded-full bg-[#e8fff2] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#198754]">
                         Selected
+                      </span>
+                    ) : null}
+
+                    {selected && activeVariant ? (
+                      <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#3f5ff0] ring-1 ring-[#dbe5ff]">
+                        {activeVariant.label}
                       </span>
                     ) : null}
                   </div>
@@ -536,38 +550,30 @@ function BlockTypeGallery({
                   ) : null}
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="hidden text-[12px] font-medium text-[#98a1ba] md:block">
-                    {hasVariants
-                      ? `${variants.length} variant${variants.length === 1 ? "" : "s"}`
-                      : "No variants"}
-                  </div>
-
-                  <div
+                <div
+                  className={cx(
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border transition-all",
+                    expanded
+                      ? "border-[#5b7cff] bg-[#eef2ff] text-[#3f5ff0]"
+                      : "border-[#e3e7f2] bg-white text-[#98a1ba]"
+                  )}
+                >
+                  <svg
                     className={cx(
-                      "flex h-9 w-9 items-center justify-center rounded-xl border transition-all",
-                      expanded
-                        ? "border-[#5b7cff] bg-[#eef2ff] text-[#3f5ff0]"
-                        : "border-[#e3e7f2] bg-white text-[#98a1ba]"
+                      "h-4 w-4 transition-transform",
+                      expanded && "rotate-180"
                     )}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
                   >
-                    <svg
-                      className={cx(
-                        "h-4 w-4 transition-transform",
-                        expanded && "rotate-180"
-                      )}
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <path
-                        d="m6 9 6 6 6-6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </div>
+                    <path
+                      d="m6 9 6 6 6-6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
               </div>
 
@@ -836,6 +842,96 @@ function ContextBanner({
   );
 }
 
+function SelectionSummaryPanel({
+  selectedBlockType,
+  selectedBlockVariant,
+  contextMode,
+  resolvedSectionLabel,
+}: {
+  selectedBlockType: ComponentOptionWithVariants | null;
+  selectedBlockVariant: ComponentVariantOption | null;
+  contextMode: boolean;
+  resolvedSectionLabel?: string;
+}) {
+  const hasVariants = Boolean(selectedBlockType?.variants?.length);
+
+  return (
+    <aside className="xl:sticky xl:top-6">
+      <div className="overflow-hidden rounded-[24px] border border-[#e7ebf4] bg-white shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+        <div className="border-b border-[#edf1f7] bg-[#f8faff] px-5 py-4">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center rounded-full bg-[#e8edff] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#4b63d7]">
+              Current structure
+            </span>
+          </div>
+
+          <h3 className="mt-3 text-[17px] font-semibold tracking-[-0.02em] text-[#111827]">
+            {selectedBlockType?.name || "Choose a block type"}
+          </h3>
+
+          <p className="mt-1 text-[13px] leading-6 text-[#7d859d]">
+            {selectedBlockType?.description ||
+              "Select a governed block family and variation to define the structure before generation."}
+          </p>
+        </div>
+
+        <div className="p-5">
+          <div className="rounded-[20px] border border-[#e8ecf4] bg-[#f8fbff] p-4">
+            <BlockTypePreview category={selectedBlockType?.category} />
+          </div>
+
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                Block Type
+              </div>
+              <div className="mt-1 text-[14px] font-semibold text-[#20263a]">
+                {selectedBlockType?.name || "Not selected"}
+              </div>
+            </div>
+
+            <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                Variant
+              </div>
+              <div className="mt-1 text-[14px] font-semibold text-[#20263a]">
+                {selectedBlockVariant?.label ||
+                  (hasVariants ? "Not selected" : "Default")}
+              </div>
+            </div>
+
+            <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                Category
+              </div>
+              <div className="mt-1 text-[14px] font-semibold capitalize text-[#20263a]">
+                {selectedBlockType?.category || "General"}
+              </div>
+            </div>
+
+            {contextMode && resolvedSectionLabel ? (
+              <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
+                  Target Section
+                </div>
+                <div className="mt-1 text-[14px] font-semibold text-[#20263a]">
+                  {resolvedSectionLabel}
+                </div>
+              </div>
+            ) : null}
+          </div>
+
+          {hasVariants && !selectedBlockVariant ? (
+            <div className="mt-4 rounded-[16px] border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-700">
+              Choose a variant to continue.
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
 export default function NewBlockPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -951,12 +1047,14 @@ export default function NewBlockPage() {
     [availableBlockTypes, blockType]
   );
 
-  const selectedBlockVariant = useMemo(
-    () =>
-      selectedBlockType?.variants?.find((variant) => variant.id === blockVariant) ||
-      null,
-    [selectedBlockType, blockVariant]
-  );
+  const selectedBlockVariant = useMemo(() => {
+    if (!selectedBlockType?.variants?.length) return null;
+
+    return (
+      selectedBlockType.variants.find((variant) => variant.id === blockVariant) ||
+      null
+    );
+  }, [selectedBlockType, blockVariant]);
 
   useEffect(() => {
     async function loadContext() {
@@ -998,26 +1096,24 @@ export default function NewBlockPage() {
   }, [pageId, sectionId, role]);
 
   useEffect(() => {
-    if (availableBlockTypes.length === 0) return;
+    if (!availableBlockTypes.length) return;
 
-    const nextDefaultType =
-      resolvedDefaultComponentId &&
-      availableBlockTypes.some((item) => item.id === resolvedDefaultComponentId)
-        ? resolvedDefaultComponentId
-        : availableBlockTypes[0]?.id || "";
-
-    setBlockType((current) => {
-      if (current && availableBlockTypes.some((item) => item.id === current)) {
-        return current;
-      }
-      return nextDefaultType;
-    });
+    const preferred =
+      availableBlockTypes.find((item) => item.id === resolvedDefaultComponentId) ||
+      availableBlockTypes[0];
 
     setExpandedBlockType((current) => {
       if (current && availableBlockTypes.some((item) => item.id === current)) {
         return current;
       }
-      return nextDefaultType;
+      return preferred.id;
+    });
+
+    setBlockType((current) => {
+      if (current && availableBlockTypes.some((item) => item.id === current)) {
+        return current;
+      }
+      return preferred.id;
     });
   }, [availableBlockTypes, resolvedDefaultComponentId]);
 
@@ -1029,19 +1125,15 @@ export default function NewBlockPage() {
 
     const variants = selectedBlockType.variants || [];
 
-    if (variants.length === 0) {
+    if (!variants.length) {
       setBlockVariant("");
       return;
     }
 
-    setBlockVariant((current) => {
-      if (current && variants.some((variant) => variant.id === current)) {
-        return current;
-      }
-
-      return variants[0]?.id || "";
-    });
-  }, [selectedBlockType]);
+    if (!variants.some((variant) => variant.id === blockVariant)) {
+      setBlockVariant(variants[0].id);
+    }
+  }, [selectedBlockType, blockVariant]);
 
   useEffect(() => {
     const shouldSeed =
@@ -1050,9 +1142,7 @@ export default function NewBlockPage() {
     if (!shouldSeed) return;
 
     const nextDefaultName =
-      resolvedSectionLabel ||
-      selectedBlockType?.name ||
-      "New Block";
+      resolvedSectionLabel || selectedBlockType?.name || "New Block";
 
     setBlockName((current) =>
       current === "Why Choose Us" || !current.trim() ? nextDefaultName : current
@@ -1146,14 +1236,13 @@ export default function NewBlockPage() {
   }
 
   function handleContinueFromBlockType() {
-    if (!blockType.trim()) {
-      setError("Please select a valid block type.");
+    if (!selectedBlockType) {
+      setError("Select a block type before continuing.");
       return;
     }
 
-    const variants = selectedBlockType?.variants || [];
-    if (variants.length > 0 && !blockVariant.trim()) {
-      setError("Please select a block variant.");
+    if (selectedBlockType.variants?.length && !selectedBlockVariant) {
+      setError("Select a variant before continuing.");
       return;
     }
 
@@ -1177,13 +1266,12 @@ export default function NewBlockPage() {
       return;
     }
 
-    if (!blockType) {
+    if (!selectedBlockType) {
       setError("Please select a valid block type.");
       return;
     }
 
-    const variants = selectedBlockType?.variants || [];
-    if (variants.length > 0 && !blockVariant) {
+    if (selectedBlockType.variants?.length > 0 && !selectedBlockVariant) {
       setError("Please select a valid block variant.");
       return;
     }
@@ -1201,7 +1289,7 @@ export default function NewBlockPage() {
     try {
       const enrichedPrompt = `
 Block Name: ${blockName}
-Block Type: ${selectedBlockType?.name || blockType}
+Block Type: ${selectedBlockType.name}
 Block Type ID: ${blockType}
 Block Variant: ${
         selectedBlockVariant?.label ||
@@ -1403,7 +1491,7 @@ ${prompt}
       />
 
       <div className="flex flex-1 items-center justify-center overflow-auto px-8 py-6">
-        <div className="mx-auto w-full max-w-[1080px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+        <div className="mx-auto w-full max-w-[1180px] rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
           {step === "context" ? (
             <>
               <ProgressHeader
@@ -1525,60 +1613,45 @@ ${prompt}
                 />
               ) : null}
 
-              <div className="rounded-[22px] border border-[#e8ecf4] bg-white p-5">
-                {allowedComponentIds && allowedComponentIds.length > 0 ? (
-                  <div className="mb-4 rounded-xl border border-[#dbe5ff] bg-[#f6f8ff] px-4 py-3 text-sm text-[#4b63d7]">
-                    This section is restricted to approved block types defined by the
-                    selected page section.
-                  </div>
-                ) : null}
-
-                {availableBlockTypes.length > 0 ? (
-                  <BlockTypeGallery
-                    options={availableBlockTypes}
-                    value={blockType}
-                    variantValue={blockVariant}
-                    expandedId={expandedBlockType}
-                    onExpand={setExpandedBlockType}
-                    onSelectType={setBlockType}
-                    onSelectVariant={setBlockVariant}
-                  />
-                ) : (
-                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-                    No valid block types are available for this context.
-                  </div>
-                )}
-              </div>
-
-              {selectedBlockType ? (
-                <div className="mt-5 rounded-[22px] bg-[#f8f9fc] px-6 py-5 ring-1 ring-[#eceff5]">
-                  <h3 className="text-[16px] font-semibold tracking-[-0.02em] text-[#111827]">
-                    Current Selection
-                  </h3>
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
-                    <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
-                        Block Type
-                      </div>
-                      <div className="mt-1 text-[14px] font-semibold text-[#20263a]">
-                        {selectedBlockType.name}
-                      </div>
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+                <div className="rounded-[22px] border border-[#e8ecf4] bg-white p-5">
+                  {allowedComponentIds && allowedComponentIds.length > 0 ? (
+                    <div className="mb-4 rounded-xl border border-[#dbe5ff] bg-[#f6f8ff] px-4 py-3 text-sm text-[#4b63d7]">
+                      This section is restricted to approved block types defined by the
+                      selected page section.
                     </div>
+                  ) : null}
 
-                    <div className="rounded-[18px] border border-[#e5e9f3] bg-white px-4 py-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#98a1ba]">
-                        Variant
-                      </div>
-                      <div className="mt-1 text-[14px] font-semibold text-[#20263a]">
-                        {selectedBlockVariant?.label ||
-                          (selectedBlockType.variants?.length
-                            ? "Not selected"
-                            : "Default")}
-                      </div>
+                  {availableBlockTypes.length > 0 ? (
+                    <BlockTypeGallery
+                      options={availableBlockTypes}
+                      value={blockType}
+                      variantValue={blockVariant}
+                      expandedId={expandedBlockType}
+                      onExpand={setExpandedBlockType}
+                      onSelectType={(value) => {
+                        setBlockType(value);
+                        setError(null);
+                      }}
+                      onSelectVariant={(value) => {
+                        setBlockVariant(value);
+                        setError(null);
+                      }}
+                    />
+                  ) : (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                      No valid block types are available for this context.
                     </div>
-                  </div>
+                  )}
                 </div>
-              ) : null}
+
+                <SelectionSummaryPanel
+                  selectedBlockType={selectedBlockType}
+                  selectedBlockVariant={selectedBlockVariant}
+                  contextMode={contextMode}
+                  resolvedSectionLabel={resolvedSectionLabel}
+                />
+              </div>
 
               {error ? (
                 <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -1599,9 +1672,9 @@ ${prompt}
                   type="button"
                   onClick={handleContinueFromBlockType}
                   disabled={
-                    !blockType.trim() ||
-                    (Boolean(selectedBlockType?.variants?.length) &&
-                      !blockVariant.trim())
+                    !selectedBlockType ||
+                    (Boolean(selectedBlockType.variants?.length) &&
+                      !selectedBlockVariant)
                   }
                   className="min-w-[170px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                 >
@@ -1640,7 +1713,7 @@ ${prompt}
                     </span>
                   </div>
 
-                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="mt-3 grid gap-3 md:grid-cols-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
                         Block Type
@@ -1657,6 +1730,15 @@ ${prompt}
                       <p className="mt-1 text-[14px] font-semibold text-[#20263a]">
                         {selectedBlockVariant?.label ||
                           (selectedBlockType?.variants?.length ? "-" : "Default")}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#8a95bc]">
+                        Category
+                      </p>
+                      <p className="mt-1 text-[14px] font-semibold capitalize text-[#20263a]">
+                        {selectedBlockType?.category || "General"}
                       </p>
                     </div>
                   </div>
@@ -1715,7 +1797,7 @@ ${prompt}
                 <button
                   type="button"
                   onClick={handleGenerate}
-                  disabled={isGenerating || !prompt.trim() || !blockType.trim()}
+                  disabled={isGenerating || !prompt.trim() || !selectedBlockType}
                   className="min-w-[190px] rounded-lg bg-[#5b7cff] px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#3f5ff0] hover:shadow-lg active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isGenerating

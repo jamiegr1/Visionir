@@ -123,6 +123,19 @@ function formatComponentLabel(value?: string) {
     .trim();
 }
 
+function formatImageSourceModeLabel(value?: string) {
+  if (!value) return "—";
+  if (value === "none") return "No Image";
+  if (value === "upload") return "Uploaded Brand Image";
+  if (value === "gallery") return "Brand Gallery";
+  return formatComponentLabel(value);
+}
+
+function formatContentLengthLabel(value?: string) {
+  if (!value) return "—";
+  return value;
+}
+
 function isHeroComponent(componentType?: string) {
   return (componentType || "").toLowerCase().includes("hero");
 }
@@ -375,12 +388,30 @@ export default function ReviewEdit({
     [editable.componentVariant]
   );
 
+  const selectedContentLengthLabel = useMemo(
+    () => formatContentLengthLabel(editable.contentLength),
+    [editable.contentLength]
+  );
+
+  const selectedImageSourceModeLabel = useMemo(
+    () => formatImageSourceModeLabel(editable.imageSourceMode),
+    [editable.imageSourceMode]
+  );
+
+  const generationPromptPreview = useMemo(() => {
+    if (!editable.generatedFromPrompt?.trim()) return "";
+    return editable.generatedFromPrompt.trim();
+  }, [editable.generatedFromPrompt]);
+
   const hasGenerationContext = Boolean(
     editable.componentType ||
       editable.componentVariant ||
       editable.pageName ||
       editable.templateName ||
-      editable.sectionLabel
+      editable.sectionLabel ||
+      editable.contentLength ||
+      editable.imageSourceMode ||
+      editable.generatedFromPrompt
   );
 
   const componentType = editable.componentType;
@@ -636,6 +667,28 @@ export default function ReviewEdit({
                         </p>
                       </div>
 
+                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              Content Length
+                            </p>
+                            <p className="mt-1 text-sm text-slate-800">
+                              {selectedContentLengthLabel}
+                            </p>
+                          </div>
+
+                          <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                              Image Source
+                            </p>
+                            <p className="mt-1 text-sm text-slate-800">
+                              {selectedImageSourceModeLabel}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
                       {editable.pageName || editable.templateName ? (
                         <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
                           <div className="grid gap-3 sm:grid-cols-2">
@@ -681,6 +734,17 @@ export default function ReviewEdit({
                               </p>
                             </div>
                           </div>
+                        </div>
+                      ) : null}
+
+                      {generationPromptPreview ? (
+                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                            Generation Prompt
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-slate-700">
+                            {generationPromptPreview}
+                          </p>
                         </div>
                       ) : null}
                     </div>

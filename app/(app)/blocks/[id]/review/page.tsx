@@ -43,6 +43,23 @@ function getUserLabel(userId?: string | null) {
   return userId;
 }
 
+function formatSelectionLabel(value?: string | null) {
+  if (!value) return "—";
+
+  return value
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+    .trim();
+}
+
+function formatImageSourceModeLabel(value?: string | null) {
+  if (!value) return "—";
+  if (value === "none") return "No Image";
+  if (value === "upload") return "Uploaded Brand Image";
+  if (value === "gallery") return "Brand Gallery";
+  return formatSelectionLabel(value);
+}
+
 function cloneBlockData(data: BlockData): BlockData {
   return JSON.parse(JSON.stringify(data));
 }
@@ -92,20 +109,48 @@ function getFirstDiff(
   prev: BlockData,
   next: BlockData
 ): { label: string; from: string; to: string } | null {
-  const rootFields: Array<{ key: keyof BlockData; label: string }> = [
+  const rootFields: Array<{ key: keyof BlockData; label: string; format?: (value: unknown) => string }> = [
     { key: "eyebrow", label: "Eyebrow" },
     { key: "headline", label: "Primary Headline" },
     { key: "subheading", label: "Subheading" },
-    { key: "componentType", label: "Block Type" },
-    { key: "componentVariant", label: "Block Variant" },
+    {
+      key: "componentType",
+      label: "Block Type",
+      format: (value) => formatSelectionLabel(String(value ?? "")),
+    },
+    {
+      key: "componentVariant",
+      label: "Block Variant",
+      format: (value) => formatSelectionLabel(String(value ?? "")),
+    },
     { key: "pageName", label: "Page Name" },
     { key: "templateName", label: "Template Name" },
     { key: "sectionLabel", label: "Section Label" },
+    {
+      key: "contentLength",
+      label: "Content Length",
+      format: (value) => String(value ?? "—"),
+    },
+    {
+      key: "imageSourceMode",
+      label: "Image Source",
+      format: (value) => formatImageSourceModeLabel(String(value ?? "")),
+    },
+    {
+      key: "generatedFromPrompt",
+      label: "Generation Prompt",
+      format: (value) => String(value ?? ""),
+    },
   ];
 
   for (const field of rootFields) {
-    const before = String(prev[field.key] ?? "");
-    const after = String(next[field.key] ?? "");
+    const beforeRaw = prev[field.key];
+    const afterRaw = next[field.key];
+
+    const before = field.format
+      ? field.format(beforeRaw)
+      : String(beforeRaw ?? "");
+    const after = field.format ? field.format(afterRaw) : String(afterRaw ?? "");
 
     if (before !== after) {
       return {
@@ -238,7 +283,7 @@ export default function BlockReviewPage() {
         }
 
         const loadedBlock = json.block as ApiBlockRecord;
-        const loaded = loadedBlock.data as BlockData;
+        const loaded = cloneBlockData(loadedBlock.data as BlockData);
         const currentStatus = String(loadedBlock?.status || "");
 
         setBlockRecord(loadedBlock);
@@ -364,15 +409,16 @@ export default function BlockReviewPage() {
     previousAiImprovedRef.current = cloneAiMap(aiImprovedFields);
   }, [editable, aiImprovedFields]);
 
-  const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
-
   const previewDoc = useMemo(() => {
     if (!editable) return "<html><body></body></html>";
 
+    const shouldHideImage = editable.imageSourceMode === "none";
     const rawImageUrl =
-      typeof editable.imageUrl === "string" && editable.imageUrl.trim()
+      !shouldHideImage &&
+      typeof editable.imageUrl === "string" &&
+      editable.imageUrl.trim()
         ? editable.imageUrl
-        : DEFAULT_BLOCK_IMAGE;
+        : undefined;
 
     let resolvedImageUrl = rawImageUrl;
 
@@ -445,7 +491,7 @@ export default function BlockReviewPage() {
       );
 
       if (nextBlock.data) {
-        const nextData = nextBlock.data;
+        const nextData = cloneBlockData(nextBlock.data);
         setEditable(nextData);
         previousEditableRef.current = cloneBlockData(nextData);
         previousAiImprovedRef.current = cloneAiMap(aiImprovedFields);
@@ -520,7 +566,15 @@ export default function BlockReviewPage() {
       const patched = json?.blockData as BlockData | undefined;
       if (!patched) return;
 
-      setEditable(patched);
+      const mergedPatched: BlockData = {
+        ...editable,
+        ...patched,
+        valuePoints: patched.valuePoints ?? editable.valuePoints,
+        design: patched.design ?? editable.design,
+        extraContent: patched.extraContent ?? editable.extraContent,
+      };
+
+      setEditable(mergedPatched);
       setRequiresApproval(true);
 
       setChangeLog((prev) => [

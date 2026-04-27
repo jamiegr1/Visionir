@@ -30,6 +30,16 @@ function isValidBlockStatus(value: unknown): value is BlockStatus {
   );
 }
 
+function normaliseStringArray(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+
+  const cleaned = value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+
+  return cleaned;
+}
+
 function resolveNextStatus(params: {
   existingStatus: BlockStatus;
   requestedStatus?: BlockStatus;
@@ -163,72 +173,85 @@ export async function PATCH(
         }
       : existing.data;
 
+  const cleanedRequestedFields = normaliseStringArray(body.changesRequestedFields);
+  const cleanedRequestedNotes =
+    typeof body.changesRequestedNotes === "string"
+      ? body.changesRequestedNotes.trim() || null
+      : undefined;
+
+  const isMovingToDraft = nextStatus === "draft";
+  const isMovingToPendingApproval = nextStatus === "pending_approval";
+  const isMovingToApproved = nextStatus === "approved";
+  const isMovingToPublished = nextStatus === "published";
+  const isMovingToChangesRequested = nextStatus === "changes_requested";
+
   const updated = await updateBlock(id, {
     data: nextData,
     status: nextStatus,
     updatedByUserId: currentUser.id,
     updatedAt: now,
 
-    approvedByUserId:
-      nextStatus === "approved"
-        ? existing.approvedByUserId ?? currentUser.id
-        : nextStatus === "draft" || nextStatus === "pending_approval"
-          ? existing.approvedByUserId
-          : existing.approvedByUserId,
-
-    publishedByUserId:
-      nextStatus === "published" ? currentUser.id : existing.publishedByUserId,
-
-    approvedAt:
-      nextStatus === "approved"
-        ? existing.approvedAt ?? now
-        : existing.approvedAt,
-
-    publishedAt: nextStatus === "published" ? now : existing.publishedAt,
-
-    submittedByUserId:
-      nextStatus === "pending_approval"
-        ? existing.submittedByUserId ?? currentUser.id
+    submittedByUserId: isMovingToPendingApproval
+      ? currentUser.id
+      : isMovingToDraft
+        ? null
         : existing.submittedByUserId ?? null,
 
-    submittedAt:
-      nextStatus === "pending_approval"
-        ? existing.submittedAt ?? now
+    submittedAt: isMovingToPendingApproval
+      ? now
+      : isMovingToDraft
+        ? null
         : existing.submittedAt ?? null,
 
-    changesRequestedByUserId:
-      nextStatus === "changes_requested"
-        ? currentUser.id
-        : nextStatus === "approved" || nextStatus === "pending_approval"
-          ? null
-          : existing.changesRequestedByUserId ?? null,
+    approvedByUserId: isMovingToApproved
+      ? currentUser.id
+      : isMovingToDraft || isMovingToPendingApproval || isMovingToChangesRequested
+        ? null
+        : existing.approvedByUserId ?? null,
 
-    changesRequestedAt:
-      nextStatus === "changes_requested"
-        ? now
-        : nextStatus === "approved" || nextStatus === "pending_approval"
-          ? null
-          : existing.changesRequestedAt ?? null,
+    approvedAt: isMovingToApproved
+      ? now
+      : isMovingToDraft || isMovingToPendingApproval || isMovingToChangesRequested
+        ? null
+        : existing.approvedAt ?? null,
 
-    changesRequestedNotes:
-      nextStatus === "changes_requested"
-        ? body.changesRequestedNotes?.trim() || null
-        : nextStatus === "approved" || nextStatus === "pending_approval"
-          ? null
-          : typeof body.changesRequestedNotes !== "undefined"
-            ? body.changesRequestedNotes?.trim() || null
-            : existing.changesRequestedNotes ?? null,
+    publishedByUserId: isMovingToPublished
+      ? currentUser.id
+      : isMovingToDraft || isMovingToPendingApproval || isMovingToChangesRequested
+        ? null
+        : existing.publishedByUserId ?? null,
 
-    changesRequestedFields:
-      nextStatus === "changes_requested"
-        ? Array.isArray(body.changesRequestedFields)
-          ? body.changesRequestedFields
-          : []
-        : nextStatus === "approved" || nextStatus === "pending_approval"
-          ? null
-          : Array.isArray(body.changesRequestedFields)
-            ? body.changesRequestedFields
-            : existing.changesRequestedFields ?? null,
+    publishedAt: isMovingToPublished
+      ? now
+      : isMovingToDraft || isMovingToPendingApproval || isMovingToChangesRequested
+        ? null
+        : existing.publishedAt ?? null,
+
+    changesRequestedByUserId: isMovingToChangesRequested
+      ? currentUser.id
+      : isMovingToApproved || isMovingToPendingApproval || isMovingToDraft
+        ? null
+        : existing.changesRequestedByUserId ?? null,
+
+    changesRequestedAt: isMovingToChangesRequested
+      ? now
+      : isMovingToApproved || isMovingToPendingApproval || isMovingToDraft
+        ? null
+        : existing.changesRequestedAt ?? null,
+
+    changesRequestedNotes: isMovingToChangesRequested
+      ? cleanedRequestedNotes ?? null
+      : isMovingToApproved || isMovingToPendingApproval || isMovingToDraft
+        ? null
+        : typeof cleanedRequestedNotes !== "undefined"
+          ? cleanedRequestedNotes
+          : existing.changesRequestedNotes ?? null,
+
+    changesRequestedFields: isMovingToChangesRequested
+      ? cleanedRequestedFields ?? []
+      : isMovingToApproved || isMovingToPendingApproval || isMovingToDraft
+        ? null
+        : cleanedRequestedFields ?? existing.changesRequestedFields ?? null,
   });
 
   if (!updated) {

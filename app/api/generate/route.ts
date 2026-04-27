@@ -1,5 +1,12 @@
 import { NextResponse } from "next/server";
-import type { Accent, BlockData, ValuePoint } from "@/lib/types";
+import type {
+  Accent,
+  BlockData,
+  BlockExtraContent,
+  ContentLength,
+  ImageSourceMode,
+  ValuePoint,
+} from "@/lib/types";
 
 type GenerateRequestBody = {
   blockName?: string;
@@ -14,12 +21,16 @@ type GenerateRequestBody = {
   sectionLabel?: string;
   sectionKey?: string;
   templateName?: string;
-  contentLength?: "Short" | "Standard" | "Detailed";
-  imageSourceMode?: "none" | "upload" | "gallery";
+  contentLength?: ContentLength;
+  imageSourceMode?: ImageSourceMode;
 };
 
 function normaliseText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function normaliseOptionalText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
 
 function formatComponentLabel(value?: string | null) {
@@ -29,6 +40,50 @@ function formatComponentLabel(value?: string | null) {
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase())
     .trim();
+}
+
+function isHeroComponent(componentType: string) {
+  return componentType.includes("hero");
+}
+
+function isValuePointsComponent(componentType: string) {
+  return (
+    componentType.includes("value-points") ||
+    componentType.includes("feature") ||
+    componentType.includes("benefit")
+  );
+}
+
+function isTestimonialComponent(componentType: string) {
+  return componentType.includes("testimonial") || componentType.includes("quote");
+}
+
+function isCtaComponent(componentType: string) {
+  return componentType.includes("cta");
+}
+
+function isStatsComponent(componentType: string) {
+  return componentType.includes("stats");
+}
+
+function isLogoComponent(componentType: string) {
+  return componentType.includes("logo");
+}
+
+function isFaqComponent(componentType: string) {
+  return componentType.includes("faq");
+}
+
+function isContactComponent(componentType: string) {
+  return componentType.includes("contact");
+}
+
+function isRichTextComponent(componentType: string) {
+  return componentType.includes("rich-text");
+}
+
+function isMediaTextComponent(componentType: string) {
+  return componentType.includes("media-text");
 }
 
 function getPromptSignals(prompt: string) {
@@ -49,6 +104,7 @@ function getPromptSignals(prompt: string) {
       "lead",
       "enquiry",
       "contact",
+      "commercial",
     ].some((term) => lower.includes(term)),
     trust: [
       "trust",
@@ -75,29 +131,12 @@ function buildEyebrow(params: {
     return sectionLabel.toUpperCase();
   }
 
-  if (componentType.includes("testimonial")) {
-    return "CLIENT PROOF";
-  }
-
-  if (componentType.includes("cta")) {
-    return "NEXT STEP";
-  }
-
-  if (componentType.includes("stats")) {
-    return "KEY FIGURES";
-  }
-
-  if (componentType.includes("logo")) {
-    return "TRUSTED BY";
-  }
-
-  if (componentType.includes("faq")) {
-    return "COMMON QUESTIONS";
-  }
-
-  if (componentType.includes("contact")) {
-    return "GET IN TOUCH";
-  }
+  if (isTestimonialComponent(componentType)) return "CLIENT PROOF";
+  if (isCtaComponent(componentType)) return "NEXT STEP";
+  if (isStatsComponent(componentType)) return "KEY FIGURES";
+  if (isLogoComponent(componentType)) return "TRUSTED BY";
+  if (isFaqComponent(componentType)) return "COMMON QUESTIONS";
+  if (isContactComponent(componentType)) return "GET IN TOUCH";
 
   return location.toUpperCase();
 }
@@ -109,27 +148,27 @@ function getVariantHeadline(params: {
 }) {
   const { blockName, componentType } = params;
 
-  if (componentType.includes("testimonial")) {
+  if (isTestimonialComponent(componentType)) {
     return blockName || "What Clients Value Most";
   }
 
-  if (componentType.includes("cta")) {
+  if (isCtaComponent(componentType)) {
     return blockName || "Take the Next Step";
   }
 
-  if (componentType.includes("stats")) {
+  if (isStatsComponent(componentType)) {
     return blockName || "Performance at a Glance";
   }
 
-  if (componentType.includes("logo")) {
+  if (isLogoComponent(componentType)) {
     return blockName || "Trusted by Leading Organisations";
   }
 
-  if (componentType.includes("faq")) {
+  if (isFaqComponent(componentType)) {
     return blockName || "Frequently Asked Questions";
   }
 
-  if (componentType.includes("contact")) {
+  if (isContactComponent(componentType)) {
     return blockName || "Speak to Our Team";
   }
 
@@ -137,7 +176,7 @@ function getVariantHeadline(params: {
     return blockName || "What This Includes";
   }
 
-  if (componentType.includes("rich-text")) {
+  if (isRichTextComponent(componentType)) {
     return blockName || "Supporting Information";
   }
 
@@ -150,10 +189,16 @@ function getVariantSubheading(params: {
   location: string;
   prompt: string;
   blockName: string;
-  contentLength: "Short" | "Standard" | "Detailed";
+  contentLength: ContentLength;
 }) {
-  const { componentType, componentVariant, location, prompt, blockName, contentLength } =
-    params;
+  const {
+    componentType,
+    componentVariant,
+    location,
+    prompt,
+    blockName,
+    contentLength,
+  } = params;
 
   const signals = getPromptSignals(prompt);
 
@@ -184,27 +229,27 @@ function getVariantSubheading(params: {
     return `Showcase four clear value points for ${location} in a structured grid layout that balances clarity, consistency, and brand control.`;
   }
 
-  if (componentType.includes("testimonial")) {
+  if (isTestimonialComponent(componentType)) {
     return `Support ${blockName || location} with concise proof-led content designed to reinforce trust, credibility, and buyer confidence.`;
   }
 
-  if (componentType.includes("cta")) {
+  if (isCtaComponent(componentType)) {
     return `Create a focused call-to-action section for ${location} that encourages the next step while remaining aligned to brand and governance standards.`;
   }
 
-  if (componentType.includes("stats")) {
+  if (isStatsComponent(componentType)) {
     return `Present key figures for ${location} in a clear, high-trust format designed to support credibility and fast understanding.`;
   }
 
-  if (componentType.includes("logo")) {
+  if (isLogoComponent(componentType)) {
     return `Display trusted brand associations for ${location} in a lightweight proof section designed to support reassurance and authority.`;
   }
 
-  if (componentType.includes("faq")) {
+  if (isFaqComponent(componentType)) {
     return `Address common questions around ${location} in a clear, structured format designed to reduce friction and improve understanding.`;
   }
 
-  if (componentType.includes("contact")) {
+  if (isContactComponent(componentType)) {
     return `Create a conversion-focused contact section for ${location} that encourages enquiries while staying aligned to governance and brand standards.`;
   }
 
@@ -212,11 +257,11 @@ function getVariantSubheading(params: {
     return `Present the key capabilities of ${location} in a structured feature format that is easy to scan and aligned to enterprise content standards.`;
   }
 
-  if (componentType.includes("rich-text")) {
+  if (isRichTextComponent(componentType)) {
     return `Provide clear supporting information for ${location} in a structured editorial format designed for readability and brand consistency.`;
   }
 
-  if (componentType.includes("media-text")) {
+  if (isMediaTextComponent(componentType)) {
     return `Combine supporting media and clear explanatory content for ${location} in a flexible section designed for clarity and consistency.`;
   }
 
@@ -236,9 +281,11 @@ function buildValuePoints(params: {
   componentVariant: string;
   location: string;
   prompt: string;
-  contentLength: "Short" | "Standard" | "Detailed";
+  contentLength: ContentLength;
 }): ValuePoint[] {
-  const { componentType, componentVariant, location, prompt, contentLength } = params;
+  const { componentType, componentVariant, location, prompt, contentLength } =
+    params;
+
   const signals = getPromptSignals(prompt);
 
   const basePoints: ValuePoint[] = [
@@ -268,7 +315,7 @@ function buildValuePoints(params: {
     return basePoints.slice(0, 3);
   }
 
-  if (componentType.includes("hero")) {
+  if (isHeroComponent(componentType)) {
     return [
       {
         title: signals.trust ? "Built for confidence" : "High-visibility structure",
@@ -295,7 +342,7 @@ function buildValuePoints(params: {
     ];
   }
 
-  if (componentType.includes("testimonial")) {
+  if (isTestimonialComponent(componentType)) {
     return [
       {
         title: "Trusted experience",
@@ -315,7 +362,7 @@ function buildValuePoints(params: {
     ];
   }
 
-  if (componentType.includes("cta")) {
+  if (isCtaComponent(componentType) || isContactComponent(componentType)) {
     return [
       {
         title: "Clear next step",
@@ -335,7 +382,7 @@ function buildValuePoints(params: {
     ];
   }
 
-  if (componentType.includes("stats")) {
+  if (isStatsComponent(componentType)) {
     return [
       {
         title: "Proof at a glance",
@@ -355,7 +402,7 @@ function buildValuePoints(params: {
     ];
   }
 
-  if (componentType.includes("logo")) {
+  if (isLogoComponent(componentType)) {
     return [
       {
         title: "Recognisable brands",
@@ -375,7 +422,7 @@ function buildValuePoints(params: {
     ];
   }
 
-  if (componentType.includes("faq")) {
+  if (isFaqComponent(componentType)) {
     return [
       {
         title: "Reduced friction",
@@ -447,11 +494,10 @@ function buildDesign(params: {
   }
 
   if (
-    componentType.includes("value-points") ||
-    componentType.includes("stats") ||
-    componentType.includes("faq") ||
-    componentType.includes("feature") ||
-    componentType.includes("logo")
+    isValuePointsComponent(componentType) ||
+    isStatsComponent(componentType) ||
+    isFaqComponent(componentType) ||
+    isLogoComponent(componentType)
   ) {
     return {
       ...baseDesign,
@@ -461,7 +507,7 @@ function buildDesign(params: {
     };
   }
 
-  if (componentType.includes("testimonial")) {
+  if (isTestimonialComponent(componentType)) {
     return {
       ...baseDesign,
       layout: "stacked",
@@ -470,7 +516,7 @@ function buildDesign(params: {
     };
   }
 
-  if (componentType.includes("cta") || componentType.includes("contact")) {
+  if (isCtaComponent(componentType) || isContactComponent(componentType)) {
     return {
       ...baseDesign,
       layout: "stacked",
@@ -479,7 +525,7 @@ function buildDesign(params: {
     };
   }
 
-  if (componentType.includes("rich-text")) {
+  if (isRichTextComponent(componentType)) {
     return {
       ...baseDesign,
       layout: "stacked",
@@ -488,7 +534,7 @@ function buildDesign(params: {
     };
   }
 
-  if (componentType.includes("media-text")) {
+  if (isMediaTextComponent(componentType)) {
     return {
       ...baseDesign,
       layout: componentVariant.includes("stacked") ? "stacked" : "split",
@@ -502,7 +548,7 @@ function buildDesign(params: {
 
 function buildImageUrl(params: {
   componentType: string;
-  imageSourceMode: "none" | "upload" | "gallery";
+  imageSourceMode: ImageSourceMode;
 }) {
   const { componentType, imageSourceMode } = params;
 
@@ -510,19 +556,120 @@ function buildImageUrl(params: {
     return undefined;
   }
 
-  if (componentType.includes("logo")) {
-    return undefined;
-  }
-
-  if (componentType.includes("stats")) {
-    return undefined;
-  }
-
-  if (componentType.includes("faq")) {
+  if (
+    isLogoComponent(componentType) ||
+    isStatsComponent(componentType) ||
+    isFaqComponent(componentType)
+  ) {
     return undefined;
   }
 
   return "/farmer.jpg";
+}
+
+function buildExtraContent(params: {
+  componentType: string;
+  componentVariant: string;
+  location: string;
+  blockName: string;
+  contentLength: ContentLength;
+}): BlockExtraContent | undefined {
+  const { componentType, componentVariant, location, blockName } = params;
+
+  if (isTestimonialComponent(componentType)) {
+    return {
+      quote: `“${location} helped bring more consistency, confidence and clarity to our digital experience.”`,
+      authorName: "Jane Smith",
+      authorRole: "Marketing Director",
+      company: location,
+    };
+  }
+
+  if (isCtaComponent(componentType)) {
+    return {
+      primaryCtaLabel: "Speak to an Expert",
+      primaryCtaUrl: "/contact",
+      secondaryCtaLabel: "Learn More",
+      secondaryCtaUrl: "/services",
+    };
+  }
+
+  if (isContactComponent(componentType)) {
+    return {
+      formTitle: "Start Your Enquiry",
+      submitLabel: "Submit Enquiry",
+      primaryCtaLabel: "Contact Us",
+      primaryCtaUrl: "/contact",
+    };
+  }
+
+  if (isStatsComponent(componentType)) {
+    return {
+      stats: [
+        { label: "Projects Delivered", value: "120+" },
+        { label: "Regions Supported", value: "42" },
+        { label: "Governed Components", value: "350+" },
+      ],
+    };
+  }
+
+  if (isLogoComponent(componentType)) {
+    return {
+      logos: [
+        { name: `${location} Partner 1` },
+        { name: `${location} Partner 2` },
+        { name: `${location} Partner 3` },
+        { name: `${location} Partner 4` },
+      ],
+    };
+  }
+
+  if (isFaqComponent(componentType)) {
+    return {
+      faqItems: [
+        {
+          question: `What does ${location} include?`,
+          answer:
+            "It includes a governed structure, clearer messaging, and reusable content patterns aligned to enterprise standards.",
+        },
+        {
+          question: "How quickly can this be deployed?",
+          answer:
+            "Deployment timing depends on workflow stage, approvals, and the publishing destination, but the structure is designed to accelerate delivery.",
+        },
+        {
+          question: "How is consistency maintained?",
+          answer:
+            "Consistency is maintained through governed component structures, locked design tokens, and approval controls.",
+        },
+      ],
+    };
+  }
+
+  if (isRichTextComponent(componentType)) {
+    return {
+      body: `This supporting section gives additional context for ${location} in a clean, readable editorial format.`,
+    };
+  }
+
+  if (isMediaTextComponent(componentType)) {
+    return {
+      body: `This section combines supporting media and explanatory content for ${location} to improve clarity and engagement.`,
+      primaryCtaLabel: "Learn More",
+      primaryCtaUrl: "/services",
+    };
+  }
+
+  if (isValuePointsComponent(componentType)) {
+    return {
+      sectionHeading: blockName,
+    };
+  }
+
+  return {
+    generatedBlockLabel: blockName,
+    selectedVariant: componentVariant,
+  };
 }
 
 export async function POST(request: Request) {
@@ -540,25 +687,21 @@ export async function POST(request: Request) {
     `Create a governed ${formatComponentLabel(componentType)} block for ${location}.`
   );
 
-  const pageId = typeof body?.pageId === "string" ? body.pageId.trim() : "";
-  const pageName = typeof body?.pageName === "string" ? body.pageName.trim() : "";
-  const sectionId =
-    typeof body?.sectionId === "string" ? body.sectionId.trim() : "";
-  const sectionLabel =
-    typeof body?.sectionLabel === "string" ? body.sectionLabel.trim() : "";
-  const sectionKey =
-    typeof body?.sectionKey === "string" ? body.sectionKey.trim() : "";
-  const templateName =
-    typeof body?.templateName === "string" ? body.templateName.trim() : "";
+  const pageId = normaliseOptionalText(body?.pageId);
+  const pageName = normaliseOptionalText(body?.pageName);
+  const sectionId = normaliseOptionalText(body?.sectionId);
+  const sectionLabel = normaliseOptionalText(body?.sectionLabel);
+  const sectionKey = normaliseOptionalText(body?.sectionKey);
+  const templateName = normaliseOptionalText(body?.templateName);
 
-  const contentLength =
+  const contentLength: ContentLength =
     body?.contentLength === "Short" ||
     body?.contentLength === "Standard" ||
     body?.contentLength === "Detailed"
       ? body.contentLength
       : "Standard";
 
-  const imageSourceMode =
+  const imageSourceMode: ImageSourceMode =
     body?.imageSourceMode === "none" ||
     body?.imageSourceMode === "upload" ||
     body?.imageSourceMode === "gallery"
@@ -568,20 +711,19 @@ export async function POST(request: Request) {
   const blockData: BlockData = {
     componentType,
     componentVariant,
-
-    pageId: pageId || undefined,
-    pageName: pageName || undefined,
-
-    sectionId: sectionId || undefined,
-    sectionLabel: sectionLabel || undefined,
-    sectionKey: sectionKey || undefined,
-
-    templateName: templateName || undefined,
-
+    pageId,
+    pageName,
+    sectionId,
+    sectionLabel,
+    sectionKey,
+    templateName,
+    generatedFromPrompt: prompt,
+    contentLength,
+    imageSourceMode,
     eyebrow: buildEyebrow({
       location,
       componentType,
-      sectionLabel: sectionLabel || undefined,
+      sectionLabel,
     }),
     headline: getVariantHeadline({
       blockName,
@@ -612,6 +754,13 @@ export async function POST(request: Request) {
       componentVariant,
       prompt,
     }),
+    extraContent: buildExtraContent({
+      componentType,
+      componentVariant,
+      location,
+      blockName,
+      contentLength,
+    }),
   };
 
   return NextResponse.json({
@@ -622,6 +771,7 @@ export async function POST(request: Request) {
       `Component type used: ${componentType}`,
       `Component variant used: ${componentVariant}`,
       `Content length used: ${contentLength}`,
+      `Image source mode used: ${imageSourceMode}`,
     ],
   });
 }
