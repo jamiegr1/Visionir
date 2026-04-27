@@ -44,20 +44,6 @@ export type ReviewEditProps = {
   canEdit?: boolean;
   canSubmit?: boolean;
   canPublish?: boolean;
-
-  mode?: "standard" | "page_builder";
-  onBack?: () => void;
-  backLabel?: string;
-  onPrimaryAction?: () => void;
-  primaryActionLabel?: string;
-  primaryActionDisabled?: boolean;
-
-  changesRequestedInfo?: {
-    requestedBy?: string;
-    requestedAt?: string;
-    notes?: string;
-    fields?: string[];
-  } | null;
 };
 
 const ACCENT_STYLES: Record<
@@ -104,113 +90,6 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-function formatFieldLabel(field: string) {
-  return field
-    .replace(/\./g, " / ")
-    .replace(/[_-]+/g, " ")
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function formatComponentLabel(value?: string) {
-  if (!value) return "—";
-
-  return value
-    .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase())
-    .trim();
-}
-
-function formatImageSourceModeLabel(value?: string) {
-  if (!value) return "—";
-  if (value === "none") return "No Image";
-  if (value === "upload") return "Uploaded Brand Image";
-  if (value === "gallery") return "Brand Gallery";
-  return formatComponentLabel(value);
-}
-
-function formatContentLengthLabel(value?: string) {
-  if (!value) return "—";
-  return value;
-}
-
-function isHeroComponent(componentType?: string) {
-  return (componentType || "").toLowerCase().includes("hero");
-}
-
-function isValueGridComponent(componentType?: string) {
-  const value = (componentType || "").toLowerCase();
-  return (
-    value.includes("value") ||
-    value.includes("benefit") ||
-    value.includes("feature")
-  );
-}
-
-function isTestimonialComponent(componentType?: string) {
-  const value = (componentType || "").toLowerCase();
-  return value.includes("testimonial") || value.includes("quote");
-}
-
-function isCtaComponent(componentType?: string) {
-  const value = (componentType || "").toLowerCase();
-  return (
-    value.includes("cta") ||
-    value.includes("contact") ||
-    value.includes("conversion")
-  );
-}
-
-function isStatsComponent(componentType?: string) {
-  return (componentType || "").toLowerCase().includes("stats");
-}
-
-function isLogoComponent(componentType?: string) {
-  const value = (componentType || "").toLowerCase();
-  return value.includes("logo") || value.includes("trust");
-}
-
-function isFaqComponent(componentType?: string) {
-  return (componentType || "").toLowerCase().includes("faq");
-}
-
-function getValuePointSectionLabel(componentType?: string) {
-  if (isStatsComponent(componentType)) return "Stats / Metric Cards";
-  if (isLogoComponent(componentType)) return "Logo / Trust Items";
-  if (isFaqComponent(componentType)) return "FAQ Items";
-  if (isTestimonialComponent(componentType)) return "Supporting Content";
-  if (isCtaComponent(componentType)) return "Supporting Points";
-  if (isValueGridComponent(componentType)) return "Value Points";
-  if (isHeroComponent(componentType)) return "Supporting Value Points";
-  return "Structured Items";
-}
-
-function getValuePointItemLabel(componentType: string | undefined, index: number) {
-  if (isStatsComponent(componentType)) return `Stat ${index + 1}`;
-  if (isLogoComponent(componentType)) return `Logo Item ${index + 1}`;
-  if (isFaqComponent(componentType)) return `FAQ Item ${index + 1}`;
-  if (isTestimonialComponent(componentType)) return `Support Item ${index + 1}`;
-  return `Value Point ${index + 1}`;
-}
-
-function getValuePointTitleLabel(componentType?: string) {
-  if (isStatsComponent(componentType)) return "Value";
-  if (isLogoComponent(componentType)) return "Name";
-  if (isFaqComponent(componentType)) return "Question";
-  if (isTestimonialComponent(componentType)) return "Label";
-  return "Title";
-}
-
-function getValuePointTextLabel(componentType?: string) {
-  if (isStatsComponent(componentType)) return "Description";
-  if (isLogoComponent(componentType)) return "Supporting Copy";
-  if (isFaqComponent(componentType)) return "Answer";
-  if (isTestimonialComponent(componentType)) return "Copy";
-  return "Copy";
-}
-
 function ImproveButton({
   busy,
   improved,
@@ -236,10 +115,6 @@ function ImproveButton({
             : "border border-slate-200 bg-white text-slate-700 hover:border-[#cfd8f6] hover:bg-[#f8faff] hover:text-[#3554d1] hover:shadow-[0_8px_22px_rgba(79,108,255,0.08)]"
       )}
     >
-      {busy && (
-        <span className="absolute inset-0 animate-pulse bg-[linear-gradient(110deg,transparent,rgba(255,255,255,0.55),transparent)]" />
-      )}
-
       <span className="relative z-[1] flex items-center gap-2">
         {busy ? (
           <>
@@ -247,31 +122,9 @@ function ImproveButton({
             Improving
           </>
         ) : improved ? (
-          <>
-            <svg
-              className="h-3.5 w-3.5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.2"
-            >
-              <path d="M5 12.5 9.2 16.7 19 7.5" />
-            </svg>
-            AI Improved
-          </>
+          <>AI Improved</>
         ) : (
-          <>
-            <svg
-              className="h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.9"
-            >
-              <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" />
-            </svg>
-            Improve with AI
-          </>
+          <>Improve with AI</>
         )}
       </span>
     </button>
@@ -303,16 +156,7 @@ function HistoryButton({
           : "border-[#e2e8f5] bg-white text-[#64748b] shadow-[0_2px_8px_rgba(15,23,42,0.04)] hover:-translate-y-[1px] hover:border-[#d3dcf5] hover:text-[#1e293b] hover:shadow-[0_6px_16px_rgba(79,111,255,0.10)] active:translate-y-0 active:scale-[0.96]"
       )}
     >
-      <span
-        className={cx(
-          "flex items-center justify-center transition-all duration-200",
-          disabled
-            ? "opacity-60"
-            : "group-hover:scale-105 group-hover:text-[#4f6fff]"
-        )}
-      >
-        {children}
-      </span>
+      {children}
     </button>
   );
 }
@@ -342,13 +186,6 @@ export default function ReviewEdit({
   canEdit = true,
   canSubmit = true,
   canPublish = false,
-  mode = "standard",
-  onBack,
-  backLabel = "Back",
-  onPrimaryAction,
-  primaryActionLabel = "Done",
-  primaryActionDisabled = false,
-  changesRequestedInfo = null,
 }: ReviewEditProps) {
   const [loadingField, setLoadingField] = useState<string | null>(null);
   const [describeBusy, setDescribeBusy] = useState(false);
@@ -367,74 +204,11 @@ export default function ReviewEdit({
     return `Brand Compliance: ${governance.score}% ✓`;
   }, [governance]);
 
-  const isPageBuilderMode = mode === "page_builder";
-  const hasChangesRequestedInfo =
-    !!changesRequestedInfo &&
-    (!!changesRequestedInfo.notes ||
-      !!changesRequestedInfo.requestedAt ||
-      !!changesRequestedInfo.requestedBy ||
-      (changesRequestedInfo.fields?.length ?? 0) > 0);
-
-  const selectedComponentTypeLabel = useMemo(
-    () => formatComponentLabel(editable.componentType),
-    [editable.componentType]
-  );
-
-  const selectedComponentVariantLabel = useMemo(
-    () =>
-      editable.componentVariant
-        ? formatComponentLabel(editable.componentVariant)
-        : "Default",
-    [editable.componentVariant]
-  );
-
-  const selectedContentLengthLabel = useMemo(
-    () => formatContentLengthLabel(editable.contentLength),
-    [editable.contentLength]
-  );
-
-  const selectedImageSourceModeLabel = useMemo(
-    () => formatImageSourceModeLabel(editable.imageSourceMode),
-    [editable.imageSourceMode]
-  );
-
-  const generationPromptPreview = useMemo(() => {
-    if (!editable.generatedFromPrompt?.trim()) return "";
-    return editable.generatedFromPrompt.trim();
-  }, [editable.generatedFromPrompt]);
-
-  const hasGenerationContext = Boolean(
-    editable.componentType ||
-      editable.componentVariant ||
-      editable.pageName ||
-      editable.templateName ||
-      editable.sectionLabel ||
-      editable.contentLength ||
-      editable.imageSourceMode ||
-      editable.generatedFromPrompt
-  );
-
-  const componentType = editable.componentType;
-  const valuePointSectionLabel = useMemo(
-    () => getValuePointSectionLabel(componentType),
-    [componentType]
-  );
-  const valuePointTitleLabel = useMemo(
-    () => getValuePointTitleLabel(componentType),
-    [componentType]
-  );
-  const valuePointTextLabel = useMemo(
-    () => getValuePointTextLabel(componentType),
-    [componentType]
-  );
-
   function markFieldImproved(key: string) {
     setFlashFields((prev) => ({ ...prev, [key]: true }));
 
     const existingTimeout = flashTimeoutsRef.current[key];
-    if (existingTimeout) {
-      window.clearTimeout(existingTimeout);
-    }
+    if (existingTimeout) window.clearTimeout(existingTimeout);
 
     flashTimeoutsRef.current[key] = window.setTimeout(() => {
       setFlashFields((prev) => ({ ...prev, [key]: false }));
@@ -447,8 +221,7 @@ export default function ReviewEdit({
     text: string,
     apply: (improved: string) => void
   ) {
-    if (!canEdit) return;
-    if (!text.trim()) return;
+    if (!canEdit || !text.trim()) return;
 
     try {
       setLoadingField(key);
@@ -472,7 +245,10 @@ export default function ReviewEdit({
     }
   }
 
-  function updateRootField<K extends keyof BlockData>(key: K, value: BlockData[K]) {
+  function updateRootField<K extends keyof BlockData>(
+    key: K,
+    value: BlockData[K]
+  ) {
     if (!canEdit) return;
 
     onResetAiImproved?.(String(key));
@@ -553,9 +329,7 @@ export default function ReviewEdit({
         html?.clientHeight || 0
       );
 
-      if (height > 0) {
-        setIframeContentHeight(height);
-      }
+      if (height > 0) setIframeContentHeight(height);
     } catch {
       //
     }
@@ -567,9 +341,7 @@ export default function ReviewEdit({
 
     const delays = [40, 120, 240, 500, 900];
     measureTimeoutsRef.current = delays.map((delay) =>
-      window.setTimeout(() => {
-        syncIframeHeight();
-      }, delay)
+      window.setTimeout(() => syncIframeHeight(), delay)
     );
   }
 
@@ -616,11 +388,6 @@ export default function ReviewEdit({
                   <h2 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
                     Refine with AI
                   </h2>
-                  {isPageBuilderMode ? (
-                    <p className="mt-1 text-sm text-slate-500">
-                      Make direct text and imagery edits, or request broader structural changes.
-                    </p>
-                  ) : null}
                 </div>
 
                 <button
@@ -635,216 +402,6 @@ export default function ReviewEdit({
             </div>
 
             <div className="flex-1 overflow-y-auto px-5 py-5 pr-3">
-              {hasGenerationContext ? (
-                <section className="mb-8">
-                  <div className="rounded-3xl border border-[#dbe5ff] bg-[linear-gradient(180deg,#f8faff_0%,#f3f7ff_100%)] p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-                    <div className="mb-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-600">
-                        Generation Context
-                      </p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">
-                        This is the selected structure and page context used when this
-                        block was generated.
-                      </p>
-                    </div>
-
-                    <div className="grid gap-3">
-                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                          Block Type
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-slate-800">
-                          {selectedComponentTypeLabel}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                          Variant
-                        </p>
-                        <p className="mt-1 text-sm font-medium text-slate-800">
-                          {selectedComponentVariantLabel}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Content Length
-                            </p>
-                            <p className="mt-1 text-sm text-slate-800">
-                              {selectedContentLengthLabel}
-                            </p>
-                          </div>
-
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                              Image Source
-                            </p>
-                            <p className="mt-1 text-sm text-slate-800">
-                              {selectedImageSourceModeLabel}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {editable.pageName || editable.templateName ? (
-                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Page
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {editable.pageName || "—"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Template
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {editable.templateName || "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {editable.sectionLabel || editable.sectionKey ? (
-                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Section
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {editable.sectionLabel || "—"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Section Key
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {editable.sectionKey || "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {generationPromptPreview ? (
-                        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3">
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                            Generation Prompt
-                          </p>
-                          <p className="mt-2 text-sm leading-6 text-slate-700">
-                            {generationPromptPreview}
-                          </p>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                </section>
-              ) : null}
-
-              {hasChangesRequestedInfo ? (
-                <section className="mb-8">
-                  <div className="rounded-3xl border border-rose-200 bg-[linear-gradient(180deg,#fff7f8_0%,#fff1f2_100%)] p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-                    <div className="mb-3 flex items-start gap-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-white text-rose-600">
-                        <svg
-                          className="h-4.5 w-4.5"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M12 9v4" />
-                          <path d="M12 17h.01" />
-                          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
-                        </svg>
-                      </div>
-
-                      <div className="min-w-0">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-rose-600">
-                          Changes Requested
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-slate-700">
-                          Keep this feedback visible while editing so the block can
-                          be updated and resubmitted correctly.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-3">
-                      {(changesRequestedInfo?.requestedBy ||
-                        changesRequestedInfo?.requestedAt) && (
-                        <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
-                          <div className="grid gap-3 sm:grid-cols-2">
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Requested By
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {changesRequestedInfo?.requestedBy || "—"}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Requested At
-                              </p>
-                              <p className="mt-1 text-sm text-slate-800">
-                                {changesRequestedInfo?.requestedAt || "—"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                          Notes
-                        </p>
-                        <p className="mt-1 text-sm leading-6 text-slate-700">
-                          {changesRequestedInfo?.notes?.trim()
-                            ? changesRequestedInfo.notes
-                            : "No additional notes were added. Review the requested fields and update the block before resubmitting."}
-                        </p>
-                      </div>
-
-                      <div className="rounded-2xl border border-rose-200 bg-white px-4 py-3">
-                        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                          Requested Fields
-                        </p>
-
-                        {changesRequestedInfo?.fields &&
-                        changesRequestedInfo.fields.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {changesRequestedInfo.fields.map((field) => (
-                              <span
-                                key={field}
-                                className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-[12px] font-medium text-rose-700"
-                              >
-                                {formatFieldLabel(field)}
-                              </span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="mt-1 text-sm text-slate-700">
-                            General review requested.
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              ) : null}
 
               <section className="mb-8">
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
@@ -869,135 +426,90 @@ export default function ReviewEdit({
 
               <section className="mb-8">
                 <h3 className="mb-4 text-[15px] font-semibold text-slate-900">
-                  Core Content
+                  Content
                 </h3>
 
                 <div className="space-y-4">
-                  <div
-                    className={cx(
-                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
-                      flashFields["eyebrow"]
-                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
-                        : "border-slate-200"
-                    )}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <label className="text-sm font-medium text-slate-800">
-                        Eyebrow
-                      </label>
-                      <ImproveButton
-                        busy={loadingField === "eyebrow"}
-                        improved={!!aiImprovedFields["eyebrow"]}
-                        disabled={!canEdit || loadingField === "eyebrow"}
-                        onClick={() =>
-                          runImprove(
-                            "eyebrow",
-                            "eyebrow",
-                            editable.eyebrow ?? "",
-                            (improved) =>
-                              setEditable((prev) =>
-                                prev ? { ...prev, eyebrow: improved } : prev
-                              )
-                          )
-                        }
-                      />
-                    </div>
+                  {(["eyebrow", "headline", "subheading"] as const).map(
+                    (field) => {
+                      const label =
+                        field === "eyebrow"
+                          ? "Eyebrow"
+                          : field === "headline"
+                            ? "Primary Headline"
+                            : "Subheading";
 
-                    <input
-                      value={editable.eyebrow ?? ""}
-                      disabled={!canEdit}
-                      onChange={(e) => updateRootField("eyebrow", e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    />
-                  </div>
+                      const isTextarea = field === "subheading";
 
-                  <div
-                    className={cx(
-                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
-                      flashFields["headline"]
-                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
-                        : "border-slate-200"
-                    )}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <label className="text-sm font-medium text-slate-800">
-                        Primary Headline
-                      </label>
-                      <ImproveButton
-                        busy={loadingField === "headline"}
-                        improved={!!aiImprovedFields["headline"]}
-                        disabled={!canEdit || loadingField === "headline"}
-                        onClick={() =>
-                          runImprove(
-                            "headline",
-                            "headline",
-                            editable.headline ?? "",
-                            (improved) =>
-                              setEditable((prev) =>
-                                prev ? { ...prev, headline: improved } : prev
-                              )
-                          )
-                        }
-                      />
-                    </div>
+                      return (
+                        <div
+                          key={field}
+                          className={cx(
+                            "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
+                            flashFields[field]
+                              ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
+                              : "border-slate-200"
+                          )}
+                        >
+                          <div className="mb-2 flex items-center justify-between gap-3">
+                            <label className="text-sm font-medium text-slate-800">
+                              {label}
+                            </label>
+                            <ImproveButton
+                              busy={loadingField === field}
+                              improved={!!aiImprovedFields[field]}
+                              disabled={!canEdit || loadingField === field}
+                              onClick={() =>
+                                runImprove(
+                                  field,
+                                  field,
+                                  String(editable[field] ?? ""),
+                                  (improved) =>
+                                    setEditable((prev) =>
+                                      prev
+                                        ? { ...prev, [field]: improved }
+                                        : prev
+                                    )
+                                )
+                              }
+                            />
+                          </div>
 
-                    <input
-                      value={editable.headline ?? ""}
-                      disabled={!canEdit}
-                      onChange={(e) => updateRootField("headline", e.target.value)}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    />
-                  </div>
-
-                  <div
-                    className={cx(
-                      "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
-                      flashFields["subheading"]
-                        ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
-                        : "border-slate-200"
-                    )}
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-3">
-                      <label className="text-sm font-medium text-slate-800">
-                        Subheading
-                      </label>
-                      <ImproveButton
-                        busy={loadingField === "subheading"}
-                        improved={!!aiImprovedFields["subheading"]}
-                        disabled={!canEdit || loadingField === "subheading"}
-                        onClick={() =>
-                          runImprove(
-                            "subheading",
-                            "subheading",
-                            editable.subheading ?? "",
-                            (improved) =>
-                              setEditable((prev) =>
-                                prev ? { ...prev, subheading: improved } : prev
-                              )
-                          )
-                        }
-                      />
-                    </div>
-
-                    <textarea
-                      value={editable.subheading ?? ""}
-                      disabled={!canEdit}
-                      onChange={(e) => updateRootField("subheading", e.target.value)}
-                      className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                    />
-                  </div>
+                          {isTextarea ? (
+                            <textarea
+                              value={editable[field] ?? ""}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateRootField(field, e.target.value)
+                              }
+                              className="min-h-[104px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                            />
+                          ) : (
+                            <input
+                              value={editable[field] ?? ""}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateRootField(field, e.target.value)
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                            />
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
                 </div>
               </section>
 
               <section className="mb-8">
                 <h3 className="mb-4 text-[15px] font-semibold text-slate-900">
-                  {valuePointSectionLabel}
+                  Value Points
                 </h3>
 
                 <div className="space-y-4">
                   {valuePoints.length === 0 ? (
                     <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-4 text-sm text-slate-400">
-                      No structured items are available for this block yet.
+                      No value points available for this block yet.
                     </div>
                   ) : (
                     valuePoints.map((point, index) => {
@@ -1015,122 +527,79 @@ export default function ReviewEdit({
                           key={index}
                           className={cx(
                             "rounded-3xl border bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)] transition-all duration-700 ease-out",
-                            flashFields[improveKeyTitle] || flashFields[improveKeyText]
+                            flashFields[improveKeyTitle] ||
+                              flashFields[improveKeyText]
                               ? "border-emerald-200 bg-[linear-gradient(180deg,#f8fffb_0%,#eefcf4_100%)] ring-4 ring-emerald-100/80 shadow-[0_10px_30px_rgba(16,185,129,0.08)]"
                               : "border-slate-200"
                           )}
                         >
                           <div className="mb-4 flex items-center gap-2">
-                            <span className={cx("h-2.5 w-2.5 rounded-full", accent.dot)} />
+                            <span
+                              className={cx(
+                                "h-2.5 w-2.5 rounded-full",
+                                accent.dot
+                              )}
+                            />
                             <span className="text-sm font-medium text-slate-800">
-                              {getValuePointItemLabel(componentType, index)}
+                              Value Point {index + 1}
                             </span>
                           </div>
 
                           <div className="space-y-3">
-                            <div className="rounded-2xl transition-all duration-300">
-                              <div className="mb-2 flex items-center justify-between gap-3">
-                                <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                  {valuePointTitleLabel}
-                                </label>
-                                <ImproveButton
-                                  busy={loadingField === improveKeyTitle}
-                                  improved={!!aiImprovedFields[improveKeyTitle]}
-                                  disabled={!canEdit || loadingField === improveKeyTitle}
-                                  onClick={() =>
-                                    runImprove(
-                                      improveKeyTitle,
-                                      `valuePointTitle:${index}`,
-                                      point.title ?? "",
-                                      (improved) =>
-                                        updateValuePoint(index, { title: improved })
-                                    )
-                                  }
-                                />
-                              </div>
+                            <input
+                              value={point.title ?? ""}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateValuePoint(
+                                  index,
+                                  { title: e.target.value },
+                                  [improveKeyTitle]
+                                )
+                              }
+                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                            />
 
-                              <input
-                                value={point.title ?? ""}
-                                disabled={!canEdit}
-                                onChange={(e) =>
-                                  updateValuePoint(
-                                    index,
-                                    { title: e.target.value },
-                                    [improveKeyTitle]
-                                  )
-                                }
-                                className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                              />
-                            </div>
+                            <textarea
+                              value={point.text ?? ""}
+                              disabled={!canEdit}
+                              onChange={(e) =>
+                                updateValuePoint(
+                                  index,
+                                  { text: e.target.value },
+                                  [improveKeyText]
+                                )
+                              }
+                              className="min-h-[86px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                            />
 
-                            <div className="rounded-2xl transition-all duration-300">
-                              <div className="mb-2 flex items-center justify-between gap-3">
-                                <label className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                  {valuePointTextLabel}
-                                </label>
-                                <ImproveButton
-                                  busy={loadingField === improveKeyText}
-                                  improved={!!aiImprovedFields[improveKeyText]}
-                                  disabled={!canEdit || loadingField === improveKeyText}
-                                  onClick={() =>
-                                    runImprove(
-                                      improveKeyText,
-                                      `valuePointText:${index}`,
-                                      point.text ?? "",
-                                      (improved) =>
-                                        updateValuePoint(index, { text: improved })
-                                    )
-                                  }
-                                />
-                              </div>
+                            <div className="grid grid-cols-4 gap-2">
+                              {(
+                                ["blue", "green", "orange", "purple"] as Accent[]
+                              ).map((accentOption) => {
+                                const accentStyle = ACCENT_STYLES[accentOption];
+                                const active = safeAccent === accentOption;
 
-                              <textarea
-                                value={point.text ?? ""}
-                                disabled={!canEdit}
-                                onChange={(e) =>
-                                  updateValuePoint(
-                                    index,
-                                    { text: e.target.value },
-                                    [improveKeyText]
-                                  )
-                                }
-                                className="min-h-[86px] w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-sm outline-none transition focus:border-blue-400 focus:bg-white disabled:cursor-not-allowed disabled:opacity-60"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                                Accent
-                              </label>
-                              <div className="grid grid-cols-4 gap-2">
-                                {(["blue", "green", "orange", "purple"] as Accent[]).map(
-                                  (accentOption) => {
-                                    const accentStyle = ACCENT_STYLES[accentOption];
-                                    const active = safeAccent === accentOption;
-
-                                    return (
-                                      <button
-                                        key={accentOption}
-                                        type="button"
-                                        disabled={!canEdit}
-                                        onClick={() =>
-                                          updateValuePoint(index, {
-                                            accent: accentOption,
-                                          })
-                                        }
-                                        className={cx(
-                                          "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60",
-                                          active
-                                            ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
-                                            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                        )}
-                                      >
-                                        {accentOption}
-                                      </button>
-                                    );
-                                  }
-                                )}
-                              </div>
+                                return (
+                                  <button
+                                    key={accentOption}
+                                    type="button"
+                                    disabled={!canEdit}
+                                    onClick={() =>
+                                      updateValuePoint(index, {
+                                        accent: accentOption,
+                                      })
+                                    }
+                                    className={cx(
+                                      "rounded-2xl border px-2 py-2 text-xs font-medium capitalize transition disabled:cursor-not-allowed disabled:opacity-60",
+                                      active
+                                        ? `${accentStyle.soft} ${accentStyle.border} ${accentStyle.text} ring-2 ${accentStyle.ring}`
+                                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                    )}
+                                  >
+                                    {accentOption}
+                                  </button>
+                                );
+                              })}
                             </div>
                           </div>
                         </div>
@@ -1146,15 +615,6 @@ export default function ReviewEdit({
                 </h3>
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Recent Changes
-                    </p>
-                    <span className="text-xs text-slate-400">
-                      {changeLog.length} {changeLog.length === 1 ? "update" : "updates"}
-                    </span>
-                  </div>
-
                   {changeLog.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-400">
                       No changes yet. Edits made on this page will appear here.
@@ -1175,25 +635,12 @@ export default function ReviewEdit({
                             </span>
                           </div>
 
-                          <div className="space-y-2">
-                            <div className="rounded-xl bg-white px-3 py-2">
-                              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                                Before
-                              </span>
-                              <p className="text-xs leading-5 text-slate-500">
-                                {item.from}
-                              </p>
-                            </div>
-
-                            <div className="rounded-xl border border-blue-100 bg-blue-50 px-3 py-2">
-                              <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.14em] text-blue-500">
-                                After
-                              </span>
-                              <p className="text-xs leading-5 text-slate-700">
-                                {item.to}
-                              </p>
-                            </div>
-                          </div>
+                          <p className="text-xs leading-5 text-slate-500">
+                            {item.from}
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-slate-700">
+                            {item.to}
+                          </p>
                         </div>
                       ))}
                     </div>
@@ -1204,121 +651,49 @@ export default function ReviewEdit({
           </div>
         </aside>
 
-        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
+        <main className="grid min-h-0 min-w-0 flex-1 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                {onBack ? (
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <svg
-                      className="h-4 w-4"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12.5 4.5 7 10l5.5 5.5" />
-                    </svg>
-                    {backLabel}
-                  </button>
-                ) : null}
-
                 <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
                   <HistoryButton label="Undo" disabled={!canUndo} onClick={onUndo}>
-                    <svg
-                      className="h-[15px] w-[15px]"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M8 5 3.5 10 8 15" />
-                      <path d="M4 10h7.25c3.18 0 5.75 2.57 5.75 5.75" />
-                    </svg>
+                    ↶
                   </HistoryButton>
 
                   <div className="h-6 w-px bg-[#e7edf6]" />
 
                   <HistoryButton label="Redo" disabled={!canRedo} onClick={onRedo}>
-                    <svg
-                      className="h-[15px] w-[15px]"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.9"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 5 16.5 10 12 15" />
-                      <path d="M16 10H8.75A5.75 5.75 0 0 0 3 15.75" />
-                    </svg>
+                    ↷
                   </HistoryButton>
                 </div>
 
                 <div>
                   <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                    {isPageBuilderMode
-                      ? "Edit Block for Page Builder"
-                      : "Create Block • Step 3 of 3 - Review & Edit"}
+                    Review & Edit
                   </h1>
-                  {isPageBuilderMode ? (
-                    <p className="mt-1 text-sm text-slate-500">
-                      Refine this block for the selected page section.
-                    </p>
-                  ) : (
-                    <p className="mt-1 text-sm text-slate-500">
-                      Review the generated structure, refine content, and confirm the
-                      final output before moving forward.
-                    </p>
-                  )}
+                  <p className="mt-1 text-sm text-slate-500">
+                    {editable.componentName || "Block"} ·{" "}
+                    {editable.variantName || "Variant"}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setViewport("mobile")}
-                  className={cx(
-                    "rounded-2xl border px-3 py-2 text-sm transition",
-                    viewport === "mobile"
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  Mobile
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewport("tablet")}
-                  className={cx(
-                    "rounded-2xl border px-3 py-2 text-sm transition",
-                    viewport === "tablet"
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  Tablet
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewport("desktop")}
-                  className={cx(
-                    "rounded-2xl border px-3 py-2 text-sm transition",
-                    viewport === "desktop"
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
-                  )}
-                >
-                  Desktop
-                </button>
+                {(["mobile", "tablet", "desktop"] as const).map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() => setViewport(item)}
+                    className={cx(
+                      "rounded-2xl border px-3 py-2 text-sm capitalize transition",
+                      viewport === item
+                        ? "border-slate-900 bg-slate-900 text-white"
+                        : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -1333,7 +708,8 @@ export default function ReviewEdit({
 
               {!canEdit && (
                 <div className="mb-4 shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
-                  This block is currently read-only for your role and its current status.
+                  This block is currently read-only for your role and its
+                  current status.
                 </div>
               )}
 
@@ -1357,7 +733,9 @@ export default function ReviewEdit({
                       <div
                         className={cx(
                           "flex min-h-full justify-center",
-                          viewport === "tablet" ? "items-start py-6" : "items-start"
+                          viewport === "tablet"
+                            ? "items-start py-6"
+                            : "items-start"
                         )}
                       >
                         <iframe
@@ -1388,14 +766,21 @@ export default function ReviewEdit({
 
           <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
             <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
-                <span>{complianceLabel}</span>
-                <span>Accessibility: WCAG AA ✓</span>
-                <span>Design Tokens: Locked</span>
-              </div>
+            <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
+  <span>{complianceLabel}</span>
+  <span>Accessibility: WCAG AA ✓</span>
+  <span>Design Tokens: Locked</span>
+  <span>
+    Structure:{" "}
+    <span className="font-medium text-slate-700">
+      {editable.componentName || editable.componentId || "Block"} ·{" "}
+      {editable.variantName || editable.variantId || "Variant"}
+    </span>
+  </span>
+</div>
 
               <div className="flex items-center gap-3">
-                {canEdit && onSaveDraft && !isPageBuilderMode && (
+                {canEdit && onSaveDraft && (
                   <button
                     type="button"
                     onClick={onSaveDraft}
@@ -1414,17 +799,6 @@ export default function ReviewEdit({
                     {submitLabel}
                   </button>
                 )}
-
-                {onPrimaryAction ? (
-                  <button
-                    type="button"
-                    onClick={onPrimaryAction}
-                    disabled={primaryActionDisabled}
-                    className="rounded-2xl bg-emerald-600 px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-emerald-700 active:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {primaryActionLabel}
-                  </button>
-                ) : null}
 
                 {canPublish && onPublish && (
                   <button
