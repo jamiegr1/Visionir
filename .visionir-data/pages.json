@@ -552,19 +552,19 @@
     "templateName": "Website Development Service",
     "name": "Test Page After Block Type Updates",
     "slug": "testpage",
-    "status": "draft",
+    "status": "published",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
-    "approvedByUserId": null,
-    "approvedAt": null,
-    "publishedByUserId": null,
-    "publishedAt": null,
+    "approvedByUserId": "user-1",
+    "approvedAt": "2026-04-28T16:03:13.701Z",
+    "publishedByUserId": "user-1",
+    "publishedAt": "2026-04-28T16:04:52.396Z",
     "changesRequestedByUserId": null,
     "changesRequestedAt": null,
     "changesRequestedNotes": null,
     "changesRequestedSections": null,
     "createdAt": "2026-04-28T13:31:07.814Z",
-    "updatedAt": "2026-04-28T13:31:07.814Z",
+    "updatedAt": "2026-04-28T16:04:52.396Z",
     "sections": [
       {
         "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
@@ -579,8 +579,10 @@
           "hero-standard"
         ],
         "defaultComponentId": "hero-standard",
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "2c841b72-e89d-4e6d-8212-df776659f018"
+        ]
       },
       {
         "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
@@ -593,8 +595,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "d0c05c76-4ad1-4668-aa84-365b2209fb2f"
+        ]
       },
       {
         "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
@@ -609,8 +613,10 @@
           "value-points-grid"
         ],
         "defaultComponentId": "value-points-grid",
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "5a3b1703-b286-4526-bbc6-963b9ae795f9"
+        ]
       },
       {
         "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
@@ -623,8 +629,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "d6cdbcfb-c587-4790-b446-d3ac2697932a"
+        ]
       },
       {
         "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
@@ -637,8 +645,10 @@
         "maxInstances": 2,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "9fa489e2-0aec-4d8c-afe1-dfdef41b8232"
+        ]
       },
       {
         "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
@@ -651,8 +661,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "097b4620-1be9-447b-b570-fcbe08372302"
+        ]
       },
       {
         "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
@@ -665,8 +677,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "4fdda54d-d291-43da-9b50-29adc698ca87"
+        ]
       }
     ]
   },
@@ -677,19 +691,19 @@
     "templateName": "Website Development Service",
     "name": "Website Development Service Page",
     "slug": "web-development-page",
-    "status": "draft",
+    "status": "published",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
-    "approvedByUserId": null,
-    "approvedAt": null,
-    "publishedByUserId": null,
-    "publishedAt": null,
+    "approvedByUserId": "user-1",
+    "approvedAt": "2026-04-28T15:54:26.549Z",
+    "publishedByUserId": "user-1",
+    "publishedAt": "2026-04-28T16:05:00.498Z",
     "changesRequestedByUserId": null,
     "changesRequestedAt": null,
     "changesRequestedNotes": null,
     "changesRequestedSections": null,
     "createdAt": "2026-04-28T13:31:34.320Z",
-    "updatedAt": "2026-04-28T13:31:34.320Z",
+    "updatedAt": "2026-04-28T16:11:05.374Z",
     "sections": [
       {
         "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
@@ -704,8 +718,10 @@
           "hero-standard"
         ],
         "defaultComponentId": "hero-standard",
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "2c841b72-e89d-4e6d-8212-df776659f018"
+        ]
       },
       {
         "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
@@ -718,8 +734,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "d0c05c76-4ad1-4668-aa84-365b2209fb2f"
+        ]
       },
       {
         "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
@@ -734,8 +752,10 @@
           "value-points-grid"
         ],
         "defaultComponentId": "value-points-grid",
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "5a3b1703-b286-4526-bbc6-963b9ae795f9"
+        ]
       },
       {
         "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
@@ -748,8 +768,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "d6cdbcfb-c587-4790-b446-d3ac2697932a"
+        ]
       },
       {
         "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
@@ -762,8 +784,10 @@
         "maxInstances": 2,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "9fa489e2-0aec-4d8c-afe1-dfdef41b8232"
+        ]
       },
       {
         "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
@@ -776,8 +800,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "097b4620-1be9-447b-b570-fcbe08372302"
+        ]
       },
       {
         "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
@@ -790,8 +816,10 @@
         "maxInstances": 1,
         "allowedComponentIds": [],
         "defaultComponentId": null,
-        "completed": false,
-        "blockIds": []
+        "completed": true,
+        "blockIds": [
+          "4fdda54d-d291-43da-9b50-29adc698ca87"
+        ]
       }
     ]
   },
@@ -814,7 +842,7 @@
     "changesRequestedNotes": null,
     "changesRequestedSections": null,
     "createdAt": "2026-04-28T13:40:15.052Z",
-    "updatedAt": "2026-04-28T15:38:01.116Z",
+    "updatedAt": "2026-04-28T15:46:38.860Z",
     "sections": [
       {
         "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",

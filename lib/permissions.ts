@@ -221,7 +221,6 @@ export function canEditPage(user: UserLike, page: PageLike) {
 
   return (
     hasPermission(user.role, "page.edit.own") &&
-    page.createdByUserId === user.id &&
     ["draft", "in_progress", "changes_requested"].includes(page.status)
   );
 }
@@ -229,7 +228,6 @@ export function canEditPage(user: UserLike, page: PageLike) {
 export function canSubmitPage(user: UserLike, page: PageLike) {
   return (
     hasPermission(user.role, "page.submit") &&
-    page.createdByUserId === user.id &&
     ["draft", "in_progress", "changes_requested"].includes(page.status)
   );
 }

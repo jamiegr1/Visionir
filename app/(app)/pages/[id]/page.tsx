@@ -1237,17 +1237,16 @@ export default function PageDetailPage() {
                   </>
                 ) : null}
 
-                {pageStatus === "approved" && (role === "approver" || role === "admin") ? (
-                  <button
-                    type="button"
-                    onClick={() => handleWorkflowAction("publish")}
-                    disabled={isActing}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    {isActing ? "Publishing..." : "Publish"}
-                  </button>
-                ) : null}
+{(pageStatus === "approved" || pageStatus === "published") ? (
+  <button
+    type="button"
+    onClick={() => router.push(`/pages/${page.id}/publish?role=${role}`)}
+    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+  >
+    <CheckCircle2 className="h-4 w-4" />
+    Publish Page
+  </button>
+) : null}
 
                 <button
                   type="button"

@@ -314,9 +314,16 @@ export async function PATCH(
           { status: 403 }
         );
       }
-
+    
+      if (page.status !== "approved") {
+        return NextResponse.json(
+          { error: "Page must be approved before it can be published." },
+          { status: 400 }
+        );
+      }
+    
       const now = new Date().toISOString();
-
+    
       const updated = await updatePage(id, {
         status: "published",
         updatedByUserId: user.id,
@@ -324,7 +331,7 @@ export async function PATCH(
         publishedByUserId: user.id,
         publishedAt: now,
       });
-
+    
       return NextResponse.json({ page: updated });
     }
 
