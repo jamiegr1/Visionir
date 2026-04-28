@@ -1,9 +1,11 @@
 "use client";
 
 import type { GovernanceResult } from "@/lib/brand-governance";
+import { COMPONENT_OPTIONS } from "@/lib/component-options";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Accent, ValuePoint, BlockData } from "@/lib/types";
+
 
 type Governance = GovernanceResult | null;
 
@@ -377,6 +379,32 @@ export default function ReviewEdit({
       ? "min(560px, calc(100dvh - 356px))"
       : "min(620px, calc(100dvh - 336px))";
 
+      const selectedComponentId =
+  editable.componentType || editable.componentId || "";
+
+const selectedComponent = COMPONENT_OPTIONS.find(
+  (component) => component.id === selectedComponentId
+);
+
+const selectedVariantId =
+  editable.componentVariant || editable.variantId || "";
+
+const selectedVariant = selectedComponent?.variants.find(
+  (variant) => variant.id === selectedVariantId
+);
+
+const blockTypeLabel =
+  selectedComponent?.name ||
+  editable.componentName ||
+  selectedComponentId ||
+  "Block";
+
+const variantLabel =
+  selectedVariant?.label ||
+  editable.variantName ||
+  selectedVariantId ||
+  "Variant";
+
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
       <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
@@ -672,8 +700,7 @@ export default function ReviewEdit({
                     Review & Edit
                   </h1>
                   <p className="mt-1 text-sm text-slate-500">
-                    {editable.componentName || "Block"} ·{" "}
-                    {editable.variantName || "Variant"}
+                  {blockTypeLabel} · {variantLabel}
                   </p>
                 </div>
               </div>
@@ -773,8 +800,7 @@ export default function ReviewEdit({
   <span>
     Structure:{" "}
     <span className="font-medium text-slate-700">
-      {editable.componentName || editable.componentId || "Block"} ·{" "}
-      {editable.variantName || editable.variantId || "Variant"}
+    {blockTypeLabel} · {variantLabel}
     </span>
   </span>
 </div>

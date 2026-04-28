@@ -53,12 +53,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-16T16:29:17.177Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-16T16:29:17.177Z",
     "updatedAt": "2026-03-16T16:29:17.177Z"
   },
@@ -116,21 +118,19 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-16T16:31:01.185Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
-    "createdAt": "2026-03-16T16:31:01.185Z",
-    "updatedAt": "2026-04-15T19:03:26.381Z",
     "changesRequestedByUserId": "user-1",
     "changesRequestedAt": "2026-04-15T13:12:22.596Z",
     "changesRequestedNotes": "Change the title to why choose agri food, remove the last bullet point.",
     "changesRequestedFields": [
       "headline",
       "valuePoints"
-    ]
+    ],
+    "createdAt": "2026-03-16T16:31:01.185Z",
+    "updatedAt": "2026-04-15T19:03:26.381Z"
   },
   {
     "id": "431a8c3f-fed7-4aaa-8079-803db024388d",
@@ -186,12 +186,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-16T16:31:44.154Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-16T16:31:44.154Z",
     "updatedAt": "2026-03-16T16:35:09.922Z"
   },
@@ -249,12 +251,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-16T16:35:12.931Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-16T16:35:12.931Z",
     "updatedAt": "2026-03-16T16:35:25.860Z"
   },
@@ -312,12 +316,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-16T16:39:16.612Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-16T16:39:16.612Z",
     "updatedAt": "2026-03-16T16:39:29.587Z"
   },
@@ -375,12 +381,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T07:30:27.064Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T07:30:27.064Z",
     "updatedAt": "2026-03-17T07:30:41.807Z"
   },
@@ -438,12 +446,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T07:56:30.751Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T07:56:30.751Z",
     "updatedAt": "2026-03-17T07:56:43.802Z"
   },
@@ -501,12 +511,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T07:56:56.093Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T07:56:56.093Z",
     "updatedAt": "2026-03-17T07:57:09.076Z"
   },
@@ -564,20 +576,18 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:23:51.977Z",
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
-    "createdAt": "2026-03-17T08:23:51.977Z",
-    "updatedAt": "2026-04-15T12:25:48.755Z",
     "changesRequestedByUserId": "user-1",
     "changesRequestedAt": "2026-04-15T12:25:48.755Z",
     "changesRequestedNotes": "Change the headline to this \"hjeadoing fgtewa\" and add an extra bullet point.",
     "changesRequestedFields": [
       "headline"
-    ]
+    ],
+    "createdAt": "2026-03-17T08:23:51.977Z",
+    "updatedAt": "2026-04-15T12:25:48.755Z"
   },
   {
     "id": "cafde310-9940-48bd-abf4-ffb1467c0fdc",
@@ -633,12 +643,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:25:39.311Z",
     "approvedAt": "2026-03-17T08:25:52.270Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T08:25:39.311Z",
     "updatedAt": "2026-03-17T08:25:52.270Z"
   },
@@ -696,12 +708,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:51:08.206Z",
     "approvedAt": "2026-03-17T08:51:21.472Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T08:51:08.206Z",
     "updatedAt": "2026-03-17T08:51:21.472Z"
   },
@@ -759,12 +773,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:51:27.349Z",
     "approvedAt": "2026-03-17T08:51:40.337Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T08:51:27.349Z",
     "updatedAt": "2026-03-17T08:51:40.337Z"
   },
@@ -822,12 +838,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:53:31.764Z",
     "approvedAt": "2026-03-17T08:53:44.729Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T08:53:31.764Z",
     "updatedAt": "2026-03-17T08:53:44.729Z"
   },
@@ -885,18 +903,16 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:57:03.808Z",
     "approvedAt": "2026-04-15T19:03:13.741Z",
-    "rejectedAt": null,
     "publishedAt": null,
-    "createdAt": "2026-03-17T08:57:03.808Z",
-    "updatedAt": "2026-04-15T19:03:13.741Z",
     "changesRequestedByUserId": null,
     "changesRequestedAt": null,
     "changesRequestedNotes": null,
-    "changesRequestedFields": null
+    "changesRequestedFields": null,
+    "createdAt": "2026-03-17T08:57:03.808Z",
+    "updatedAt": "2026-04-15T19:03:13.741Z"
   },
   {
     "id": "c4dbb905-46b6-448f-846a-7ef3a2b7f8e3",
@@ -952,12 +968,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T08:58:04.015Z",
     "approvedAt": "2026-04-15T08:43:13.660Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T08:58:04.015Z",
     "updatedAt": "2026-04-15T08:43:13.660Z"
   },
@@ -1015,12 +1033,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": "2026-03-17T09:00:04.728Z",
     "approvedAt": "2026-04-15T09:02:33.324Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:00:04.728Z",
     "updatedAt": "2026-04-15T09:02:33.324Z"
   },
@@ -1078,12 +1098,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:07:12.199Z",
     "updatedAt": "2026-03-17T09:07:12.199Z"
   },
@@ -1141,12 +1163,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:12:14.349Z",
     "updatedAt": "2026-03-17T09:12:14.349Z"
   },
@@ -1204,12 +1228,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:20:40.284Z",
     "updatedAt": "2026-03-17T09:20:40.284Z"
   },
@@ -1267,12 +1293,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-04-15T09:02:28.367Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:23:08.160Z",
     "updatedAt": "2026-04-15T09:02:28.367Z"
   },
@@ -1330,12 +1358,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:25:44.495Z",
     "updatedAt": "2026-03-17T09:25:44.495Z"
   },
@@ -1393,12 +1423,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-17T10:32:23.818Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T09:47:46.138Z",
     "updatedAt": "2026-03-17T10:32:23.818Z"
   },
@@ -1456,12 +1488,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-17T15:59:22.190Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T15:57:48.926Z",
     "updatedAt": "2026-03-17T15:59:22.190Z"
   },
@@ -1519,12 +1553,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T16:28:34.093Z",
     "updatedAt": "2026-03-17T16:28:34.093Z"
   },
@@ -1582,12 +1618,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-17T16:45:56.396Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-17T16:45:15.993Z",
     "updatedAt": "2026-03-17T16:45:56.396Z"
   },
@@ -1645,12 +1683,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-18T15:42:56.331Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-18T14:59:55.981Z",
     "updatedAt": "2026-03-18T15:42:56.331Z"
   },
@@ -1708,12 +1748,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-18T15:58:39.122Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-18T15:57:18.996Z",
     "updatedAt": "2026-03-18T15:58:39.122Z"
   },
@@ -1771,12 +1813,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-19T13:17:45.218Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-19T12:46:59.425Z",
     "updatedAt": "2026-03-19T13:17:45.218Z"
   },
@@ -1834,12 +1878,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-20T11:02:14.005Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-20T11:01:52.868Z",
     "updatedAt": "2026-03-20T11:02:14.005Z"
   },
@@ -1897,12 +1943,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-23T11:21:13.492Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-23T11:20:43.211Z",
     "updatedAt": "2026-03-23T11:21:13.492Z"
   },
@@ -1960,12 +2008,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-23T11:28:05.793Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-23T11:21:58.373Z",
     "updatedAt": "2026-03-23T11:28:05.793Z"
   },
@@ -2023,12 +2073,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-23T13:23:55.282Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-23T12:06:46.238Z",
     "updatedAt": "2026-03-23T13:23:55.282Z"
   },
@@ -2086,894 +2138,16 @@
     "updatedByUserId": "user-creator-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T20:20:48.920Z",
     "updatedAt": "2026-03-24T20:20:48.920Z"
-  },
-  {
-    "id": "bf02b455-e789-48a8-9feb-2f9ff3324eb4",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "2a97b3cb-d700-4b2b-921d-c1ab129558e0",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "88a4716f-cf67-4187-9455-d5fedcd52ebd",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "691e2e91-5da8-41c1-aba0-6bf7cdd47067",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "cffc331c-0fa5-4a4b-9603-b2d473143cbc",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "3d5fdc8c-6061-4ae6-b767-9833eff6d677",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "aff64dae-9fbc-439a-a618-6bc31c610a90",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "93cfbec8-4b86-46ab-9100-4d2a1c7f4fc5",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "686d5f87-fda8-4376-867b-0388388b6a6d",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "1d4c852c-b70d-474d-bb10-d94c848b07f3",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "d134d1f7-ecb7-4afb-b7bf-eb0663f179cd",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "c4895672-5618-40c3-ba88-6714fbbde20e",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "870182a1-3f8b-4677-80ef-d362b38ed5d0",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "3466c9cb-83bb-46e8-afec-d2ef093fbec0",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "9d0eac12-bf91-49ab-a4ec-54d7ed71e642",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
-  },
-  {
-    "id": "ff832333-031a-4df8-9cbc-792e298441e7",
-    "data": {
-      "data": {
-        "eyebrow": "FOOD, FEED & AGRICULTURE",
-        "headline": "Why Choose Kiwa Agri-Food",
-        "subheading": "From accredited certification to tailored technical support, Kiwa Agri-Food gives you confidence in compliance, credibility and business growth.",
-        "imageUrl": "/farmer.jpg",
-        "valuePoints": [
-          {
-            "title": "Independent and UKAS-accredited",
-            "text": "Across food safety, feed and organic standards — with 20+ years of certified service under ISO/IEC 17065.",
-            "accent": "blue"
-          },
-          {
-            "title": "Holistic technical support",
-            "text": "From certification to training — tailored to your operations and supported by in-house technical experts.",
-            "accent": "green"
-          },
-          {
-            "title": "Local auditors, practical insight",
-            "text": "Support that fits the realities of your operation, with clear guidance and responsive coordination.",
-            "accent": "orange"
-          },
-          {
-            "title": "Scalable enterprise assurance",
-            "text": "From local needs to complex supply chains — backed by global Kiwa expertise and consistent governance.",
-            "accent": "purple"
-          }
-        ],
-        "design": {
-          "theme": "enterprise",
-          "layout": "split",
-          "cardStyle": "soft",
-          "headingAlign": "left",
-          "borderRadius": "xl",
-          "shadow": "soft",
-          "background": "#f5f7fb",
-          "surface": "#ffffff",
-          "headingColor": "#0f172a",
-          "textColor": "#475569",
-          "eyebrowColor": "#1457d1",
-          "cardColors": {
-            "blue": "#3b82f6",
-            "green": "#22c55e",
-            "orange": "#f59e0b",
-            "purple": "#8b5cf6"
-          }
-        }
-      },
-      "status": "draft",
-      "createdBy": "user-1",
-      "createdByName": "Jamie"
-    }
   },
   {
     "id": "1ac457b7-472e-4b04-99a6-9025641a6074",
@@ -3029,12 +2203,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-04-15T08:37:33.159Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T21:28:28.045Z",
     "updatedAt": "2026-04-15T08:37:33.159Z"
   },
@@ -3092,12 +2268,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:28:41.346Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T21:37:08.505Z",
     "updatedAt": "2026-03-26T17:28:41.346Z"
   },
@@ -3155,12 +2333,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-24T21:48:51.483Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T21:48:26.123Z",
     "updatedAt": "2026-03-24T21:48:51.483Z"
   },
@@ -3218,12 +2398,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-24T21:53:52.917Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T21:53:30.749Z",
     "updatedAt": "2026-03-24T21:53:52.917Z"
   },
@@ -3281,12 +2463,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-24T21:59:23.540Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T21:59:09.554Z",
     "updatedAt": "2026-03-24T21:59:23.540Z"
   },
@@ -3344,12 +2528,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-24T22:04:14.682Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T22:03:19.450Z",
     "updatedAt": "2026-03-24T22:04:14.682Z"
   },
@@ -3407,12 +2593,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-24T22:05:04.886Z",
     "updatedAt": "2026-03-24T22:05:04.886Z"
   },
@@ -3470,12 +2658,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-03-25T11:07:23.015Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-25T11:07:06.130Z",
     "updatedAt": "2026-03-25T11:07:23.015Z"
   },
@@ -3533,12 +2723,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-25T11:16:54.066Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-25T11:20:12.024Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-25T11:16:32.904Z",
     "updatedAt": "2026-03-25T11:20:12.024Z"
   },
@@ -3596,12 +2788,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-25T11:31:21.408Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-25T11:32:03.924Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-25T11:30:55.799Z",
     "updatedAt": "2026-03-25T11:32:03.924Z"
   },
@@ -3659,12 +2853,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-25T11:32:37.277Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-25T11:32:41.954Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-25T11:32:22.200Z",
     "updatedAt": "2026-03-25T11:32:41.954Z"
   },
@@ -3722,12 +2918,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-25T11:37:13.114Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-25T11:37:38.162Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-25T11:36:46.612Z",
     "updatedAt": "2026-03-25T11:37:38.162Z"
   },
@@ -3785,12 +2983,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T15:31:02.466Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T15:31:25.244Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T15:30:34.815Z",
     "updatedAt": "2026-03-26T15:31:25.244Z"
   },
@@ -3848,12 +3048,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T15:43:59.325Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T15:44:09.051Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T15:43:02.983Z",
     "updatedAt": "2026-03-26T15:44:09.051Z"
   },
@@ -3911,12 +3113,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T15:54:46.552Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T15:55:15.639Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T15:54:25.304Z",
     "updatedAt": "2026-03-26T15:55:15.639Z"
   },
@@ -3974,12 +3178,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:16:36.744Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T17:20:24.922Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T17:16:06.394Z",
     "updatedAt": "2026-03-26T17:20:24.922Z"
   },
@@ -4037,12 +3243,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:22:41.532Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T17:22:46.610Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T17:22:25.801Z",
     "updatedAt": "2026-03-26T17:22:46.610Z"
   },
@@ -4100,12 +3308,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:25:58.907Z",
-    "rejectedAt": null,
     "publishedAt": "2026-04-14T17:19:35.627Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T17:25:45.339Z",
     "updatedAt": "2026-04-14T17:19:35.627Z"
   },
@@ -4163,12 +3373,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-26T17:28:16.135Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-26T17:28:18.693Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T17:28:01.828Z",
     "updatedAt": "2026-03-26T17:28:18.693Z"
   },
@@ -4226,12 +3438,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-26T23:15:22.905Z",
     "updatedAt": "2026-03-26T23:15:22.905Z"
   },
@@ -4289,12 +3503,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:38:17.543Z",
     "updatedAt": "2026-03-31T06:38:17.543Z"
   },
@@ -4352,12 +3568,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:39:15.742Z",
     "updatedAt": "2026-03-31T06:39:15.742Z"
   },
@@ -4415,12 +3633,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:39:55.043Z",
     "updatedAt": "2026-03-31T06:39:55.043Z"
   },
@@ -4478,12 +3698,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:42:21.220Z",
     "updatedAt": "2026-03-31T06:44:38.347Z"
   },
@@ -4541,12 +3763,14 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:44:59.263Z",
     "updatedAt": "2026-03-31T06:44:59.263Z"
   },
@@ -4604,59 +3828,102 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": "user-1",
     "submittedAt": null,
     "approvedAt": "2026-03-31T07:04:42.722Z",
-    "rejectedAt": null,
     "publishedAt": "2026-03-31T07:06:03.894Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-03-31T06:59:46.914Z",
     "updatedAt": "2026-03-31T07:06:03.894Z"
   },
   {
     "id": "33b4d4a0-12c5-48ed-9802-173af01918d3",
     "data": {
-      "componentType": "hero-standard",
-      "headline": "Website Development Service Page — Hero",
       "eyebrow": "Hero",
-      "body": "Draft content for the Hero section.",
-      "ctaText": "Learn more"
+      "headline": "Website Development Service Page — Hero",
+      "subheading": "",
+      "valuePoints": [],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero-standard"
     },
     "status": "draft",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-04-13T20:18:12.027Z",
     "updatedAt": "2026-04-13T20:18:12.027Z"
   },
   {
     "id": "fa2edbaa-3c18-415a-a6d2-39452db35f19",
     "data": {
-      "componentType": "hero-standard",
-      "headline": "Title updated",
       "eyebrow": "Test For website develo3seqwdq3dw3edw3edpment service page",
-      "body": "Draft content for the Hero section.",
-      "ctaText": "Learn more",
-      "subheading": "This will be the updated sub heading for the hero section"
+      "headline": "Title updated",
+      "subheading": "This will be the updated sub heading for the hero section",
+      "valuePoints": [],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero-standard"
     },
     "status": "approved",
     "createdByUserId": "user-1",
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": "user-1",
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": "2026-04-14T15:25:03.007Z",
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-04-13T20:18:33.123Z",
     "updatedAt": "2026-04-14T17:21:54.038Z"
   },
@@ -4715,13 +3982,88 @@
     "updatedByUserId": "user-1",
     "submittedByUserId": null,
     "approvedByUserId": null,
-    "rejectedByUserId": null,
     "publishedByUserId": null,
     "submittedAt": null,
     "approvedAt": null,
-    "rejectedAt": null,
     "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
     "createdAt": "2026-04-14T17:24:31.759Z",
     "updatedAt": "2026-04-14T17:24:41.120Z"
+  },
+  {
+    "id": "2abf6ddb-8aa1-49ae-b09b-011a7a8205aa",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Us",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero-standard",
+      "componentVariant": "left-content-right-image",
+      "generatedFromPrompt": "Block Name: Why Choose Us\nBlock Type: Articles / Blog\nBlock Type ID: articles\nSelected Variant: Grid\nSelected Variant ID: articles-grid\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Why Choose Us",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-27T16:27:06.081Z",
+    "updatedAt": "2026-04-27T16:27:06.081Z"
   }
 ]

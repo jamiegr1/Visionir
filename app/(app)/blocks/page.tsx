@@ -18,6 +18,7 @@ import {
 import type { BlockData } from "@/lib/types";
 import type { Role } from "@/lib/permissions";
 import { evaluateBlockGovernance } from "@/lib/brand-governance";
+import { COMPONENT_OPTIONS } from "@/lib/component-options";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -114,13 +115,25 @@ function getBlockName(data: BlockData | null, id: string) {
 }
 
 function getComponentName(data: BlockData | null): string {
-  if (!data?.componentType) return "—";
-  return formatComponentLabel(data.componentType);
+  const componentId = data?.componentType || data?.componentId || "";
+
+  if (!componentId) return "—";
+
+  const component = COMPONENT_OPTIONS.find((item) => item.id === componentId);
+
+  return component?.name || formatComponentLabel(componentId);
 }
 
 function getComponentVariant(data: BlockData | null): string {
-  if (!data?.componentVariant) return "Default";
-  return formatComponentLabel(data.componentVariant);
+  const componentId = data?.componentType || data?.componentId || "";
+  const variantId = data?.componentVariant || data?.variantId || "";
+
+  if (!variantId) return "Default";
+
+  const component = COMPONENT_OPTIONS.find((item) => item.id === componentId);
+  const variant = component?.variants.find((item) => item.id === variantId);
+
+  return variant?.label || formatComponentLabel(variantId);
 }
 
 function getOwnerName(block: ApiBlockRecord) {
