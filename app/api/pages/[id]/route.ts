@@ -119,7 +119,7 @@ export async function PATCH(
           blockId?: string;
           updatedByUserId?: string;
           changesRequestedNotes?: string | null;
-          changesRequestedSections?: string[] | null;
+          skipAllowedComponentCheck?: boolean;
         })
       | null;
 
@@ -155,7 +155,8 @@ export async function PATCH(
           id,
           body.sectionId,
           body.blockId,
-          user.id
+          user.id,
+          body.skipAllowedComponentCheck === true
         );
 
         if (!updated) {

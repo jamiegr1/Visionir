@@ -4065,5 +4065,1306 @@
     "changesRequestedFields": null,
     "createdAt": "2026-04-27T16:27:06.081Z",
     "updatedAt": "2026-04-27T16:27:06.081Z"
+  },
+  {
+    "id": "e5e938bd-76ea-4424-add2-295407259ed7",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Us",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero-standard",
+      "componentVariant": "left-content-right-image",
+      "generatedFromPrompt": "Block Name: Why Choose Us\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Why Choose Us",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T13:30:10.432Z",
+    "updatedAt": "2026-04-28T13:30:10.432Z"
+  },
+  {
+    "id": "a042a345-a67a-434a-8d49-8901b285e2c4",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T13:58:36.864Z",
+    "updatedAt": "2026-04-28T13:58:36.864Z"
+  },
+  {
+    "id": "a24df3b4-2f1b-486c-8f06-11129c093c80",
+    "data": {
+      "eyebrow": "FAQ",
+      "headline": "FAQ",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "faq",
+      "componentVariant": "faq-accordion",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
+      "sectionLabel": "FAQ",
+      "generatedFromPrompt": "Block Name: FAQ\nBlock Type: FAQ\nBlock Type ID: faq\nSelected Variant: Accordion\nSelected Variant ID: faq-accordion\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "FAQ",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T13:59:36.458Z",
+    "updatedAt": "2026-04-28T13:59:36.458Z"
+  },
+  {
+    "id": "5d6c663d-8e4c-4d68-abee-d6add3ab992a",
+    "data": {
+      "eyebrow": "FOOD, FEED & AGRICULTURE",
+      "headline": "Why Choose Us",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "cta",
+      "componentVariant": "cta-banner",
+      "generatedFromPrompt": "Block Name: Why Choose Us\nBlock Type: Call To Action\nBlock Type ID: cta\nSelected Variant: Full Width Banner\nSelected Variant ID: cta-banner\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Why Choose Us",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "published",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": "user-1",
+    "submittedAt": "2026-04-28T14:00:43.899Z",
+    "approvedAt": "2026-04-28T14:00:52.473Z",
+    "publishedAt": "2026-04-28T14:01:18.098Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:00:34.214Z",
+    "updatedAt": "2026-04-28T14:01:18.098Z"
+  },
+  {
+    "id": "d7f2df6b-cf85-4b1a-b8a9-1ab99e7ea9ab",
+    "data": {
+      "eyebrow": "STATS",
+      "headline": "Stats",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "stats",
+      "componentVariant": "stats-row",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+      "sectionLabel": "Stats",
+      "generatedFromPrompt": "Block Name: Stats\nBlock Type: Statistics / Metrics\nBlock Type ID: stats\nSelected Variant: Horizontal Row\nSelected Variant ID: stats-row\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Stats",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": null,
+    "approvedByUserId": null,
+    "publishedByUserId": null,
+    "submittedAt": null,
+    "approvedAt": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:04:45.425Z",
+    "updatedAt": "2026-04-28T14:04:59.257Z"
+  },
+  {
+    "id": "d6cdbcfb-c587-4790-b446-d3ac2697932a",
+    "data": {
+      "eyebrow": "STATS",
+      "headline": "Stats",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "stats",
+      "componentVariant": "stats-row",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+      "sectionLabel": "Stats",
+      "generatedFromPrompt": "Block Name: Stats\nBlock Type: Statistics / Metrics\nBlock Type ID: stats\nSelected Variant: Horizontal Row\nSelected Variant ID: stats-row\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Stats",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:07:35.025Z",
+    "approvedAt": "2026-04-28T14:07:42.833Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:07:26.011Z",
+    "updatedAt": "2026-04-28T14:07:42.833Z"
+  },
+  {
+    "id": "93eb0a3e-7444-4873-b806-164a40ddbd29",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Test Page Testimonial",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Test Page Testimonial \nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Test Page Testimonial",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:14:30.643Z",
+    "approvedAt": "2026-04-28T14:14:38.659Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:14:23.305Z",
+    "updatedAt": "2026-04-28T14:14:38.659Z"
+  },
+  {
+    "id": "531f0ade-c068-40e6-991e-d637b302f41c",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Test page testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Test page testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Test page testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:16:48.093Z",
+    "approvedAt": "2026-04-28T14:16:55.950Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:16:39.324Z",
+    "updatedAt": "2026-04-28T14:16:55.950Z"
+  },
+  {
+    "id": "a0fade00-0a39-4459-b4dc-e343831eacd9",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Test Page Testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Test Page Testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Test Page Testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:21:48.700Z",
+    "approvedAt": "2026-04-28T14:21:56.657Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:21:39.988Z",
+    "updatedAt": "2026-04-28T14:21:56.657Z"
+  },
+  {
+    "id": "3a75fbd4-d5e8-4b8b-8186-e95dd30295ba",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:26:23.825Z",
+    "approvedAt": "2026-04-28T14:26:31.653Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:26:16.291Z",
+    "updatedAt": "2026-04-28T14:26:31.653Z"
+  },
+  {
+    "id": "e681de63-92ae-45aa-ab6b-6fb4980982aa",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:28:05.825Z",
+    "approvedAt": "2026-04-28T14:28:13.709Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:27:56.664Z",
+    "updatedAt": "2026-04-28T14:28:13.709Z"
+  },
+  {
+    "id": "9fa489e2-0aec-4d8c-afe1-dfdef41b8232",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Testimonials",
+      "subheading": "Introduce Test page After BLock Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After BLock Updates",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Testimonials\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Test page After BLock Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Testimonials",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T14:29:52.972Z",
+    "approvedAt": "2026-04-28T14:30:00.911Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T14:29:44.753Z",
+    "updatedAt": "2026-04-28T14:30:00.911Z"
+  },
+  {
+    "id": "097b4620-1be9-447b-b570-fcbe08372302",
+    "data": {
+      "eyebrow": "FAQ",
+      "headline": "FAQ For Test Page",
+      "subheading": "Introduce Test page After Block Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "faq",
+      "componentVariant": "faq-accordion",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After Block Updates",
+      "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
+      "sectionLabel": "FAQ",
+      "generatedFromPrompt": "Block Name: FAQ For Test Page\nBlock Type: FAQ\nBlock Type ID: faq\nSelected Variant: Accordion\nSelected Variant ID: faq-accordion\nLocation / Business Area: Test page After Block Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "FAQ For Test Page",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T15:34:50.640Z",
+    "approvedAt": "2026-04-28T15:34:59.161Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T15:34:39.312Z",
+    "updatedAt": "2026-04-28T15:34:59.161Z"
+  },
+  {
+    "id": "5a3b1703-b286-4526-bbc6-963b9ae795f9",
+    "data": {
+      "eyebrow": "CONTENT",
+      "headline": "Why Choose Us Test Page",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero",
+      "componentVariant": "hero-split",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After Block Updates",
+      "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
+      "sectionLabel": "Content",
+      "generatedFromPrompt": "Block Name: Why Choose Us Test Page\nBlock Type: Hero\nBlock Type ID: hero\nSelected Variant: Split Layout\nSelected Variant ID: hero-split\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Why Choose Us Test Page",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T15:35:59.197Z",
+    "approvedAt": "2026-04-28T15:36:07.065Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T15:35:50.428Z",
+    "updatedAt": "2026-04-28T15:36:07.065Z"
+  },
+  {
+    "id": "d0c05c76-4ad1-4668-aa84-365b2209fb2f",
+    "data": {
+      "eyebrow": "INTRO",
+      "headline": "Intro Test Page",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero",
+      "componentVariant": "hero-centered",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After Block Updates",
+      "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
+      "sectionLabel": "Intro",
+      "generatedFromPrompt": "Block Name: Intro Test Page\nBlock Type: Hero\nBlock Type ID: hero\nSelected Variant: Centered\nSelected Variant ID: hero-centered\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Intro Test Page",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T15:36:29.167Z",
+    "approvedAt": "2026-04-28T15:36:36.985Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T15:36:22.057Z",
+    "updatedAt": "2026-04-28T15:36:36.985Z"
+  },
+  {
+    "id": "2c841b72-e89d-4e6d-8212-df776659f018",
+    "data": {
+      "eyebrow": "HERO",
+      "headline": "Hero",
+      "subheading": "Introduce Food, Feed & Agriculture with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "hero",
+      "componentVariant": "hero-video",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After Block Updates",
+      "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
+      "sectionLabel": "Hero",
+      "generatedFromPrompt": "Block Name: Hero\nBlock Type: Hero\nBlock Type ID: hero\nSelected Variant: With Video\nSelected Variant ID: hero-video\nLocation / Business Area: Food, Feed & Agriculture\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Hero",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T15:36:52.382Z",
+    "approvedAt": "2026-04-28T15:37:00.316Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T15:36:45.753Z",
+    "updatedAt": "2026-04-28T15:37:00.316Z"
+  },
+  {
+    "id": "4fdda54d-d291-43da-9b50-29adc698ca87",
+    "data": {
+      "eyebrow": "CALL TO ACTION",
+      "headline": "Call to Action Test Page",
+      "subheading": "Introduce Test page After Block Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "cta",
+      "componentVariant": "cta-banner",
+      "pageId": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+      "pageName": "Test page After Block Updates",
+      "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
+      "sectionLabel": "Call to Action",
+      "generatedFromPrompt": "Block Name: Call to Action Test Page\nBlock Type: Call To Action\nBlock Type ID: cta\nSelected Variant: Full Width Banner\nSelected Variant ID: cta-banner\nLocation / Business Area: Test page After Block Updates\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone.",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Call to Action Test Page",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-28T15:37:38.616Z",
+    "approvedAt": "2026-04-28T15:37:46.395Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-28T15:37:19.154Z",
+    "updatedAt": "2026-04-28T15:37:46.395Z"
   }
 ]

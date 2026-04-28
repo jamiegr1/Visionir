@@ -258,7 +258,8 @@ export async function attachBlockToPageSection(
   pageId: string,
   sectionId: string,
   blockId: string,
-  updatedByUserId: string
+  updatedByUserId: string,
+  skipAllowedComponentCheck = false
 ): Promise<PageRecord | null> {
   const page = await getPageById(pageId);
 
@@ -287,7 +288,10 @@ export async function attachBlockToPageSection(
     throw new Error("Block does not have a valid component type.");
   }
 
-  if (!section.allowedComponentIds.includes(safeComponentType)) {
+  if (
+    !skipAllowedComponentCheck &&
+    !section.allowedComponentIds.includes(safeComponentType)
+  ) {
     throw new Error(
       `Block type "${safeComponentType}" is not allowed in section "${section.label}".`
     );

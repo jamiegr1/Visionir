@@ -544,5 +544,394 @@
         "blockIds": []
       }
     ]
+  },
+  {
+    "id": "04a3d8e5-46a7-439e-8053-78a0dc98fb3c",
+    "templateId": "afa5161a-0819-4a39-942f-ac896f7423f3",
+    "templateVersion": 1,
+    "templateName": "Website Development Service",
+    "name": "Test Page After Block Type Updates",
+    "slug": "testpage",
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "approvedByUserId": null,
+    "approvedAt": null,
+    "publishedByUserId": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedSections": null,
+    "createdAt": "2026-04-28T13:31:07.814Z",
+    "updatedAt": "2026-04-28T13:31:07.814Z",
+    "sections": [
+      {
+        "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
+        "key": "hero",
+        "label": "Hero",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard"
+        ],
+        "defaultComponentId": "hero-standard",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
+        "key": "intro",
+        "label": "Intro",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
+        "key": "content",
+        "label": "Content",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+        "key": "stats",
+        "label": "Stats",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+        "key": "testimonials",
+        "label": "Testimonials",
+        "order": 4,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 2,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
+        "key": "faq",
+        "label": "FAQ",
+        "order": 5,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
+        "key": "cta",
+        "label": "Call to Action",
+        "order": 6,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      }
+    ]
+  },
+  {
+    "id": "8ec793eb-58b1-4d5e-a915-2a64ff7dfdd9",
+    "templateId": "afa5161a-0819-4a39-942f-ac896f7423f3",
+    "templateVersion": 1,
+    "templateName": "Website Development Service",
+    "name": "Website Development Service Page",
+    "slug": "web-development-page",
+    "status": "draft",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "approvedByUserId": null,
+    "approvedAt": null,
+    "publishedByUserId": null,
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedSections": null,
+    "createdAt": "2026-04-28T13:31:34.320Z",
+    "updatedAt": "2026-04-28T13:31:34.320Z",
+    "sections": [
+      {
+        "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
+        "key": "hero",
+        "label": "Hero",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard"
+        ],
+        "defaultComponentId": "hero-standard",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
+        "key": "intro",
+        "label": "Intro",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
+        "key": "content",
+        "label": "Content",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+        "key": "stats",
+        "label": "Stats",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+        "key": "testimonials",
+        "label": "Testimonials",
+        "order": 4,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 2,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
+        "key": "faq",
+        "label": "FAQ",
+        "order": 5,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      },
+      {
+        "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
+        "key": "cta",
+        "label": "Call to Action",
+        "order": 6,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": false,
+        "blockIds": []
+      }
+    ]
+  },
+  {
+    "id": "436eaa96-a1c5-4988-bae5-40fe8941207b",
+    "templateId": "afa5161a-0819-4a39-942f-ac896f7423f3",
+    "templateVersion": 1,
+    "templateName": "Website Development Service",
+    "name": "Test page After Block Updates",
+    "slug": "testpage",
+    "status": "published",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "approvedAt": "2026-04-28T15:37:57.302Z",
+    "publishedByUserId": "user-1",
+    "publishedAt": "2026-04-28T15:37:58.575Z",
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedSections": null,
+    "createdAt": "2026-04-28T13:40:15.052Z",
+    "updatedAt": "2026-04-28T15:38:01.116Z",
+    "sections": [
+      {
+        "sectionId": "27fd72b0-c233-4ccb-9339-b03a6b74a175",
+        "key": "hero",
+        "label": "Hero",
+        "order": 0,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [
+          "hero-standard"
+        ],
+        "defaultComponentId": "hero-standard",
+        "completed": true,
+        "blockIds": [
+          "2c841b72-e89d-4e6d-8212-df776659f018"
+        ]
+      },
+      {
+        "sectionId": "68c09854-cdb4-41e9-b2bb-d936dd22dab2",
+        "key": "intro",
+        "label": "Intro",
+        "order": 1,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": true,
+        "blockIds": [
+          "d0c05c76-4ad1-4668-aa84-365b2209fb2f"
+        ]
+      },
+      {
+        "sectionId": "172d7a98-abb0-4d42-8065-189adf3ce264",
+        "key": "content",
+        "label": "Content",
+        "order": 2,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 3,
+        "allowedComponentIds": [
+          "value-points-grid"
+        ],
+        "defaultComponentId": "value-points-grid",
+        "completed": true,
+        "blockIds": [
+          "5a3b1703-b286-4526-bbc6-963b9ae795f9"
+        ]
+      },
+      {
+        "sectionId": "9f857760-d1db-4ada-98ad-bfa99071cf9a",
+        "key": "stats",
+        "label": "Stats",
+        "order": 3,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": true,
+        "blockIds": [
+          "d6cdbcfb-c587-4790-b446-d3ac2697932a"
+        ]
+      },
+      {
+        "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+        "key": "testimonials",
+        "label": "Testimonials",
+        "order": 4,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 2,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": true,
+        "blockIds": [
+          "9fa489e2-0aec-4d8c-afe1-dfdef41b8232"
+        ]
+      },
+      {
+        "sectionId": "ba72ed90-242c-4358-92e8-69d8870f656a",
+        "key": "faq",
+        "label": "FAQ",
+        "order": 5,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 0,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": true,
+        "blockIds": [
+          "097b4620-1be9-447b-b570-fcbe08372302"
+        ]
+      },
+      {
+        "sectionId": "5642283f-f9b7-4464-8b20-34a3d2cbcb72",
+        "key": "cta",
+        "label": "Call to Action",
+        "order": 6,
+        "required": true,
+        "canSkip": false,
+        "minInstances": 1,
+        "maxInstances": 1,
+        "allowedComponentIds": [],
+        "defaultComponentId": null,
+        "completed": true,
+        "blockIds": [
+          "4fdda54d-d291-43da-9b50-29adc698ca87"
+        ]
+      }
+    ]
   }
 ]

@@ -159,10 +159,62 @@ function getBlockStatusPillClass(status: string | undefined) {
 }
 
 function getBlockComponentType(block: ApiBlockRecord) {
-  const componentType = block.data?.componentType;
+  const componentType =
+    block.data?.componentType ||
+    block.data?.componentId ||
+    block.data?.category;
+
   return typeof componentType === "string" && componentType.trim()
     ? componentType.trim()
     : "";
+}
+
+function normaliseComponentId(value: string) {
+  const cleaned = value.trim().toLowerCase();
+
+  const aliases: Record<string, string> = {
+    testimonial: "testimonials",
+    testimonials: "testimonials",
+
+    stat: "stats",
+    stats: "stats",
+    statistics: "stats",
+    metrics: "stats",
+
+    logo: "logos",
+    logos: "logos",
+    "logo-cloud": "logos",
+
+    feature: "features",
+    features: "features",
+    benefit: "features",
+    benefits: "features",
+
+    text: "rich-text",
+    "text-section": "rich-text",
+    "rich-text": "rich-text",
+
+    article: "articles",
+    articles: "articles",
+    blog: "articles",
+
+    process: "steps",
+    steps: "steps",
+
+    cta: "cta",
+    "call-to-action": "cta",
+
+    hero: "hero",
+    faq: "faq",
+    pricing: "pricing",
+    team: "team",
+    media: "media",
+    form: "form",
+    contact: "contact",
+    timeline: "timeline",
+  };
+
+  return aliases[cleaned] || cleaned;
 }
 
 function getBlockName(block: ApiBlockRecord) {
@@ -359,23 +411,6 @@ function Badge({
     >
       {children}
     </span>
-  );
-}
-
-function RuleRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <p className="text-sm font-medium text-slate-600">{label}</p>
-      <div className="max-w-[60%] text-right text-sm leading-6 text-slate-900">
-        {value}
-      </div>
-    </div>
   );
 }
 
@@ -679,6 +714,8 @@ export default function PageDetailPage() {
   const [activeTab, setActiveTab] = useState<PageTab>("sections");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [existingBlockQuery, setExistingBlockQuery] = useState("");
+  const hasAppliedSectionFromUrlRef = useRef(false);
+  const hasAppliedTabFromUrlRef = useRef(false);
 
   const [page, setPage] = useState<PageRecord | null>(null);
   const [pageName, setPageName] = useState("");
@@ -750,17 +787,41 @@ export default function PageDetailPage() {
     return (page?.sections ?? []).slice().sort((a, b) => a.order - b.order);
   }, [page]);
 
-  useEffect(() => {
-    if (!sortedSections.length) {
-      setSelectedSectionId(null);
-      return;
-    }
-
-    setSelectedSectionId((current) => {
-      const exists = sortedSections.some((section) => section.sectionId === current);
-      return exists ? current : sortedSections[0]?.sectionId ?? null;
+  const sectionIdFromUrl = searchParams.get("sectionId") || "";
+  const tabFromUrl = searchParams.get("tab") || "";
+  const sectionIdsKey = sortedSections
+    .map((section) => section.sectionId)
+    .join("|");
+  
+    useEffect(() => {
+      if (!sortedSections.length) {
+        setSelectedSectionId(null);
+        return;
+      }
+    
+      if (!hasAppliedTabFromUrlRef.current && tabFromUrl === "sections") {
+        hasAppliedTabFromUrlRef.current = true;
+        setActiveTab("sections");
+      }
+    
+      if (
+        !hasAppliedSectionFromUrlRef.current &&
+        sectionIdFromUrl &&
+        sortedSections.some((section) => section.sectionId === sectionIdFromUrl)
+      ) {
+        hasAppliedSectionFromUrlRef.current = true;
+        setSelectedSectionId(sectionIdFromUrl);
+        return;
+      }
+    
+      setSelectedSectionId((current) => {
+        const exists = sortedSections.some(
+          (section) => section.sectionId === current
+        );
+    
+        return exists ? current : sortedSections[0]?.sectionId ?? null;
+      });
     });
-  }, [sortedSections]);
 
   useEffect(() => {
     setExistingBlockQuery("");
@@ -779,19 +840,29 @@ export default function PageDetailPage() {
   const availableBlocksForSelectedSection = useMemo(() => {
     if (!selectedSection) return [];
 
-    const allowed = new Set(selectedSection.allowedComponentIds);
+    const allowed = new Set(
+      selectedSection.allowedComponentIds.map((id) => normaliseComponentId(id))
+    );
 
     return allBlocks.filter((block) => {
-      const componentType = getBlockComponentType(block);
+      const componentType = normaliseComponentId(getBlockComponentType(block));
       const status = block.status || "";
-
+    
       const isReusable =
         status === "approved" ||
         status === "published" ||
         status === "completed" ||
         status === "deployed";
-
-      return componentType ? allowed.has(componentType) && isReusable : false;
+    
+      const blockSectionId =
+        typeof block.data?.sectionId === "string" ? block.data.sectionId : "";
+    
+      const wasGeneratedForThisSection =
+        blockSectionId === selectedSection.sectionId;
+    
+      const isAllowedByType = componentType ? allowed.has(componentType) : false;
+    
+      return isReusable && (isAllowedByType || wasGeneratedForThisSection);
     });
   }, [selectedSection, allBlocks]);
 
@@ -965,6 +1036,7 @@ export default function PageDetailPage() {
           sectionId: selectedSection.sectionId,
           blockId,
           updatedByUserId: "user-1",
+          skipAllowedComponentCheck: true,
         }),
       });
 
@@ -1018,14 +1090,14 @@ export default function PageDetailPage() {
 
   function handleGenerateBlock() {
     if (!selectedSection || !page) return;
-
+  
     const allowed = selectedSection.allowedComponentIds || [];
-
-    if (allowed.length === 0) {
-      alert("This section does not have any allowed block types.");
-      return;
-    }
-
+    const fallbackComponentId =
+      selectedSection.defaultComponentId ||
+      allowed[0] ||
+      selectedSection.key ||
+      selectedSection.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+  
     const params = new URLSearchParams({
       role,
       pageId: page.id,
@@ -1034,13 +1106,14 @@ export default function PageDetailPage() {
       pageName: page.name,
       sectionLabel: selectedSection.label,
       sectionKey: selectedSection.key,
-      returnTo: `/pages/${page.id}?role=${role}&sectionId=${selectedSection.sectionId}`,
+      lockedComponentId: fallbackComponentId,
+      returnTo: `/pages/${page.id}?role=${role}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`,
     });
-
+  
     if (selectedSection.defaultComponentId) {
       params.set("defaultComponentId", selectedSection.defaultComponentId);
     }
-
+  
     router.push(`/blocks/new?${params.toString()}`);
   }
 
@@ -1063,10 +1136,6 @@ export default function PageDetailPage() {
   const requiredSections = sortedSections.filter((section) => section.required);
   const completedSections = sortedSections.filter((section) => section.completed);
   const incompleteSections = sortedSections.filter((section) => !section.completed);
-  const totalAttachedBlocks = sortedSections.reduce(
-    (sum, section) => sum + section.blockIds.length,
-    0
-  );
 
   const workflowSummary =
     pageStatus === "draft"
@@ -1194,12 +1263,47 @@ export default function PageDetailPage() {
         </section>
 
         <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
-          <div className="grid flex-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <OverviewCard label="Template" value={page.templateName} />
-            <OverviewCard label="Sections" value={`${sortedSections.length}`} />
-            <OverviewCard label="Completed" value={`${completedSections.length}`} />
-            <OverviewCard label="Blocks" value={`${totalAttachedBlocks}`} />
-          </div>
+        <div className="grid flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+  <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+      Template
+    </p>
+    <p className="mt-2 truncate text-sm font-semibold text-slate-900">
+      {page.templateName}
+    </p>
+  </div>
+
+  <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+          Page Progress
+        </p>
+        <p className="mt-2 text-sm font-semibold text-slate-900">
+          {completedSections.length} / {sortedSections.length} sections complete
+        </p>
+      </div>
+
+      <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+        {Math.round(
+          (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+        )}
+        %
+      </span>
+    </div>
+
+    <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+      <div
+        className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
+        style={{
+          width: `${Math.round(
+            (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+          )}%`,
+        }}
+      />
+    </div>
+  </div>
+</div>
 
           <div className="flex flex-wrap items-stretch gap-3 xl:ml-4 xl:self-start">
             <TabButton
@@ -1224,94 +1328,123 @@ export default function PageDetailPage() {
         </div>
 
         {activeTab === "overview" ? (
-          <div className="mt-4 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-              <Panel
-                title="Page Metadata"
-                subtitle="Basic page information and workflow status."
-                icon={<FileText className="h-5 w-5" />}
-              >
-                <div>
-                  <MetaRow label="Page ID" value={page.id} />
-                  <MetaRow label="Slug" value={page.slug || "—"} />
-                  <MetaRow label="Status" value={getStatusLabel(pageStatus)} />
-                  <MetaRow label="Template" value={page.templateName} />
-                  <MetaRow label="Template Version" value={`v${page.templateVersion}`} />
-                  <MetaRow label="Created At" value={formatDateTime(page.createdAt)} />
-                  <MetaRow label="Updated At" value={formatDateTime(page.updatedAt)} />
-                </div>
-              </Panel>
-
-              <Panel
-                title="Workflow Summary"
-                subtitle="Where this page currently sits in the governed process."
-                icon={<Sparkles className="h-5 w-5" />}
-              >
-                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm leading-6 text-slate-700">{workflowSummary}</p>
-                </div>
-              </Panel>
-            </aside>
-
-            <main className="min-w-0 space-y-6">
-              <Panel
-                title="Page Overview"
-                subtitle="Edit the page identity while keeping the governed structure intact."
-                icon={<Pencil className="h-5 w-5" />}
-              >
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <div>
-                    <FieldLabel>Page Name</FieldLabel>
-                    <TextInput
-                      value={pageName}
-                      onChange={(e) => setPageName(e.target.value)}
-                      placeholder="Service Page"
-                    />
-                  </div>
-
-                  <div>
-                    <FieldLabel>Slug</FieldLabel>
-                    <TextInput
-                      value={pageSlug}
-                      onChange={(e) => setPageSlug(e.target.value)}
-                      placeholder="service-page"
-                    />
-                  </div>
-                </div>
-              </Panel>
-
-              <Panel
-                title="Page Progress"
-                subtitle="A quick view of completion across the governed structure."
-                icon={<CheckCircle2 className="h-5 w-5" />}
-              >
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <OverviewCard label="Total sections" value={`${sortedSections.length}`} />
-                  <OverviewCard label="Required" value={`${requiredSections.length}`} />
-                  <OverviewCard label="Completed" value={`${completedSections.length}`} />
-                  <OverviewCard label="Incomplete" value={`${incompleteSections.length}`} />
-                </div>
-              </Panel>
-
-              <Panel
-                title="Template Link"
-                subtitle="This page is governed by the selected template."
-                icon={<LayoutTemplate className="h-5 w-5" />}
-              >
-                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">{page.templateName}</p>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">
-                    This page inherits its approved section structure and allowed block
-                    types from the template.
-                  </p>
-                </div>
-              </Panel>
-            </main>
+  <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+    <main className="min-w-0 space-y-6">
+      <Panel
+        title="Page Details"
+        subtitle="Manage the page name, URL slug and key publishing information."
+        icon={<Pencil className="h-5 w-5" />}
+      >
+        <div className="grid gap-5 lg:grid-cols-2">
+          <div>
+            <FieldLabel>Page Name</FieldLabel>
+            <TextInput
+              value={pageName}
+              onChange={(e) => setPageName(e.target.value)}
+              placeholder="Service Page"
+            />
           </div>
-        ) : null}
+
+          <div>
+            <FieldLabel>Slug</FieldLabel>
+            <TextInput
+              value={pageSlug}
+              onChange={(e) => setPageSlug(e.target.value)}
+              placeholder="service-page"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <OverviewCard label="Status" value={getStatusLabel(pageStatus)} />
+          <OverviewCard label="Template" value={page.templateName} />
+          <OverviewCard label="Last Updated" value={formatDateTime(page.updatedAt)} />
+        </div>
+      </Panel>
+
+      <Panel
+        title="Page Readiness"
+        subtitle="Track whether the governed page structure is ready for approval."
+        icon={<CheckCircle2 className="h-5 w-5" />}
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              {completedSections.length} of {sortedSections.length} sections complete
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {incompleteSections.length === 0
+                ? "All required sections are complete."
+                : `${incompleteSections.length} section${
+                    incompleteSections.length === 1 ? "" : "s"
+                  } still need content.`}
+            </p>
+          </div>
+
+          <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+            {Math.round(
+              (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+            )}
+            %
+          </span>
+        </div>
+
+        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
+          <div
+            className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
+            style={{
+              width: `${Math.round(
+                (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+              )}%`,
+            }}
+          />
+        </div>
+      </Panel>
+    </main>
+
+    <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+      <Panel
+        title="Workflow"
+        subtitle="Current approval and publishing position."
+        icon={<Sparkles className="h-5 w-5" />}
+      >
+        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+          <StatusPill status={pageStatus} />
+          <p className="mt-4 text-sm leading-6 text-slate-700">
+            {workflowSummary}
+          </p>
+        </div>
+      </Panel>
+
+      <Panel
+        title="Template"
+        subtitle="The governed structure this page follows."
+        icon={<LayoutTemplate className="h-5 w-5" />}
+      >
+        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-semibold text-slate-900">
+            {page.templateName}
+          </p>
+          <p className="mt-1 text-sm text-slate-500">
+            Version {page.templateVersion}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
+            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            <LayoutTemplate className="h-4 w-4" />
+            View Template
+          </button>
+        </div>
+      </Panel>
+    </aside>
+  </div>
+) : null}
 
         {activeTab === "sections" ? (
-          <div className="mt-4 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)_360px]">
+          <div className="mt-4 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
             <aside className="space-y-6">
               <Panel
                 title="Page Sections"
@@ -1364,38 +1497,35 @@ export default function PageDetailPage() {
               ) : (
                 <>
                   <Panel
-                    title={selectedSection.label}
-                    subtitle="Generate a new governed block for this section, or choose one from the approved block library below."
-                    icon={<Blocks className="h-5 w-5" />}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={selectedSection.required ? "emerald" : "slate"}>
-                        {selectedSection.required ? "Required" : "Optional"}
-                      </Badge>
-                      <Badge tone={selectedSection.completed ? "emerald" : "amber"}>
-                        {selectedSection.completed ? "Complete" : "Needs content"}
-                      </Badge>
-                    </div>
+  title={selectedSection.label}
+  subtitle="Build this section by generating a governed block or attaching an approved compatible block."
+  icon={<Blocks className="h-5 w-5" />}
+>
+  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="flex flex-wrap items-center gap-2">
+      <Badge tone={selectedSection.required ? "emerald" : "slate"}>
+        {selectedSection.required ? "Required" : "Optional"}
+      </Badge>
 
-                    <div className="mt-6 grid gap-4 sm:grid-cols-4">
-                      <OverviewCard
-                        label="Attached blocks"
-                        value={`${selectedSection.blockIds.length}`}
-                      />
-                      <OverviewCard
-                        label="Allowed types"
-                        value={`${selectedSection.allowedComponentIds.length}`}
-                      />
-                      <OverviewCard
-                        label="Default type"
-                        value={selectedSection.defaultComponentId || "—"}
-                      />
-                      <OverviewCard
-                        label="Instances"
-                        value={`${selectedSection.minInstances}–${selectedSection.maxInstances}`}
-                      />
-                    </div>
-                  </Panel>
+      <Badge tone={selectedSection.completed ? "emerald" : "amber"}>
+        {selectedSection.completed ? "Complete" : "Needs content"}
+      </Badge>
+
+      <Badge tone="blue">
+        {selectedSection.blockIds.length}/{selectedSection.maxInstances} blocks
+      </Badge>
+    </div>
+
+    <button
+      type="button"
+      onClick={handleGenerateBlock}
+      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+    >
+      <Sparkles className="h-4 w-4" />
+      Generate Block
+    </button>
+  </div>
+</Panel>
 
                   <Panel
                     title="Attached blocks"
@@ -1410,8 +1540,10 @@ export default function PageDetailPage() {
                             block={block}
                             onEdit={() =>
                               router.push(
-                                `/blocks/${block.id}/review?role=${role}&returnTo=${encodeURIComponent(
-                                  `/pages/${page.id}?role=${role}&sectionId=${selectedSection.sectionId}`
+                                `/blocks/${block.id}/review?role=${role}&editMode=page_builder&pageId=${page.id}&sectionId=${
+                                  selectedSection.sectionId
+                                }&returnTo=${encodeURIComponent(
+                                  `/pages/${page.id}?role=${role}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`
                                 )}`
                               )
                             }
@@ -1502,89 +1634,6 @@ export default function PageDetailPage() {
                 </>
               )}
             </main>
-
-            <aside className="space-y-6">
-              <Panel
-                title="Section rules"
-                subtitle="The guardrails inherited from the template."
-                icon={<LayoutTemplate className="h-5 w-5" />}
-                className="xl:sticky xl:top-6"
-              >
-                {selectedSection ? (
-                  <div className="space-y-4">
-                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Section signals
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedSection.canSkip ? (
-                          <Badge tone="blue">Can skip</Badge>
-                        ) : (
-                          <Badge tone="slate">Cannot skip</Badge>
-                        )}
-
-                        {selectedSection.required ? (
-                          <Badge tone="emerald">Required for completion</Badge>
-                        ) : null}
-
-                        {selectedSection.completed ? (
-                          <Badge tone="emerald">Ready</Badge>
-                        ) : (
-                          <Badge tone="amber">Needs content</Badge>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                      <RuleRow
-                        label="Instances"
-                        value={`${selectedSection.minInstances}–${selectedSection.maxInstances}`}
-                      />
-                      <RuleRow
-                        label="Default block"
-                        value={selectedSection.defaultComponentId || "—"}
-                      />
-                      <RuleRow
-                        label="Allowed types"
-                        value={`${selectedSection.allowedComponentIds.length}`}
-                      />
-                      <RuleRow
-                        label="Attached blocks"
-                        value={`${selectedSection.blockIds.length}`}
-                      />
-                      <RuleRow
-                        label="Completed"
-                        value={selectedSection.completed ? "Yes" : "No"}
-                      />
-                    </div>
-
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                        Allowed block types
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedSection.allowedComponentIds.length > 0 ? (
-                          selectedSection.allowedComponentIds.map((componentId) => (
-                            <span
-                              key={componentId}
-                              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                            >
-                              {componentId}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-slate-500">None set</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">Select a section to inspect it.</p>
-                )}
-              </Panel>
-            </aside>
           </div>
         ) : null}
 

@@ -18,6 +18,7 @@ export type ChangeLogItem = {
 };
 
 export type ReviewEditProps = {
+  isPageBuilder?: boolean;
   editable: BlockData;
   setEditable: Dispatch<SetStateAction<BlockData | null>>;
   previewDoc: string;
@@ -31,6 +32,8 @@ export type ReviewEditProps = {
   requestDescribeChanges: () => Promise<void>;
   pendingPatchExists?: boolean;
   governance?: Governance;
+  onBack?: () => void;
+  backLabel?: string;
   onSaveDraft?: () => void;
   onSubmitApproval?: () => void;
   onPublish?: () => void;
@@ -164,6 +167,7 @@ function HistoryButton({
 }
 
 export default function ReviewEdit({
+  isPageBuilder,
   editable,
   setEditable,
   previewDoc,
@@ -173,6 +177,8 @@ export default function ReviewEdit({
   requestDescribeChanges,
   pendingPatchExists,
   governance,
+  onBack,
+  backLabel = "Back",
   onSaveDraft,
   onSubmitApproval,
   onPublish,
@@ -379,31 +385,38 @@ export default function ReviewEdit({
       ? "min(560px, calc(100dvh - 356px))"
       : "min(620px, calc(100dvh - 336px))";
 
+      const editableMeta = editable as BlockData & {
+        componentId?: string;
+        variantId?: string;
+        componentName?: string;
+        variantName?: string;
+      };
+      
       const selectedComponentId =
-  editable.componentType || editable.componentId || "";
-
-const selectedComponent = COMPONENT_OPTIONS.find(
-  (component) => component.id === selectedComponentId
-);
-
-const selectedVariantId =
-  editable.componentVariant || editable.variantId || "";
-
-const selectedVariant = selectedComponent?.variants.find(
-  (variant) => variant.id === selectedVariantId
-);
-
-const blockTypeLabel =
-  selectedComponent?.name ||
-  editable.componentName ||
-  selectedComponentId ||
-  "Block";
-
-const variantLabel =
-  selectedVariant?.label ||
-  editable.variantName ||
-  selectedVariantId ||
-  "Variant";
+        editableMeta.componentType || editableMeta.componentId || "";
+      
+      const selectedComponent = COMPONENT_OPTIONS.find(
+        (component) => component.id === selectedComponentId
+      );
+      
+      const selectedVariantId =
+        editableMeta.componentVariant || editableMeta.variantId || "";
+      
+      const selectedVariant = selectedComponent?.variants.find(
+        (variant) => variant.id === selectedVariantId
+      );
+      
+      const blockTypeLabel =
+        selectedComponent?.name ||
+        editableMeta.componentName ||
+        selectedComponentId ||
+        "Block";
+      
+      const variantLabel =
+        selectedVariant?.label ||
+        editableMeta.variantName ||
+        selectedVariantId ||
+        "Variant";
 
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
@@ -683,8 +696,9 @@ const variantLabel =
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
-                  <HistoryButton label="Undo" disabled={!canUndo} onClick={onUndo}>
+
+<div className="inline-flex items-center gap-2 rounded-[20px] border border-[#dde5f2] bg-white/90 p-1.5 shadow-[0_10px_32px_rgba(15,23,42,0.06)] backdrop-blur">
+  <HistoryButton label="Undo" disabled={!canUndo} onClick={onUndo}>
                     ↶
                   </HistoryButton>
 
@@ -806,15 +820,15 @@ const variantLabel =
 </div>
 
               <div className="flex items-center gap-3">
-                {canEdit && onSaveDraft && (
-                  <button
-                    type="button"
-                    onClick={onSaveDraft}
-                    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    Save Draft
-                  </button>
-                )}
+              {isPageBuilder && onBack && (
+  <button
+    type="button"
+    onClick={onBack}
+    className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+  >
+    Back to Page
+  </button>
+)}
 
                 {canSubmit && onSubmitApproval && (
                   <button

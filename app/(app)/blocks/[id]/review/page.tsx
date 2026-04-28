@@ -664,13 +664,19 @@ export default function BlockReviewPage() {
 
   async function handleSubmitApproval() {
     try {
-      if (isPageBuilderEdit) {
-        await handlePrimaryPageBuilderAction();
-        return;
-      }
-
       await saveBlock("pending_approval");
-      router.push(`/blocks/${id}/approval?role=${role}`);
+      const pageId = editable?.pageId || searchParams.get("pageId") || "";
+const sectionId = editable?.sectionId || searchParams.get("sectionId") || "";
+
+router.push(
+  `/blocks/${id}/approval?role=${role}${
+    returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""
+  }${
+    pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : ""
+  }${
+    sectionId ? `&sectionId=${encodeURIComponent(String(sectionId))}` : ""
+  }`
+);
     } catch (error) {
       console.error("Failed to submit for approval:", error);
     }
@@ -703,6 +709,7 @@ export default function BlockReviewPage() {
 
   return (
     <ReviewEdit
+  isPageBuilder={editMode === "page_builder"}
       editable={editable}
       setEditable={setEditable}
       previewDoc={previewDoc}
@@ -712,18 +719,9 @@ export default function BlockReviewPage() {
       requestDescribeChanges={requestDescribeChanges}
       pendingPatchExists={pendingPatchExists}
       governance={governance}
-      mode={isPageBuilderEdit ? "page_builder" : "standard"}
-      onBack={handleBack}
-      backLabel={returnTo ? "Back to Page" : "Back to Block Detail"}
-      onPrimaryAction={
-        isPageBuilderEdit ? handlePrimaryPageBuilderAction : undefined
-      }
-      primaryActionLabel={
-        requiresApproval ? "Submit for Approval" : "Use This Block"
-      }
-      primaryActionDisabled={pendingPatchExists}
-      onSaveDraft={isPageBuilderEdit ? undefined : handleSaveDraft}
-      onSubmitApproval={!isPageBuilderEdit ? handleSubmitApproval : undefined}
+      onSaveDraft={handleSaveDraft}
+      onSubmitApproval={handleSubmitApproval}
+      submitLabel={isPageBuilderEdit ? "Submit for Approval" : "Submit for Approval"}
       onUndo={handleUndo}
       onRedo={handleRedo}
       canUndo={undoStack.length > 0}
@@ -734,7 +732,8 @@ export default function BlockReviewPage() {
       canEdit={!pendingPatchExists}
       canSubmit={!pendingPatchExists}
       canPublish={false}
-      changesRequestedInfo={changesRequestedInfo}
+      onBack={handleBack}
+backLabel={returnTo ? "Back to Page" : "Back to Block Detail"}
     />
   );
 }

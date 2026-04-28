@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
 import {
@@ -229,6 +229,13 @@ export default function BlockApprovalPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const id = params.id;
+  const searchParams = useSearchParams();
+
+const returnTo = searchParams.get("returnTo") || "";
+const pageId = searchParams.get("pageId") || "";
+const sectionId = searchParams.get("sectionId") || "";
+
+const isPageBuilderApproval = Boolean(returnTo || (pageId && sectionId));
 
   const [currentUser, setCurrentUser] = useState<UserLike | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -335,7 +342,12 @@ export default function BlockApprovalPage() {
 
     if (status === "approved" || status === "published") {
       redirectedRef.current = true;
-      router.replace(`/blocks/${id}/deploy`);
+      router.replace(
+        isPageBuilderApproval
+          ? returnTo ||
+              `/pages/${pageId}?role=${currentUser.role}&tab=sections&sectionId=${sectionId}#section-workspace`
+          : `/blocks/${id}/deploy?role=${currentUser.role}`
+      );
     }
   }, [id, loading, router, status, currentUser]);
 
@@ -427,6 +439,16 @@ export default function BlockApprovalPage() {
 
           if (!redirectedRef.current) {
             redirectedRef.current = true;
+            if (isPageBuilderApproval) {
+              await attachBlockToPageSection();
+            
+              router.replace(
+                returnTo ||
+                  `/pages/${pageId}?role=${currentRole}&tab=sections&sectionId=${sectionId}#section-workspace`
+              );
+              return;
+            }
+            
             router.replace(`/blocks/${id}/deploy?role=${currentRole}`);
           }
         } catch (error) {
@@ -499,6 +521,28 @@ export default function BlockApprovalPage() {
     setStatus(nextStatus);
   }
 
+  async function attachBlockToPageSection() {
+    if (!currentUser || !pageId || !sectionId) return;
+  
+    const res = await fetch(`/api/pages/${pageId}?role=${currentUser.role}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "attach_block",
+        sectionId,
+        blockId: id,
+        updatedByUserId: currentUser.id,
+        skipAllowedComponentCheck: true,
+      }),
+    });
+  
+    const json = await res.json().catch(() => ({}));
+  
+    if (!res.ok) {
+      throw new Error(json?.error || "Failed to attach block to page section");
+    }
+  }
+
   async function handleApprove() {
     if (!currentUser) return;
 
@@ -510,7 +554,17 @@ export default function BlockApprovalPage() {
 
       if (!redirectedRef.current) {
         redirectedRef.current = true;
-        router.replace(`/blocks/${id}/deploy`);
+        if (isPageBuilderApproval) {
+          await attachBlockToPageSection();
+        
+          router.replace(
+            returnTo ||
+              `/pages/${pageId}?role=${currentUser.role}&tab=sections&sectionId=${sectionId}#section-workspace`
+          );
+          return;
+        }
+        
+        router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
       }
     } catch (error) {
       console.error("Approve failed:", error);

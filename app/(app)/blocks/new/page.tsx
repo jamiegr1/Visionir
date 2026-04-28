@@ -285,6 +285,45 @@ function isRole(value: string | null): value is Role {
   return value === "creator" || value === "approver" || value === "admin";
 }
 
+function normaliseComponentId(value: string | null) {
+  if (!value) return "";
+
+  const cleaned = value.trim().toLowerCase();
+
+  const aliases: Record<string, string> = {
+    testimonial: "testimonials",
+    testimonials: "testimonials",
+    "logo-cloud": "logos",
+    logos: "logos",
+    logo: "logos",
+    stat: "stats",
+    statistics: "stats",
+    metrics: "stats",
+    "statistics-metrics": "stats",
+    feature: "features",
+    benefits: "features",
+    "features-benefits": "features",
+    text: "rich-text",
+    "text-section": "rich-text",
+    article: "articles",
+    blog: "articles",
+    "articles-blog": "articles",
+    process: "steps",
+    "process-steps": "steps",
+    "call-to-action": "cta",
+    contact: "contact",
+    hero: "hero",
+    faq: "faq",
+    pricing: "pricing",
+    team: "team",
+    media: "media",
+    form: "form",
+    timeline: "timeline",
+  };
+
+  return aliases[cleaned] || cleaned;
+}
+
 function getStepNumber(step: Step): 1 | 2 | 3 {
   if (step === "context") return 1;
   if (step === "block_type") return 2;
@@ -667,13 +706,17 @@ function BlockTypeSelector({
   selectedVariantId,
   onSelectBlockType,
   onSelectVariant,
+  lockedBlockType,
 }: {
   selectedBlockTypeId: string;
   selectedVariantId: string;
   onSelectBlockType: (id: string) => void;
   onSelectVariant: (id: string) => void;
+  lockedBlockType?: boolean;
 }) {
-  const [view, setView] = useState<"types" | "variants">("types");
+  const [view, setView] = useState<"types" | "variants">(
+    lockedBlockType ? "variants" : "types"
+  );
 
   const selectedBlockType =
     blockTypeOptions.find((item) => item.id === selectedBlockTypeId) ||
@@ -689,13 +732,15 @@ function BlockTypeSelector({
       <div className="rounded-[24px] border border-[#e8ecf4] bg-white p-5">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <button
-              type="button"
-              onClick={() => setView("types")}
-              className="mb-3 text-[13px] font-semibold text-[#5b7cff]"
-            >
-              ← Back to block types
-            </button>
+          {!lockedBlockType ? (
+  <button
+    type="button"
+    onClick={() => setView("types")}
+    className="mb-3 text-[13px] font-semibold text-[#5b7cff]"
+  >
+    ← Back to block types
+  </button>
+) : null}
 
             <div className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#5b7cff]">
               Selected type
@@ -782,16 +827,7 @@ function BlockTypeSelector({
 
   return (
     <div className="rounded-[24px] border border-[#e8ecf4] bg-white p-5">
-      <div className="mb-5">
-        <h3 className="text-[18px] font-semibold tracking-[-0.03em] text-[#111827]">
-          Choose block type
-        </h3>
-        <p className="mt-1 text-[13px] leading-6 text-[#7d859d]">
-          Select the component structure you want the AI to generate.
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid grid-cols-3 gap-4">
         {blockTypeOptions.map((option) => {
           const selected = selectedBlockTypeId === option.id;
 
@@ -801,13 +837,13 @@ function BlockTypeSelector({
               type="button"
               onClick={() => selectType(option.id)}
               className={cx(
-                "min-h-[150px] rounded-[22px] border p-5 text-left transition-all",
+                "min-h-[132px] rounded-[22px] border p-4 text-left transition-all",
                 selected
                   ? "border-[#5b7cff] bg-[#f4f7ff] shadow-[0_12px_30px_rgba(63,95,240,0.10)]"
                   : "border-[#edf0f6] bg-[#fafbff] hover:border-[#d7def1] hover:bg-white"
               )}
             >
-              <div className="mb-4 flex items-start justify-between gap-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
                 <div className="text-[16px] font-semibold text-[#20263a]">
                   {option.name}
                 </div>
@@ -843,6 +879,19 @@ function NewBlockPageContent() {
 
   const currentUser = useMemo(() => ({ id: "user-1", role }), [role]);
   const canCreate = hasPermission(currentUser.role, "block.create");
+  const pageId = searchParams.get("pageId") || "";
+const sectionId = searchParams.get("sectionId") || "";
+const pageNameFromUrl = searchParams.get("pageName") || "";
+const sectionLabelFromUrl = searchParams.get("sectionLabel") || "";
+const sectionKeyFromUrl = searchParams.get("sectionKey") || "";
+const lockedComponentIdFromUrl = normaliseComponentId(
+  searchParams.get("lockedComponentId") ||
+    searchParams.get("defaultComponentId") ||
+    sectionKeyFromUrl ||
+    sectionLabelFromUrl
+);
+
+const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUrl);
 
   const [step, setStep] = useState<Step>("context");
 
@@ -850,8 +899,14 @@ function NewBlockPageContent() {
   const [location, setLocation] = useState("Food, Feed & Agriculture");
   const [contentLength, setContentLength] = useState("Standard");
 
-  const [selectedBlockTypeId, setSelectedBlockTypeId] = useState("why-choose-us");
-  const [selectedVariantId, setSelectedVariantId] = useState("why-cards");
+  const initialBlockType =
+  blockTypeOptions.find((item) => item.id === lockedComponentIdFromUrl) ||
+  blockTypeOptions[0];
+
+const [selectedBlockTypeId, setSelectedBlockTypeId] = useState(initialBlockType.id);
+const [selectedVariantId, setSelectedVariantId] = useState(
+  initialBlockType.variants[0]?.id || ""
+);
 
   const selectedBlockType = useMemo(
     () => blockTypeOptions.find((item) => item.id === selectedBlockTypeId) || blockTypeOptions[0],
@@ -862,6 +917,33 @@ function NewBlockPageContent() {
     () => selectedBlockType.variants.find((item) => item.id === selectedVariantId) || selectedBlockType.variants[0],
     [selectedBlockType, selectedVariantId]
   );
+
+  useEffect(() => {
+    if (!isPageBuilderMode) return;
+  
+    const lockedType = blockTypeOptions.find(
+      (item) => item.id === lockedComponentIdFromUrl
+    );
+  
+    if (!lockedType) return;
+  
+    setSelectedBlockTypeId(lockedType.id);
+    setSelectedVariantId((current) =>
+      lockedType.variants.some((variant) => variant.id === current)
+        ? current
+        : lockedType.variants[0]?.id || ""
+    );
+  
+    if (sectionLabelFromUrl) {
+      setBlockName(sectionLabelFromUrl);
+      setLocation(pageNameFromUrl || sectionLabelFromUrl);
+    }
+  }, [
+    isPageBuilderMode,
+    lockedComponentIdFromUrl,
+    sectionLabelFromUrl,
+    pageNameFromUrl,
+  ]);
 
   const [imageSourceMode, setImageSourceMode] = useState<ImageSourceMode>("none");
   const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
@@ -985,6 +1067,10 @@ ${prompt}
             category: selectedBlockType.name,
             componentId: selectedBlockType.id,
             variantId: selectedVariant.id,
+            pageId,
+            sectionId,
+            pageName: pageNameFromUrl,
+            sectionLabel: sectionLabelFromUrl,
             prompt: enrichedPrompt,
           }),
         });
@@ -1000,7 +1086,21 @@ ${prompt}
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            data: generateJson.blockData,
+            data: {
+              ...generateJson.blockData,
+          
+              componentType: selectedBlockType.id,
+              componentVariant: selectedVariant.id,
+              componentId: selectedBlockType.id,
+              variantId: selectedVariant.id,
+              componentName: selectedBlockType.name,
+              variantName: selectedVariant.name,
+          
+              pageId,
+              sectionId,
+              pageName: pageNameFromUrl,
+              sectionLabel: sectionLabelFromUrl,
+            },
             status: "draft",
           }),
         });
@@ -1023,7 +1123,15 @@ ${prompt}
       setProgressLabel("Block ready");
 
       window.setTimeout(() => {
-        router.push(`/blocks/${blockId}/review?role=${role}`);
+        router.push(
+          `/blocks/${blockId}/review?role=${role}${
+            isPageBuilderMode
+              ? `&returnTo=${encodeURIComponent(
+                  `/pages/${pageId}?role=${role}&sectionId=${sectionId}`
+                )}`
+              : ""
+          }`
+        );
       }, 250);
     } catch (e: any) {
       setError(e?.message || "Something went wrong");
@@ -1067,7 +1175,7 @@ ${prompt}
       <TopBar title="Create Block" stepLabel={`Step ${stepNumber} of 3`} />
 
       <div className="flex flex-1 items-center justify-center overflow-hidden px-8 py-6">
-  <div className="mx-auto flex max-h-[calc(100dvh-150px)] w-full max-w-[1180px] flex-col rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+      <div className="mx-auto flex max-h-[calc(100dvh-150px)] w-full max-w-[1040px] flex-col rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
           {step === "context" ? (
             <>
               <ProgressHeader
@@ -1102,13 +1210,22 @@ ${prompt}
               {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
               <div className="mt-5 flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => router.push(`/?role=${role}`)}
-                  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
-                >
-                  Cancel
-                </button>
+              <button
+  type="button"
+  onClick={() => {
+    const returnTo = searchParams.get("returnTo");
+
+    if (returnTo) {
+      router.push(returnTo);
+      return;
+    }
+
+    router.push(`/dashboard?role=${role}`);
+  }}
+  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
+>
+  Cancel
+</button>
 
                 <button
                   type="button"
@@ -1125,18 +1242,23 @@ ${prompt}
           {step === "block_type" ? (
             <>
               <ProgressHeader
-                currentStep={2}
-                title="Block Type & Variant"
-                subtitle="Choose the block structure and preferred layout variant before writing AI instructions."
-              />
+  currentStep={2}
+  title={isPageBuilderMode ? "Choose Variant" : "Block Type & Variant"}
+  subtitle={
+    isPageBuilderMode
+      ? `This block type has been set by the ${sectionLabelFromUrl || "selected"} section. Choose the layout variant you want to generate.`
+      : "Choose the type of section you want to generate, then select its preferred layout variant."
+  }
+/>
 
-<div className="min-h-0 flex-1 overflow-y-auto pr-2">
-  <BlockTypeSelector
-    selectedBlockTypeId={selectedBlockTypeId}
-    selectedVariantId={selectedVariantId}
-    onSelectBlockType={handleSelectBlockType}
-    onSelectVariant={setSelectedVariantId}
-  />
+<div className="relative min-h-0 flex-1 overflow-y-auto pr-2 max-h-[490px]">
+<BlockTypeSelector
+  selectedBlockTypeId={selectedBlockTypeId}
+  selectedVariantId={selectedVariantId}
+  onSelectBlockType={handleSelectBlockType}
+  onSelectVariant={setSelectedVariantId}
+  lockedBlockType={isPageBuilderMode}
+/>
 </div>
 
               {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
