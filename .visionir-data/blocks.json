@@ -4986,7 +4986,7 @@
     "id": "097b4620-1be9-447b-b570-fcbe08372302",
     "data": {
       "eyebrow": "FAQ",
-      "headline": "FAQ For Test Page",
+      "headline": "FAQ Test No.2",
       "subheading": "Introduce Test page After Block Updates with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
       "valuePoints": [
         {
@@ -5049,15 +5049,15 @@
     "submittedByUserId": "user-1",
     "approvedByUserId": "user-1",
     "publishedByUserId": null,
-    "submittedAt": "2026-04-28T15:34:50.640Z",
-    "approvedAt": "2026-04-28T15:34:59.161Z",
+    "submittedAt": "2026-04-29T13:14:58.820Z",
+    "approvedAt": "2026-04-29T13:15:06.737Z",
     "publishedAt": null,
     "changesRequestedByUserId": null,
     "changesRequestedAt": null,
     "changesRequestedNotes": null,
     "changesRequestedFields": null,
     "createdAt": "2026-04-28T15:34:39.312Z",
-    "updatedAt": "2026-04-28T15:34:59.161Z"
+    "updatedAt": "2026-04-29T13:15:06.737Z"
   },
   {
     "id": "5a3b1703-b286-4526-bbc6-963b9ae795f9",
@@ -5366,5 +5366,82 @@
     "changesRequestedFields": null,
     "createdAt": "2026-04-28T15:37:19.154Z",
     "updatedAt": "2026-04-28T15:37:46.395Z"
+  },
+  {
+    "id": "a440d17a-af51-4df5-95bd-4e4088d00abe",
+    "data": {
+      "eyebrow": "TESTIMONIALS",
+      "headline": "Testimonials For Test Page 4",
+      "subheading": "Introduce Website Development Service Page with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.",
+      "valuePoints": [
+        {
+          "title": "High-visibility structure",
+          "text": "A strong opening pattern designed for top-of-page placement and immediate clarity.",
+          "accent": "blue"
+        },
+        {
+          "title": "Enterprise-ready messaging",
+          "text": "Built to support trust, consistency and clearer decision-making across complex service offerings.",
+          "accent": "green"
+        },
+        {
+          "title": "Brand-governed output",
+          "text": "Structured to stay aligned with approved language, layouts and design tokens.",
+          "accent": "orange"
+        },
+        {
+          "title": "Reusable across templates",
+          "text": "Designed to scale across regions, services and page types without fragmenting the experience.",
+          "accent": "purple"
+        }
+      ],
+      "design": {
+        "theme": "enterprise",
+        "layout": "split",
+        "cardStyle": "soft",
+        "headingAlign": "left",
+        "borderRadius": "xl",
+        "shadow": "soft",
+        "background": "#f5f7fb",
+        "surface": "#ffffff",
+        "headingColor": "#0f172a",
+        "textColor": "#475569",
+        "eyebrowColor": "#1457d1",
+        "cardColors": {
+          "blue": "#3b82f6",
+          "green": "#22c55e",
+          "orange": "#f59e0b",
+          "purple": "#8b5cf6"
+        }
+      },
+      "componentType": "testimonials",
+      "componentVariant": "testimonials-carousel",
+      "pageId": "d6ac8455-78e7-4f47-b06d-0e9351529e93",
+      "pageName": "Website Development Service Page",
+      "sectionId": "1445a8eb-c24f-4107-adf3-298dc161f601",
+      "sectionLabel": "Testimonials",
+      "generatedFromPrompt": "Block Name: Testimonials For Test Page No.2\nBlock Type: Testimonials\nBlock Type ID: testimonials\nSelected Variant: Carousel\nSelected Variant ID: testimonials-carousel\nLocation / Business Area: Website Development Service Page\nContent Length: Standard\nImage Source: No Image\n\nGeneration Request:\nCreate a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone. Use a testimonial from a company called mediascout and one from a company called Netbuilder",
+      "contentLength": "Standard",
+      "imageSourceMode": "none",
+      "extraContent": {
+        "generatedBlockLabel": "Testimonials For Test Page No.2",
+        "selectedVariant": "left-content-right-image"
+      }
+    },
+    "status": "approved",
+    "createdByUserId": "user-1",
+    "updatedByUserId": "user-1",
+    "submittedByUserId": "user-1",
+    "approvedByUserId": "user-1",
+    "publishedByUserId": null,
+    "submittedAt": "2026-04-29T16:27:15.799Z",
+    "approvedAt": "2026-04-29T16:27:23.656Z",
+    "publishedAt": null,
+    "changesRequestedByUserId": null,
+    "changesRequestedAt": null,
+    "changesRequestedNotes": null,
+    "changesRequestedFields": null,
+    "createdAt": "2026-04-29T13:15:41.988Z",
+    "updatedAt": "2026-04-29T16:27:23.656Z"
   }
 ]

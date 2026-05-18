@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ComponentSchema } from "@/lib/component-schema";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
@@ -175,35 +175,27 @@ function normaliseComponentId(value: string) {
   const aliases: Record<string, string> = {
     testimonial: "testimonials",
     testimonials: "testimonials",
-
     stat: "stats",
     stats: "stats",
     statistics: "stats",
     metrics: "stats",
-
     logo: "logos",
     logos: "logos",
     "logo-cloud": "logos",
-
     feature: "features",
     features: "features",
     benefit: "features",
     benefits: "features",
-
     text: "rich-text",
     "text-section": "rich-text",
     "rich-text": "rich-text",
-
     article: "articles",
     articles: "articles",
     blog: "articles",
-
     process: "steps",
     steps: "steps",
-
     cta: "cta",
     "call-to-action": "cta",
-
     hero: "hero",
     faq: "faq",
     pricing: "pricing",
@@ -230,6 +222,10 @@ function getBlockName(block: ApiBlockRecord) {
   return `Block ${block.id.slice(0, 8)}`;
 }
 
+function getComponentName(id: string, componentOptions: ComponentSchema[]) {
+  return componentOptions.find((component) => component.id === id)?.name ?? id;
+}
+
 function StatusPill({ status }: { status: PageStatus }) {
   return (
     <span
@@ -243,38 +239,13 @@ function StatusPill({ status }: { status: PageStatus }) {
   );
 }
 
-function OverviewCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function OverviewCard({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[22px] border border-slate-200 bg-white px-4 py-4 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
         {label}
       </p>
       <p className="mt-2 text-sm font-medium text-slate-900">{value}</p>
-    </div>
-  );
-}
-
-function MetaRow({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-        {label}
-      </p>
-      <p className="max-w-[62%] break-words text-right text-sm leading-6 text-slate-700">
-        {value}
-      </p>
     </div>
   );
 }
@@ -344,12 +315,7 @@ function TabButton({
           : "border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-1 hover:scale-[1.02] hover:border-[#cfd8f6] hover:bg-[#f8faff] hover:text-slate-900 hover:shadow-[0_14px_30px_rgba(15,23,42,0.10)]"
       )}
     >
-      <span
-        className={cx(
-          "transition-transform duration-200",
-          !active && "group-hover:scale-110"
-        )}
-      >
+      <span className={cx("transition-transform duration-200", !active && "group-hover:scale-110")}>
         {icon}
       </span>
       <span>{label}</span>
@@ -357,11 +323,7 @@ function TabButton({
   );
 }
 
-function FieldLabel({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function FieldLabel({ children }: { children: React.ReactNode }) {
   return (
     <label className="block">
       <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -403,12 +365,7 @@ function Badge({
             : "bg-slate-100 text-slate-600";
 
   return (
-    <span
-      className={cx(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",
-        styles
-      )}
-    >
+    <span className={cx("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", styles)}>
       {children}
     </span>
   );
@@ -489,11 +446,9 @@ function AttachedBlockCard({
     <div className="rounded-[22px] border border-slate-200 bg-white p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <p className="truncate text-sm font-semibold text-slate-900">
-              {getBlockName(block)}
-            </p>
-          </div>
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {getBlockName(block)}
+          </p>
           <p className="mt-1 truncate text-xs text-slate-500">
             {getBlockComponentType(block) || "Unknown component"} · Updated{" "}
             {formatDate(block.updatedAt)}
@@ -706,6 +661,7 @@ export default function PageDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [blocksLoading, setBlocksLoading] = useState(false);
+  const [componentOptionsLoading, setComponentOptionsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isActing, setIsActing] = useState(false);
   const [attachLoadingBlockId, setAttachLoadingBlockId] = useState<string | null>(null);
@@ -722,6 +678,7 @@ export default function PageDetailPage() {
   const [pageSlug, setPageSlug] = useState("");
   const [pageStatus, setPageStatus] = useState<PageStatus>("draft");
   const [allBlocks, setAllBlocks] = useState<ApiBlockRecord[]>([]);
+  const [componentOptions, setComponentOptions] = useState<ComponentSchema[]>([]);
 
   useEffect(() => {
     async function loadPage() {
@@ -783,45 +740,69 @@ export default function PageDetailPage() {
     void loadBlocks();
   }, [role]);
 
+  useEffect(() => {
+    async function loadComponentOptions() {
+      try {
+        setComponentOptionsLoading(true);
+
+        const res = await fetch("/api/component-registry", {
+          cache: "no-store",
+        });
+
+        const json = await res.json().catch(() => ({}));
+
+        const components = Array.isArray(json?.components)
+          ? (json.components as ComponentSchema[])
+          : [];
+
+        setComponentOptions(components);
+      } catch (error) {
+        console.error("Failed to load component registry:", error);
+        setComponentOptions([]);
+      } finally {
+        setComponentOptionsLoading(false);
+      }
+    }
+
+    void loadComponentOptions();
+  }, []);
+
   const sortedSections = useMemo(() => {
     return (page?.sections ?? []).slice().sort((a, b) => a.order - b.order);
   }, [page]);
 
   const sectionIdFromUrl = searchParams.get("sectionId") || "";
   const tabFromUrl = searchParams.get("tab") || "";
-  const sectionIdsKey = sortedSections
-    .map((section) => section.sectionId)
-    .join("|");
-  
-    useEffect(() => {
-      if (!sortedSections.length) {
-        setSelectedSectionId(null);
-        return;
-      }
-    
-      if (!hasAppliedTabFromUrlRef.current && tabFromUrl === "sections") {
-        hasAppliedTabFromUrlRef.current = true;
-        setActiveTab("sections");
-      }
-    
-      if (
-        !hasAppliedSectionFromUrlRef.current &&
-        sectionIdFromUrl &&
-        sortedSections.some((section) => section.sectionId === sectionIdFromUrl)
-      ) {
-        hasAppliedSectionFromUrlRef.current = true;
-        setSelectedSectionId(sectionIdFromUrl);
-        return;
-      }
-    
-      setSelectedSectionId((current) => {
-        const exists = sortedSections.some(
-          (section) => section.sectionId === current
-        );
-    
-        return exists ? current : sortedSections[0]?.sectionId ?? null;
-      });
+
+  useEffect(() => {
+    if (!sortedSections.length) {
+      setSelectedSectionId(null);
+      return;
+    }
+
+    if (!hasAppliedTabFromUrlRef.current && tabFromUrl === "sections") {
+      hasAppliedTabFromUrlRef.current = true;
+      setActiveTab("sections");
+    }
+
+    if (
+      !hasAppliedSectionFromUrlRef.current &&
+      sectionIdFromUrl &&
+      sortedSections.some((section) => section.sectionId === sectionIdFromUrl)
+    ) {
+      hasAppliedSectionFromUrlRef.current = true;
+      setSelectedSectionId(sectionIdFromUrl);
+      return;
+    }
+
+    setSelectedSectionId((current) => {
+      const exists = sortedSections.some(
+        (section) => section.sectionId === current
+      );
+
+      return exists ? current : sortedSections[0]?.sectionId ?? null;
     });
+  }, [sortedSections, sectionIdFromUrl, tabFromUrl]);
 
   useEffect(() => {
     setExistingBlockQuery("");
@@ -841,27 +822,29 @@ export default function PageDetailPage() {
     if (!selectedSection) return [];
 
     const allowed = new Set(
-      selectedSection.allowedComponentIds.map((id) => normaliseComponentId(id))
+      selectedSection.allowedComponentIds.map((componentId) =>
+        normaliseComponentId(componentId)
+      )
     );
 
     return allBlocks.filter((block) => {
       const componentType = normaliseComponentId(getBlockComponentType(block));
       const status = block.status || "";
-    
+
       const isReusable =
         status === "approved" ||
         status === "published" ||
         status === "completed" ||
         status === "deployed";
-    
+
       const blockSectionId =
         typeof block.data?.sectionId === "string" ? block.data.sectionId : "";
-    
+
       const wasGeneratedForThisSection =
         blockSectionId === selectedSection.sectionId;
-    
+
       const isAllowedByType = componentType ? allowed.has(componentType) : false;
-    
+
       return isReusable && (isAllowedByType || wasGeneratedForThisSection);
     });
   }, [selectedSection, allBlocks]);
@@ -1090,14 +1073,14 @@ export default function PageDetailPage() {
 
   function handleGenerateBlock() {
     if (!selectedSection || !page) return;
-  
+
     const allowed = selectedSection.allowedComponentIds || [];
     const fallbackComponentId =
       selectedSection.defaultComponentId ||
       allowed[0] ||
       selectedSection.key ||
       selectedSection.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  
+
     const params = new URLSearchParams({
       role,
       pageId: page.id,
@@ -1109,11 +1092,11 @@ export default function PageDetailPage() {
       lockedComponentId: fallbackComponentId,
       returnTo: `/pages/${page.id}?role=${role}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`,
     });
-  
+
     if (selectedSection.defaultComponentId) {
       params.set("defaultComponentId", selectedSection.defaultComponentId);
     }
-  
+
     router.push(`/blocks/new?${params.toString()}`);
   }
 
@@ -1133,7 +1116,6 @@ export default function PageDetailPage() {
     );
   }
 
-  const requiredSections = sortedSections.filter((section) => section.required);
   const completedSections = sortedSections.filter((section) => section.completed);
   const incompleteSections = sortedSections.filter((section) => !section.completed);
 
@@ -1198,9 +1180,9 @@ export default function PageDetailPage() {
                   {isSaving ? "Saving..." : "Save Page"}
                 </button>
 
-                {(pageStatus === "draft" ||
-                  pageStatus === "changes_requested" ||
-                  pageStatus === "in_progress") ? (
+                {pageStatus === "draft" ||
+                pageStatus === "changes_requested" ||
+                pageStatus === "in_progress" ? (
                   <button
                     type="button"
                     onClick={() => handleWorkflowAction("submit")}
@@ -1237,16 +1219,16 @@ export default function PageDetailPage() {
                   </>
                 ) : null}
 
-{(pageStatus === "approved" || pageStatus === "published") ? (
-  <button
-    type="button"
-    onClick={() => router.push(`/pages/${page.id}/publish?role=${role}`)}
-    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
-  >
-    <CheckCircle2 className="h-4 w-4" />
-    Publish Page
-  </button>
-) : null}
+                {pageStatus === "approved" || pageStatus === "published" ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/pages/${page.id}/publish?role=${role}`)}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                    Publish Page
+                  </button>
+                ) : null}
 
                 <button
                   type="button"
@@ -1262,47 +1244,44 @@ export default function PageDetailPage() {
         </section>
 
         <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
-        <div className="grid flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-  <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
-    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-      Template
-    </p>
-    <p className="mt-2 truncate text-sm font-semibold text-slate-900">
-      {page.templateName}
-    </p>
-  </div>
+          <div className="grid flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Template
+              </p>
+              <p className="mt-2 truncate text-sm font-semibold text-slate-900">
+                {page.templateName}
+              </p>
+            </div>
 
-  <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-          Page Progress
-        </p>
-        <p className="mt-2 text-sm font-semibold text-slate-900">
-          {completedSections.length} / {sortedSections.length} sections complete
-        </p>
-      </div>
+            <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    Page Progress
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                    {completedSections.length} / {sortedSections.length} sections complete
+                  </p>
+                </div>
 
-      <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
-        {Math.round(
-          (completedSections.length / Math.max(sortedSections.length, 1)) * 100
-        )}
-        %
-      </span>
-    </div>
+                <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {Math.round((completedSections.length / Math.max(sortedSections.length, 1)) * 100)}%
+                </span>
+              </div>
 
-    <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
-      <div
-        className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
-        style={{
-          width: `${Math.round(
-            (completedSections.length / Math.max(sortedSections.length, 1)) * 100
-          )}%`,
-        }}
-      />
-    </div>
-  </div>
-</div>
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                <div
+                  className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
+                  style={{
+                    width: `${Math.round(
+                      (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+                    )}%`,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
 
           <div className="flex flex-wrap items-stretch gap-3 xl:ml-4 xl:self-start">
             <TabButton
@@ -1327,120 +1306,117 @@ export default function PageDetailPage() {
         </div>
 
         {activeTab === "overview" ? (
-  <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-    <main className="min-w-0 space-y-6">
-      <Panel
-        title="Page Details"
-        subtitle="Manage the page name, URL slug and key publishing information."
-        icon={<Pencil className="h-5 w-5" />}
-      >
-        <div className="grid gap-5 lg:grid-cols-2">
-          <div>
-            <FieldLabel>Page Name</FieldLabel>
-            <TextInput
-              value={pageName}
-              onChange={(e) => setPageName(e.target.value)}
-              placeholder="Service Page"
-            />
+          <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <main className="min-w-0 space-y-6">
+              <Panel
+                title="Page Details"
+                subtitle="Manage the page name, URL slug and key publishing information."
+                icon={<Pencil className="h-5 w-5" />}
+              >
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <div>
+                    <FieldLabel>Page Name</FieldLabel>
+                    <TextInput
+                      value={pageName}
+                      onChange={(e) => setPageName(e.target.value)}
+                      placeholder="Service Page"
+                    />
+                  </div>
+
+                  <div>
+                    <FieldLabel>Slug</FieldLabel>
+                    <TextInput
+                      value={pageSlug}
+                      onChange={(e) => setPageSlug(e.target.value)}
+                      placeholder="service-page"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  <OverviewCard label="Status" value={getStatusLabel(pageStatus)} />
+                  <OverviewCard label="Template" value={page.templateName} />
+                  <OverviewCard label="Last Updated" value={formatDateTime(page.updatedAt)} />
+                </div>
+              </Panel>
+
+              <Panel
+                title="Page Readiness"
+                subtitle="Track whether the governed page structure is ready for approval."
+                icon={<CheckCircle2 className="h-5 w-5" />}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {completedSections.length} of {sortedSections.length} sections complete
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {incompleteSections.length === 0
+                        ? "All required sections are complete."
+                        : `${incompleteSections.length} section${
+                            incompleteSections.length === 1 ? "" : "s"
+                          } still need content.`}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                    {Math.round((completedSections.length / Math.max(sortedSections.length, 1)) * 100)}%
+                  </span>
+                </div>
+
+                <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
+                    style={{
+                      width: `${Math.round(
+                        (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+                      )}%`,
+                    }}
+                  />
+                </div>
+              </Panel>
+            </main>
+
+            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+              <Panel
+                title="Workflow"
+                subtitle="Current approval and publishing position."
+                icon={<Sparkles className="h-5 w-5" />}
+              >
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <StatusPill status={pageStatus} />
+                  <p className="mt-4 text-sm leading-6 text-slate-700">
+                    {workflowSummary}
+                  </p>
+                </div>
+              </Panel>
+
+              <Panel
+                title="Template"
+                subtitle="The governed structure this page follows."
+                icon={<LayoutTemplate className="h-5 w-5" />}
+              >
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                  <p className="text-sm font-semibold text-slate-900">
+                    {page.templateName}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Version {page.templateVersion}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
+                    className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <LayoutTemplate className="h-4 w-4" />
+                    View Template
+                  </button>
+                </div>
+              </Panel>
+            </aside>
           </div>
-
-          <div>
-            <FieldLabel>Slug</FieldLabel>
-            <TextInput
-              value={pageSlug}
-              onChange={(e) => setPageSlug(e.target.value)}
-              placeholder="service-page"
-            />
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          <OverviewCard label="Status" value={getStatusLabel(pageStatus)} />
-          <OverviewCard label="Template" value={page.templateName} />
-          <OverviewCard label="Last Updated" value={formatDateTime(page.updatedAt)} />
-        </div>
-      </Panel>
-
-      <Panel
-        title="Page Readiness"
-        subtitle="Track whether the governed page structure is ready for approval."
-        icon={<CheckCircle2 className="h-5 w-5" />}
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-slate-900">
-              {completedSections.length} of {sortedSections.length} sections complete
-            </p>
-            <p className="mt-1 text-sm text-slate-500">
-              {incompleteSections.length === 0
-                ? "All required sections are complete."
-                : `${incompleteSections.length} section${
-                    incompleteSections.length === 1 ? "" : "s"
-                  } still need content.`}
-            </p>
-          </div>
-
-          <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
-            {Math.round(
-              (completedSections.length / Math.max(sortedSections.length, 1)) * 100
-            )}
-            %
-          </span>
-        </div>
-
-        <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
-            style={{
-              width: `${Math.round(
-                (completedSections.length / Math.max(sortedSections.length, 1)) * 100
-              )}%`,
-            }}
-          />
-        </div>
-      </Panel>
-    </main>
-
-    <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
-      <Panel
-        title="Workflow"
-        subtitle="Current approval and publishing position."
-        icon={<Sparkles className="h-5 w-5" />}
-      >
-        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-          <StatusPill status={pageStatus} />
-          <p className="mt-4 text-sm leading-6 text-slate-700">
-            {workflowSummary}
-          </p>
-        </div>
-      </Panel>
-
-      <Panel
-        title="Template"
-        subtitle="The governed structure this page follows."
-        icon={<LayoutTemplate className="h-5 w-5" />}
-      >
-        <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-          <p className="text-sm font-semibold text-slate-900">
-            {page.templateName}
-          </p>
-          <p className="mt-1 text-sm text-slate-500">
-            Version {page.templateVersion}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
-            className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-          >
-            <LayoutTemplate className="h-4 w-4" />
-            View Template
-          </button>
-        </div>
-      </Panel>
-    </aside>
-  </div>
-) : null}
+        ) : null}
 
         {activeTab === "sections" ? (
           <div className="mt-4 grid gap-6 xl:grid-cols-[300px_minmax(0,1fr)]">
@@ -1496,35 +1472,54 @@ export default function PageDetailPage() {
               ) : (
                 <>
                   <Panel
-  title={selectedSection.label}
-  subtitle="Build this section by generating a governed block or attaching an approved compatible block."
-  icon={<Blocks className="h-5 w-5" />}
->
-  <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
-    <div className="flex flex-wrap items-center gap-2">
-      <Badge tone={selectedSection.required ? "emerald" : "slate"}>
-        {selectedSection.required ? "Required" : "Optional"}
-      </Badge>
+                    title={selectedSection.label}
+                    subtitle="Build this section by generating a governed block or attaching an approved compatible block."
+                    icon={<Blocks className="h-5 w-5" />}
+                  >
+                    <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge tone={selectedSection.required ? "emerald" : "slate"}>
+                          {selectedSection.required ? "Required" : "Optional"}
+                        </Badge>
 
-      <Badge tone={selectedSection.completed ? "emerald" : "amber"}>
-        {selectedSection.completed ? "Complete" : "Needs content"}
-      </Badge>
+                        <Badge tone={selectedSection.completed ? "emerald" : "amber"}>
+                          {selectedSection.completed ? "Complete" : "Needs content"}
+                        </Badge>
 
-      <Badge tone="blue">
-        {selectedSection.blockIds.length}/{selectedSection.maxInstances} blocks
-      </Badge>
-    </div>
+                        <Badge tone="blue">
+                          {selectedSection.blockIds.length}/{selectedSection.maxInstances} blocks
+                        </Badge>
+                      </div>
 
-    <button
-      type="button"
-      onClick={handleGenerateBlock}
-      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
-    >
-      <Sparkles className="h-4 w-4" />
-      Generate Block
-    </button>
-  </div>
-</Panel>
+                      <button
+                        type="button"
+                        onClick={handleGenerateBlock}
+                        className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        Generate Block
+                      </button>
+                    </div>
+
+                    <div className="mt-5 rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                        Allowed block types
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {selectedSection.allowedComponentIds.length > 0 ? (
+                          selectedSection.allowedComponentIds.map((componentId) => (
+                            <Badge key={componentId} tone="blue">
+                              {getComponentName(componentId, componentOptions)}
+                            </Badge>
+                          ))
+                        ) : (
+                          <span className="text-sm text-slate-500">
+                            No block types have been assigned to this section.
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </Panel>
 
                   <Panel
                     title="Attached blocks"
@@ -1598,7 +1593,7 @@ export default function PageDetailPage() {
                       </div>
                     </div>
 
-                    {blocksLoading ? (
+                    {blocksLoading || componentOptionsLoading ? (
                       <div className="rounded-[22px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center text-sm text-slate-500">
                         Loading blocks…
                       </div>
@@ -1622,7 +1617,11 @@ export default function PageDetailPage() {
                         <p className="mt-1 text-sm text-slate-500">
                           This section currently allows{" "}
                           {selectedSection.allowedComponentIds.length > 0
-                            ? selectedSection.allowedComponentIds.join(", ")
+                            ? selectedSection.allowedComponentIds
+                                .map((componentId) =>
+                                  getComponentName(componentId, componentOptions)
+                                )
+                                .join(", ")
                             : "no block types"}
                           . Generate a new governed block for this section, or broaden the
                           allowed block types in the template if needed.

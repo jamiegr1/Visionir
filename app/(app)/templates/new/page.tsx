@@ -18,7 +18,7 @@ import {
   Trash2,
   Wand2,
 } from "lucide-react";
-import { COMPONENT_OPTIONS } from "@/lib/component-options";
+import type { ComponentSchema } from "@/lib/component-schema";
 
 type Role = "creator" | "approver" | "admin";
 
@@ -307,8 +307,24 @@ function slugify(value: string) {
     .replace(/-{2,}/g, "-");
 }
 
-function getComponentName(id: string) {
-  return COMPONENT_OPTIONS.find((component) => component.id === id)?.name ?? id;
+type ComponentOption = {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+};
+
+function mapComponentToOption(component: ComponentSchema): ComponentOption {
+  return {
+    id: component.id,
+    name: component.name,
+    category: component.category,
+    description: component.description,
+  };
+}
+
+function getComponentName(id: string, componentOptions: ComponentOption[]) {
+  return componentOptions.find((component) => component.id === id)?.name ?? id;
 }
 
 function createEmptySection(index: number): SectionForm {
@@ -577,6 +593,44 @@ export default function NewTemplatePage() {
   const [defaultAiInstruction, setDefaultAiInstruction] = useState("");
 
   const [sections, setSections] = useState<SectionForm[]>([]);
+
+  const [componentOptions, setComponentOptions] = useState<ComponentOption[]>([]);
+const [loadingComponents, setLoadingComponents] = useState(true);
+
+useEffect(() => {
+  let active = true;
+
+  async function loadComponents() {
+    try {
+      setLoadingComponents(true);
+
+      const res = await fetch("/api/component-registry");
+      const json = await res.json().catch(() => ({}));
+
+      if (!active) return;
+
+      const components = Array.isArray(json?.components)
+        ? (json.components as ComponentSchema[])
+        : [];
+
+      setComponentOptions(components.map(mapComponentToOption));
+    } catch {
+      if (active) {
+        setComponentOptions([]);
+      }
+    } finally {
+      if (active) {
+        setLoadingComponents(false);
+      }
+    }
+  }
+
+  loadComponents();
+
+  return () => {
+    active = false;
+  };
+}, []);
 
   useEffect(() => {
     const preset = TEMPLATE_PRESETS.find((item) => item.id === selectedPresetId);
@@ -1519,10 +1573,19 @@ export default function NewTemplatePage() {
                       </FieldLabel>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                        {COMPONENT_OPTIONS.map((component) => {
-                          const checked = activeSection.allowedComponentIds.includes(component.id);
+                       {loadingComponents ? (
+  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+    Loading approved block types…
+  </div>
+) : componentOptions.length === 0 ? (
+  <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-700">
+    No approved block types are available yet. Approve a block type first, then return to this template.
+  </div>
+) : (
+  componentOptions.map((component) => {
+    const checked = activeSection.allowedComponentIds.includes(component.id);
 
-                          return (
+    return (
                             <label
                               key={component.id}
                               className="flex cursor-pointer items-start gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"
@@ -1552,8 +1615,9 @@ export default function NewTemplatePage() {
                                 </p>
                               </div>
                             </label>
-                          );
-                        })}
+                            );
+                          })
+                        )}
                       </div>
                     </div>
 
@@ -1568,13 +1632,15 @@ export default function NewTemplatePage() {
                         }
                       >
                         <option value="">Select default component</option>
-                        {COMPONENT_OPTIONS.filter((component) =>
-                          activeSection.allowedComponentIds.includes(component.id)
-                        ).map((component) => (
-                          <option key={component.id} value={component.id}>
-                            {component.name}
-                          </option>
-                        ))}
+                        {componentOptions
+  .filter((component) =>
+    activeSection.allowedComponentIds.includes(component.id)
+  )
+  .map((component) => (
+    <option key={component.id} value={component.id}>
+      {component.name}
+    </option>
+  ))}
                       </Select>
                     </div>
 

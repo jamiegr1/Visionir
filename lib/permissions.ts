@@ -11,6 +11,11 @@ export type Permission =
   | "block.approve"
   | "block.request_changes"
   | "block.publish"
+  | "block_type.create"
+  | "block_type.view"
+  | "block_type.submit"
+  | "block_type.approve"
+  | "block_type.request_changes"
   | "template.create"
   | "template.edit"
   | "template.view"
@@ -42,6 +47,9 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "page.edit.own",
     "page.view.own",
     "page.submit",
+    "block_type.create",
+"block_type.view",
+"block_type.submit",
   ],
   approver: [
     "block.create",
@@ -63,6 +71,11 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "page.approve",
     "page.request_changes",
     "page.publish",
+    "block_type.create",
+"block_type.view",
+"block_type.submit",
+"block_type.approve",
+"block_type.request_changes",
   ],
   admin: [
     "block.create",
@@ -94,6 +107,11 @@ export const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     "user.manage",
     "role.manage",
     "settings.manage",
+    "block_type.create",
+"block_type.view",
+"block_type.submit",
+"block_type.approve",
+"block_type.request_changes",
   ],
 };
 
@@ -253,11 +271,54 @@ export function canPublishPage(user: UserLike, page: PageLike) {
   );
 }
 
+export type BlockTypeStatus =
+  | "draft"
+  | "pending_approval"
+  | "changes_requested"
+  | "approved"
+  | "archived";
+
+export type BlockTypeLike = {
+  createdByUserId: string;
+  status: BlockTypeStatus;
+};
+
+export function canCreateBlockType(user: UserLike) {
+  return hasPermission(user.role, "block_type.create");
+}
+
+export function canSubmitBlockType(user: UserLike, blockType: BlockTypeLike) {
+  return (
+    hasPermission(user.role, "block_type.submit") &&
+    blockType.createdByUserId === user.id &&
+    ["draft", "changes_requested"].includes(blockType.status)
+  );
+}
+
+export function canApproveBlockType(user: UserLike, blockType: BlockTypeLike) {
+  return (
+    hasPermission(user.role, "block_type.approve") &&
+    blockType.status === "pending_approval"
+  );
+}
+
+export function canRequestChangesBlockType(
+  user: UserLike,
+  blockType: BlockTypeLike
+) {
+  return (
+    hasPermission(user.role, "block_type.request_changes") &&
+    blockType.status === "pending_approval"
+  );
+}
+
 export function canAccessApprovals(user: UserLike) {
   return (
     hasPermission(user.role, "block.approve") ||
     hasPermission(user.role, "block.request_changes") ||
     hasPermission(user.role, "page.approve") ||
-    hasPermission(user.role, "page.request_changes")
+    hasPermission(user.role, "page.request_changes") ||
+    hasPermission(user.role, "block_type.approve") ||
+    hasPermission(user.role, "block_type.request_changes")
   );
 }

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import Generating from "./_components/Generating";
 import type { BlockData } from "@/lib/types";
+import type { ComponentSchema } from "@/lib/component-schema";
 import { hasPermission, type Role } from "@/lib/permissions";
 
 type Step = "context" | "block_type" | "instructions" | "generating";
@@ -31,227 +32,25 @@ type BlockTypeOption = {
   variants: BlockVariant[];
 };
 
-const blockTypeOptions: BlockTypeOption[] = [
-  // HERO
-  {
-    id: "hero",
-    name: "Hero",
-    category: "Conversion",
-    description: "Primary above-the-fold section introducing the page.",
-    bestFor: "Landing pages, homepages, campaigns",
-    variants: [
-      { id: "hero-split", name: "Split Layout", description: "Text left, image right." },
-      { id: "hero-centered", name: "Centered", description: "Headline and CTA centered." },
-      { id: "hero-video", name: "With Video", description: "Hero with embedded video." },
-      { id: "hero-minimal", name: "Minimal", description: "Clean, text-focused hero." },
-    ],
-  },
-
-  // FEATURES / WHY
-  {
-    id: "features",
-    name: "Features / Benefits",
-    category: "Content",
-    description: "Highlights key benefits or product features.",
-    bestFor: "Product pages, services, SaaS",
-    variants: [
-      { id: "features-grid", name: "Grid", description: "Multiple feature cards." },
-      { id: "features-split", name: "Split + Image", description: "Features with supporting image." },
-      { id: "features-list", name: "Stacked List", description: "Vertical list layout." },
-      { id: "features-icons", name: "Icon Features", description: "Icon-led feature blocks." },
-    ],
-  },
-
-  // CTA
-  {
-    id: "cta",
-    name: "Call To Action",
-    category: "Conversion",
-    description: "Encourages the user to take action.",
-    bestFor: "Lead gen, bookings, demos",
-    variants: [
-      { id: "cta-banner", name: "Full Width Banner", description: "Large horizontal CTA." },
-      { id: "cta-card", name: "Card", description: "Contained CTA box." },
-      { id: "cta-split", name: "Split Layout", description: "Text + action side by side." },
-      { id: "cta-minimal", name: "Minimal", description: "Simple inline CTA." },
-    ],
-  },
-
-  // FAQ
-  {
-    id: "faq",
-    name: "FAQ",
-    category: "Support",
-    description: "Answers common customer questions.",
-    bestFor: "Service pages, pricing pages",
-    variants: [
-      { id: "faq-accordion", name: "Accordion", description: "Expandable questions." },
-      { id: "faq-two-column", name: "Two Column", description: "Compact layout." },
-      { id: "faq-support", name: "Support CTA", description: "FAQs + contact prompt." },
-    ],
-  },
-
-  // TESTIMONIALS
-  {
-    id: "testimonials",
-    name: "Testimonials",
-    category: "Trust",
-    description: "Builds credibility using customer proof.",
-    bestFor: "Landing pages, case studies",
-    variants: [
-      { id: "testimonials-carousel", name: "Carousel", description: "Sliding testimonials." },
-      { id: "testimonials-grid", name: "Grid", description: "Multiple quotes." },
-      { id: "testimonials-featured", name: "Featured", description: "Single large testimonial." },
-    ],
-  },
-
-  // LOGO CLOUD
-  {
-    id: "logos",
-    name: "Logo Cloud",
-    category: "Trust",
-    description: "Displays brands or clients.",
-    bestFor: "Enterprise credibility",
-    variants: [
-      { id: "logos-grid", name: "Grid", description: "Simple logo grid." },
-      { id: "logos-scroll", name: "Scrolling", description: "Auto-moving logos." },
-      { id: "logos-highlight", name: "Highlighted", description: "Featured logos." },
-    ],
-  },
-
-  // STATS
-  {
-    id: "stats",
-    name: "Statistics / Metrics",
-    category: "Proof",
-    description: "Highlights key numbers.",
-    bestFor: "Enterprise proof, authority",
-    variants: [
-      { id: "stats-row", name: "Horizontal Row", description: "Inline stats." },
-      { id: "stats-cards", name: "Cards", description: "Individual stat cards." },
-      { id: "stats-highlight", name: "Highlight", description: "One big stat focus." },
-    ],
-  },
-
-  // PRICING
-  {
-    id: "pricing",
-    name: "Pricing",
-    category: "Conversion",
-    description: "Displays pricing tiers or plans.",
-    bestFor: "SaaS, services",
-    variants: [
-      { id: "pricing-cards", name: "Pricing Cards", description: "Standard tier layout." },
-      { id: "pricing-comparison", name: "Comparison Table", description: "Side-by-side comparison." },
-      { id: "pricing-minimal", name: "Minimal", description: "Simple pricing rows." },
-    ],
-  },
-
-  // TEAM
-  {
-    id: "team",
-    name: "Team",
-    category: "Content",
-    description: "Showcases team members.",
-    bestFor: "About pages",
-    variants: [
-      { id: "team-grid", name: "Grid", description: "Multiple team cards." },
-      { id: "team-featured", name: "Featured Member", description: "Highlight key person." },
-    ],
-  },
-
-  // CONTENT / TEXT
-  {
-    id: "rich-text",
-    name: "Text Section",
-    category: "Content",
-    description: "General purpose text content block.",
-    bestFor: "Articles, descriptions",
-    variants: [
-      { id: "text-single", name: "Single Column", description: "Standard text." },
-      { id: "text-two-col", name: "Two Column", description: "Split content." },
-    ],
-  },
-
-  // MEDIA
-  {
-    id: "media",
-    name: "Image / Media",
-    category: "Media",
-    description: "Displays images or video.",
-    bestFor: "Visual storytelling",
-    variants: [
-      { id: "media-full", name: "Full Width", description: "Edge-to-edge media." },
-      { id: "media-gallery", name: "Gallery", description: "Multiple images." },
-      { id: "media-split", name: "Split Media", description: "Media + text." },
-    ],
-  },
-
-  // FORM
-  {
-    id: "form",
-    name: "Form",
-    category: "Conversion",
-    description: "Collects user input.",
-    bestFor: "Lead generation",
-    variants: [
-      { id: "form-simple", name: "Simple Form", description: "Basic fields." },
-      { id: "form-split", name: "Split Layout", description: "Form + content." },
-    ],
-  },
-
-  // BLOG / ARTICLES
-  {
-    id: "articles",
-    name: "Articles / Blog",
-    category: "Content",
-    description: "Displays posts or resources.",
-    bestFor: "Content marketing",
-    variants: [
-      { id: "articles-grid", name: "Grid", description: "Card layout." },
-      { id: "articles-list", name: "List", description: "Vertical list." },
-    ],
-  },
-
-  // STEPS / PROCESS
-  {
-    id: "steps",
-    name: "Process / Steps",
-    category: "Content",
-    description: "Explains a process or journey.",
-    bestFor: "How it works",
-    variants: [
-      { id: "steps-horizontal", name: "Horizontal Steps", description: "Step-by-step row." },
-      { id: "steps-vertical", name: "Vertical Steps", description: "Stacked steps." },
-    ],
-  },
-
-  // TIMELINE
-  {
-    id: "timeline",
-    name: "Timeline",
-    category: "Content",
-    description: "Shows chronological events.",
-    bestFor: "Company history",
-    variants: [
-      { id: "timeline-vertical", name: "Vertical Timeline", description: "Standard timeline." },
-      { id: "timeline-horizontal", name: "Horizontal Timeline", description: "Side scrolling." },
-    ],
-  },
-
-  // CONTACT
-  {
-    id: "contact",
-    name: "Contact",
-    category: "Conversion",
-    description: "Contact details or location.",
-    bestFor: "Contact pages",
-    variants: [
-      { id: "contact-details", name: "Details", description: "Basic contact info." },
-      { id: "contact-map", name: "Map + Info", description: "Map with contact details." },
-    ],
-  },
-];
+function mapComponentToBlockTypeOption(
+  component: ComponentSchema
+): BlockTypeOption {
+  return {
+    id: component.id,
+    name: component.name,
+    category: component.category,
+    description: component.description,
+    bestFor:
+      component.useCaseLabel ||
+      component.tags?.join(", ") ||
+      "Governed reusable block type",
+    variants: component.variants.map((variant) => ({
+      id: variant.id,
+      name: variant.label,
+      description: variant.description || "Approved layout variant.",
+    })),
+  };
+}
 
 const progressLabels = [
   "Analysing prompt...",
@@ -702,12 +501,14 @@ function VariantPreview({ variantId }: { variantId: string }) {
 }
 
 function BlockTypeSelector({
+  blockTypeOptions,
   selectedBlockTypeId,
   selectedVariantId,
   onSelectBlockType,
   onSelectVariant,
   lockedBlockType,
 }: {
+  blockTypeOptions: BlockTypeOption[];
   selectedBlockTypeId: string;
   selectedVariantId: string;
   onSelectBlockType: (id: string) => void;
@@ -894,46 +695,105 @@ const lockedComponentIdFromUrl = normaliseComponentId(
 const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUrl);
 
   const [step, setStep] = useState<Step>("context");
+  const [blockTypeOptions, setBlockTypeOptions] = useState<BlockTypeOption[]>([]);
+  const [loadingBlockTypes, setLoadingBlockTypes] = useState(true);
+  useEffect(() => {
+    let active = true;
 
+    async function loadBlockTypes() {
+      try {
+        setLoadingBlockTypes(true);
+
+        const res = await fetch("/api/component-registry");
+        const json = await res.json().catch(() => ({}));
+
+        if (!active) return;
+
+        const components = Array.isArray(json?.components)
+          ? (json.components as ComponentSchema[])
+          : [];
+
+        const mapped = components
+          .map(mapComponentToBlockTypeOption)
+          .filter((item) => item.variants.length > 0);
+
+        setBlockTypeOptions(mapped);
+      } catch {
+        if (active) {
+          setBlockTypeOptions([]);
+        }
+      } finally {
+        if (active) {
+          setLoadingBlockTypes(false);
+        }
+      }
+    }
+
+    loadBlockTypes();
+
+    return () => {
+      active = false;
+    };
+  }, []);
   const [blockName, setBlockName] = useState("Why Choose Us");
   const [location, setLocation] = useState("Food, Feed & Agriculture");
   const [contentLength, setContentLength] = useState("Standard");
 
-  const initialBlockType =
-  blockTypeOptions.find((item) => item.id === lockedComponentIdFromUrl) ||
-  blockTypeOptions[0];
-
-const [selectedBlockTypeId, setSelectedBlockTypeId] = useState(initialBlockType.id);
-const [selectedVariantId, setSelectedVariantId] = useState(
-  initialBlockType.variants[0]?.id || ""
-);
+  const [selectedBlockTypeId, setSelectedBlockTypeId] = useState("");
+  const [selectedVariantId, setSelectedVariantId] = useState("");
 
   const selectedBlockType = useMemo(
-    () => blockTypeOptions.find((item) => item.id === selectedBlockTypeId) || blockTypeOptions[0],
-    [selectedBlockTypeId]
+    () =>
+      blockTypeOptions.find((item) => item.id === selectedBlockTypeId) ||
+      blockTypeOptions[0],
+    [blockTypeOptions, selectedBlockTypeId]
   );
 
   const selectedVariant = useMemo(
-    () => selectedBlockType.variants.find((item) => item.id === selectedVariantId) || selectedBlockType.variants[0],
+    () =>
+      selectedBlockType?.variants.find((item) => item.id === selectedVariantId) ||
+      selectedBlockType?.variants[0],
     [selectedBlockType, selectedVariantId]
   );
 
   useEffect(() => {
-    if (!isPageBuilderMode) return;
-  
+    if (!blockTypeOptions.length) return;
+
     const lockedType = blockTypeOptions.find(
       (item) => item.id === lockedComponentIdFromUrl
     );
-  
+
+    const initialType = lockedType || blockTypeOptions[0];
+
+    setSelectedBlockTypeId((current) => current || initialType.id);
+    setSelectedVariantId((current) => {
+      if (
+        current &&
+        initialType.variants.some((variant) => variant.id === current)
+      ) {
+        return current;
+      }
+
+      return initialType.variants[0]?.id || "";
+    });
+  }, [blockTypeOptions, lockedComponentIdFromUrl]);
+
+  useEffect(() => {
+    if (!isPageBuilderMode || !blockTypeOptions.length) return;
+
+    const lockedType = blockTypeOptions.find(
+      (item) => item.id === lockedComponentIdFromUrl
+    );
+
     if (!lockedType) return;
-  
+
     setSelectedBlockTypeId(lockedType.id);
     setSelectedVariantId((current) =>
       lockedType.variants.some((variant) => variant.id === current)
         ? current
         : lockedType.variants[0]?.id || ""
     );
-  
+
     if (sectionLabelFromUrl) {
       setBlockName(sectionLabelFromUrl);
       setLocation(pageNameFromUrl || sectionLabelFromUrl);
@@ -943,6 +803,7 @@ const [selectedVariantId, setSelectedVariantId] = useState(
     lockedComponentIdFromUrl,
     sectionLabelFromUrl,
     pageNameFromUrl,
+    blockTypeOptions,
   ]);
 
   const [imageSourceMode, setImageSourceMode] = useState<ImageSourceMode>("none");
@@ -1156,7 +1017,28 @@ ${prompt}
       </div>
     );
   }
+  if (loadingBlockTypes) {
+    return (
+      <div className="flex h-full min-h-0 items-center justify-center bg-[#f6f7fb] text-sm font-medium text-slate-500">
+        Loading block types…
+      </div>
+    );
+  }
 
+  if (!blockTypeOptions.length || !selectedBlockType || !selectedVariant) {
+    return (
+      <div className="flex h-full min-h-0 items-center justify-center bg-[#f6f7fb] px-6">
+        <div className="w-full max-w-[520px] rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+          <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
+            No approved block types available
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">
+            Create and approve a block type before generating blocks.
+          </p>
+        </div>
+      </div>
+    );
+  }
   if (step === "generating") {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
@@ -1253,6 +1135,7 @@ ${prompt}
 
 <div className="relative min-h-0 flex-1 overflow-y-auto pr-2 max-h-[490px]">
 <BlockTypeSelector
+  blockTypeOptions={blockTypeOptions}
   selectedBlockTypeId={selectedBlockTypeId}
   selectedVariantId={selectedVariantId}
   onSelectBlockType={handleSelectBlockType}

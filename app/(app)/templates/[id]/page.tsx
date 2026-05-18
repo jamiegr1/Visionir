@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import type { ComponentSchema } from "@/lib/component-schema";
 import {
   ArrowLeft,
   Archive,
@@ -368,6 +369,17 @@ function SectionSummaryCard({
   );
 }
 
+function getComponentNameFromRegistry(
+  componentRegistry: ComponentSchema[],
+  componentId: string | null | undefined
+) {
+  if (!componentId) return "—";
+
+  const component = componentRegistry.find((item) => item.id === componentId);
+
+  return component?.name || componentId;
+}
+
 function RuleRow({
   label,
   value,
@@ -405,6 +417,7 @@ export default function TemplateDetailPage() {
   const [isCreatingPage, setIsCreatingPage] = useState(false);
   const [copied, setCopied] = useState(false);
   const [template, setTemplate] = useState<TemplateRecord | null>(null);
+  const [componentRegistry, setComponentRegistry] = useState<ComponentSchema[]>([]);
   const [activeTab, setActiveTab] = useState<TemplateTab>("structure");
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
 
@@ -437,6 +450,29 @@ export default function TemplateDetailPage() {
       void loadTemplate();
     }
   }, [id, role]);
+
+  useEffect(() => {
+    async function loadComponentRegistry() {
+      try {
+        const res = await fetch(`/api/component-registry`, {
+          cache: "no-store",
+        });
+  
+        const json = await res.json().catch(() => ({}));
+  
+        setComponentRegistry(
+          Array.isArray(json?.components)
+            ? (json.components as ComponentSchema[])
+            : []
+        );
+      } catch (error) {
+        console.error("Failed to load component registry:", error);
+        setComponentRegistry([]);
+      }
+    }
+  
+    void loadComponentRegistry();
+  }, []);
 
   useEffect(() => {
     if (!template?.sections?.length) {
@@ -587,6 +623,11 @@ export default function TemplateDetailPage() {
   const optionalSections = sortedSections.filter((section) => !section.required);
   const selectedSection =
     sortedSections.find((section) => section.id === selectedSectionId) ?? null;
+
+    const selectedSectionDefaultBlockName = getComponentNameFromRegistry(
+      componentRegistry,
+      selectedSection?.defaultComponentId
+    );
 
   const totalAllowedBlocks = sortedSections.reduce(
     (sum, section) => sum + section.allowedComponentIds.length,
@@ -837,7 +878,10 @@ export default function TemplateDetailPage() {
                             {section.label}
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
-                            {section.defaultComponentId || "No default component set"}
+                          {getComponentNameFromRegistry(
+  componentRegistry,
+  section.defaultComponentId
+) || "No default component set"}
                           </p>
                         </div>
                       ))
@@ -863,7 +907,10 @@ export default function TemplateDetailPage() {
                             {section.label}
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
-                            {section.defaultComponentId || "No default component set"}
+                          {getComponentNameFromRegistry(
+  componentRegistry,
+  section.defaultComponentId
+) || "No default component set"}
                           </p>
                         </div>
                       ))
@@ -981,9 +1028,9 @@ export default function TemplateDetailPage() {
                         value={`${selectedSection.minInstances}–${selectedSection.maxInstances}`}
                       />
                       <RuleRow
-                        label="Default block"
-                        value={selectedSection.defaultComponentId || "—"}
-                      />
+  label="Default block"
+  value={selectedSectionDefaultBlockName}
+/>
                       <RuleRow
                         label="Allowed blocks"
                         value={`${selectedSection.allowedComponentIds.length}`}
@@ -1000,18 +1047,19 @@ export default function TemplateDetailPage() {
                       </p>
 
                       <div className="mt-3 flex flex-wrap gap-2">
-                        {selectedSection.allowedComponentIds.length > 0 ? (
-                          selectedSection.allowedComponentIds.map((componentId) => (
-                            <span
-                              key={componentId}
-                              className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                            >
-                              {componentId}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-sm text-slate-500">None set</span>
-                        )}
+                      {selectedSection.allowedComponentIds.length > 0 ? (
+  selectedSection.allowedComponentIds.map((componentId) => (
+    <span
+      key={componentId}
+      className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+      title={componentId}
+    >
+      {getComponentNameFromRegistry(componentRegistry, componentId)}
+    </span>
+  ))
+) : (
+  <span className="text-sm text-slate-500">None set</span>
+)}
                       </div>
                     </div>
 
@@ -1102,9 +1150,12 @@ export default function TemplateDetailPage() {
                             value={`${section.minInstances}–${section.maxInstances}`}
                           />
                           <RuleRow
-                            label="Default block"
-                            value={section.defaultComponentId || "—"}
-                          />
+  label="Default block"
+  value={getComponentNameFromRegistry(
+    componentRegistry,
+    section.defaultComponentId
+  )}
+/>
                           <RuleRow
                             label="Can skip"
                             value={section.canSkip ? "Yes" : "No"}
@@ -1217,7 +1268,10 @@ export default function TemplateDetailPage() {
 
                         <div className="mt-4 rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-8 text-center">
                           <p className="text-sm font-medium text-slate-700">
-                            {section.defaultComponentId || "Representative block preview"}
+                          {getComponentNameFromRegistry(
+  componentRegistry,
+  section.defaultComponentId
+) || "Representative block preview"}
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
                             This is a placeholder preview area for the section.

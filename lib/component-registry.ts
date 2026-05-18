@@ -1,8 +1,8 @@
-import type { ComponentSchema } from "@/lib/component-schema";
+import type { ComponentSchema, RolePermission } from "@/lib/component-schema";
 
 const now = new Date().toISOString();
 
-const basePermissions = {
+const basePermissions: RolePermission = {
   canView: ["creator", "approver", "admin"],
   canEdit: ["creator", "approver", "admin"],
   canApprove: ["approver", "admin"],

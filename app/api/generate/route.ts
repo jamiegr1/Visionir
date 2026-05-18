@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server";
+import { getApprovedComponentRegistry } from "@/lib/component-registry-server";
+import type { ComponentSchema } from "@/lib/component-schema";
 import type {
   Accent,
   BlockData,
@@ -12,6 +14,8 @@ type GenerateRequestBody = {
   blockName?: string;
   location?: string;
   category?: string;
+  componentId?: string;
+  variantId?: string;
   componentType?: string;
   componentVariant?: string;
   prompt?: string;
@@ -42,78 +46,27 @@ function formatComponentLabel(value?: string | null) {
     .trim();
 }
 
-function isHeroComponent(componentType: string) {
-  return componentType.includes("hero");
+function findComponent(registry: ComponentSchema[], componentId: string) {
+  return registry.find((component) => component.id === componentId) || null;
 }
 
-function isValuePointsComponent(componentType: string) {
-  return (
-    componentType.includes("value-points") ||
-    componentType.includes("feature") ||
-    componentType.includes("benefit")
-  );
-}
-
-function isTestimonialComponent(componentType: string) {
-  return componentType.includes("testimonial") || componentType.includes("quote");
-}
-
-function isCtaComponent(componentType: string) {
-  return componentType.includes("cta");
-}
-
-function isStatsComponent(componentType: string) {
-  return componentType.includes("stats");
-}
-
-function isLogoComponent(componentType: string) {
-  return componentType.includes("logo");
-}
-
-function isFaqComponent(componentType: string) {
-  return componentType.includes("faq");
-}
-
-function isContactComponent(componentType: string) {
-  return componentType.includes("contact");
-}
-
-function isRichTextComponent(componentType: string) {
-  return componentType.includes("rich-text");
-}
-
-function isMediaTextComponent(componentType: string) {
-  return componentType.includes("media-text");
+function getFirstField(component: ComponentSchema | null, ids: string[]) {
+  return component?.fields.find((field) => ids.includes(field.id));
 }
 
 function getPromptSignals(prompt: string) {
   const lower = prompt.toLowerCase();
 
   return {
-    enterprise: [
-      "enterprise",
-      "corporate",
-      "professional",
-      "high-level",
-      "strategic",
-    ].some((term) => lower.includes(term)),
-    conversion: [
-      "conversion",
-      "cta",
-      "action",
-      "lead",
-      "enquiry",
-      "contact",
-      "commercial",
-    ].some((term) => lower.includes(term)),
-    trust: [
-      "trust",
-      "credible",
-      "credibility",
-      "proof",
-      "assurance",
-      "confidence",
-    ].some((term) => lower.includes(term)),
+    enterprise: ["enterprise", "corporate", "professional", "strategic"].some(
+      (term) => lower.includes(term)
+    ),
+    conversion: ["conversion", "cta", "lead", "enquiry", "contact"].some(
+      (term) => lower.includes(term)
+    ),
+    trust: ["trust", "credible", "proof", "assurance", "confidence"].some(
+      (term) => lower.includes(term)
+    ),
     concise: ["short", "concise", "tight", "brief", "minimal"].some((term) =>
       lower.includes(term)
     ),
@@ -122,147 +75,43 @@ function getPromptSignals(prompt: string) {
 
 function buildEyebrow(params: {
   location: string;
-  componentType: string;
+  component: ComponentSchema | null;
   sectionLabel?: string;
 }) {
-  const { location, componentType, sectionLabel } = params;
+  const { location, component, sectionLabel } = params;
 
-  if (sectionLabel) {
-    return sectionLabel.toUpperCase();
-  }
-
-  if (isTestimonialComponent(componentType)) return "CLIENT PROOF";
-  if (isCtaComponent(componentType)) return "NEXT STEP";
-  if (isStatsComponent(componentType)) return "KEY FIGURES";
-  if (isLogoComponent(componentType)) return "TRUSTED BY";
-  if (isFaqComponent(componentType)) return "COMMON QUESTIONS";
-  if (isContactComponent(componentType)) return "GET IN TOUCH";
+  if (sectionLabel) return sectionLabel.toUpperCase();
+  if (component?.category === "proof") return "PROOF";
+  if (component?.category === "conversion") return "NEXT STEP";
+  if (component?.category === "utility") return "INFORMATION";
+  if (component?.category === "navigation") return "NAVIGATION";
 
   return location.toUpperCase();
 }
 
-function getVariantHeadline(params: {
+function buildHeadline(params: {
   blockName: string;
-  componentType: string;
-  componentVariant: string;
+  component: ComponentSchema | null;
 }) {
-  const { blockName, componentType } = params;
+  const { blockName, component } = params;
 
-  if (isTestimonialComponent(componentType)) {
-    return blockName || "What Clients Value Most";
-  }
+  if (blockName) return blockName;
+  if (component?.name) return component.name;
 
-  if (isCtaComponent(componentType)) {
-    return blockName || "Take the Next Step";
-  }
-
-  if (isStatsComponent(componentType)) {
-    return blockName || "Performance at a Glance";
-  }
-
-  if (isLogoComponent(componentType)) {
-    return blockName || "Trusted by Leading Organisations";
-  }
-
-  if (isFaqComponent(componentType)) {
-    return blockName || "Frequently Asked Questions";
-  }
-
-  if (isContactComponent(componentType)) {
-    return blockName || "Speak to Our Team";
-  }
-
-  if (componentType.includes("feature")) {
-    return blockName || "What This Includes";
-  }
-
-  if (isRichTextComponent(componentType)) {
-    return blockName || "Supporting Information";
-  }
-
-  return blockName;
+  return "Governed Content Block";
 }
 
-function getVariantSubheading(params: {
-  componentType: string;
-  componentVariant: string;
+function buildSubheading(params: {
+  component: ComponentSchema | null;
   location: string;
   prompt: string;
-  blockName: string;
   contentLength: ContentLength;
 }) {
-  const {
-    componentType,
-    componentVariant,
-    location,
-    prompt,
-    blockName,
-    contentLength,
-  } = params;
-
+  const { component, location, prompt, contentLength } = params;
   const signals = getPromptSignals(prompt);
 
-  if (componentType === "hero-standard" && componentVariant === "centered") {
-    if (signals.enterprise) {
-      return `Introduce ${location} with a clear, enterprise-ready message that builds confidence, strengthens positioning, and aligns to governed brand standards.`;
-    }
-
-    return `Build trust and clarity across ${location} with a structured, brand-governed hero section designed to introduce the page with confidence and focus.`;
-  }
-
-  if (
-    componentType === "hero-standard" &&
-    componentVariant === "left-content-right-image"
-  ) {
-    if (signals.conversion) {
-      return `Introduce ${location} with a strong proposition, clear supporting context, and a focused CTA designed to move high-intent users forward with confidence.`;
-    }
-
-    return `Introduce ${location} with a strong message, supporting context, and a clear CTA using a split hero layout designed for high-visibility service and solution pages.`;
-  }
-
-  if (componentType === "value-points-grid" && componentVariant === "three-up") {
-    return `Communicate the strongest differentiators for ${location} in a concise three-column structure that is easy to scan and aligned to enterprise content governance.`;
-  }
-
-  if (componentType === "value-points-grid" && componentVariant === "four-up") {
-    return `Showcase four clear value points for ${location} in a structured grid layout that balances clarity, consistency, and brand control.`;
-  }
-
-  if (isTestimonialComponent(componentType)) {
-    return `Support ${blockName || location} with concise proof-led content designed to reinforce trust, credibility, and buyer confidence.`;
-  }
-
-  if (isCtaComponent(componentType)) {
-    return `Create a focused call-to-action section for ${location} that encourages the next step while remaining aligned to brand and governance standards.`;
-  }
-
-  if (isStatsComponent(componentType)) {
-    return `Present key figures for ${location} in a clear, high-trust format designed to support credibility and fast understanding.`;
-  }
-
-  if (isLogoComponent(componentType)) {
-    return `Display trusted brand associations for ${location} in a lightweight proof section designed to support reassurance and authority.`;
-  }
-
-  if (isFaqComponent(componentType)) {
-    return `Address common questions around ${location} in a clear, structured format designed to reduce friction and improve understanding.`;
-  }
-
-  if (isContactComponent(componentType)) {
-    return `Create a conversion-focused contact section for ${location} that encourages enquiries while staying aligned to governance and brand standards.`;
-  }
-
-  if (componentType.includes("feature")) {
-    return `Present the key capabilities of ${location} in a structured feature format that is easy to scan and aligned to enterprise content standards.`;
-  }
-
-  if (isRichTextComponent(componentType)) {
-    return `Provide clear supporting information for ${location} in a structured editorial format designed for readability and brand consistency.`;
-  }
-
-  if (isMediaTextComponent(componentType)) {
-    return `Combine supporting media and clear explanatory content for ${location} in a flexible section designed for clarity and consistency.`;
+  if (component?.description) {
+    return `${component.description} Built for ${location} with governed structure, brand consistency and enterprise-ready content control.`;
   }
 
   if (contentLength === "Short") {
@@ -270,198 +119,91 @@ function getVariantSubheading(params: {
   }
 
   if (contentLength === "Detailed") {
-    return `Present ${location} in a more detailed, structured content block that balances clarity, trust, and enterprise-ready consistency.`;
+    return `Present ${location} in a detailed, structured content block that balances clarity, trust and enterprise-ready consistency.`;
   }
 
-  return `From accredited certification to tailored technical support, ${location} gives you confidence in compliance, credibility and business growth.`;
+  if (signals.enterprise) {
+    return `Create an enterprise-ready section for ${location} with clear hierarchy, governed messaging and consistent presentation.`;
+  }
+
+  return `Create a structured section for ${location} that keeps content clear, consistent and aligned to governance standards.`;
 }
 
 function buildValuePoints(params: {
-  componentType: string;
-  componentVariant: string;
+  component: ComponentSchema | null;
   location: string;
-  prompt: string;
   contentLength: ContentLength;
 }): ValuePoint[] {
-  const { componentType, componentVariant, location, prompt, contentLength } =
-    params;
+  const { component, location, contentLength } = params;
 
-  const signals = getPromptSignals(prompt);
+  const fieldNames =
+    component?.fields
+      .slice(0, 4)
+      .map((field) => field.label)
+      .filter(Boolean) || [];
 
-  const basePoints: ValuePoint[] = [
+  const base: ValuePoint[] = [
     {
-      title: "Independent and trusted",
-      text: `Position ${location} with clear, high-confidence messaging that supports enterprise trust and buyer assurance.`,
+      title: "Structured for clarity",
+      text: `Uses a governed ${component?.name || "block"} structure to make ${location} easier to understand.`,
       accent: "blue",
     },
     {
-      title: "Structured for clarity",
-      text: "Use governed layouts and concise content patterns to make complex propositions easier to understand.",
+      title: "Aligned to governance",
+      text: "Keeps content, layout and presentation within approved brand and system rules.",
       accent: "green",
     },
     {
-      title: "Aligned to governance",
-      text: "Keep copy, layout and presentation within the rules of the brand system and organisational standards.",
+      title: "Reusable by design",
+      text: "Creates a repeatable content pattern that can support templates, pages and future site evolution.",
       accent: "orange",
     },
     {
-      title: "Designed to scale",
-      text: "Create repeatable, reusable sections that work across templates, teams and future page evolution.",
+      title: "Built for control",
+      text: "Supports approval workflows, schema consistency and enterprise content standards.",
       accent: "purple",
     },
   ];
 
-  if (componentType === "value-points-grid" && componentVariant === "three-up") {
-    return basePoints.slice(0, 3);
+  if (fieldNames.length >= 3) {
+    return fieldNames.slice(0, 4).map((label, index) => ({
+      title: label,
+      text: `Governed ${label.toLowerCase()} content for ${location}, aligned to the approved block type schema.`,
+      accent: ["blue", "green", "orange", "purple"][index] as Accent,
+    }));
   }
 
-  if (isHeroComponent(componentType)) {
-    return [
-      {
-        title: signals.trust ? "Built for confidence" : "High-visibility structure",
-        text: "A strong opening pattern designed for top-of-page placement and immediate clarity.",
-        accent: "blue",
-      },
-      {
-        title: signals.enterprise
-          ? "Enterprise-ready messaging"
-          : "Structured for clarity",
-        text: "Built to support trust, consistency and clearer decision-making across complex service offerings.",
-        accent: "green",
-      },
-      {
-        title: "Brand-governed output",
-        text: "Structured to stay aligned with approved language, layouts and design tokens.",
-        accent: "orange",
-      },
-      {
-        title: "Reusable across templates",
-        text: "Designed to scale across regions, services and page types without fragmenting the experience.",
-        accent: "purple",
-      },
-    ];
-  }
-
-  if (isTestimonialComponent(componentType)) {
-    return [
-      {
-        title: "Trusted experience",
-        text: "Highlights confidence, consistency and positive delivery experience through proof-led messaging.",
-        accent: "blue",
-      },
-      {
-        title: "Stronger reassurance",
-        text: "Supports buying confidence with concise, high-trust validation.",
-        accent: "green",
-      },
-      {
-        title: "Governed presentation",
-        text: "Keeps proof content aligned to brand, tone and approved design standards.",
-        accent: "orange",
-      },
-    ];
-  }
-
-  if (isCtaComponent(componentType) || isContactComponent(componentType)) {
-    return [
-      {
-        title: "Clear next step",
-        text: "Moves users toward action with a stronger, more deliberate call-to-action.",
-        accent: "blue",
-      },
-      {
-        title: "Focused messaging",
-        text: "Removes distraction and keeps the section aligned to a single objective.",
-        accent: "green",
-      },
-      {
-        title: "Consistent conversion pattern",
-        text: "Applies a repeatable, governed CTA format that works across templates and regions.",
-        accent: "orange",
-      },
-    ];
-  }
-
-  if (isStatsComponent(componentType)) {
-    return [
-      {
-        title: "Proof at a glance",
-        text: "Makes key figures easier to understand and faster to scan.",
-        accent: "blue",
-      },
-      {
-        title: "Stronger credibility",
-        text: "Uses measurable indicators to support confidence and reassurance.",
-        accent: "green",
-      },
-      {
-        title: "Reusable trust pattern",
-        text: "Provides a governed way to repeat performance messaging across the site.",
-        accent: "orange",
-      },
-    ];
-  }
-
-  if (isLogoComponent(componentType)) {
-    return [
-      {
-        title: "Recognisable brands",
-        text: "Reinforces trust through familiar organisations, partners or accreditations.",
-        accent: "blue",
-      },
-      {
-        title: "Fast reassurance",
-        text: "Adds immediate confidence without requiring long-form explanation.",
-        accent: "green",
-      },
-      {
-        title: "Lightweight proof",
-        text: "Provides a subtle, reusable trust pattern across key journeys.",
-        accent: "orange",
-      },
-    ];
-  }
-
-  if (isFaqComponent(componentType)) {
-    return [
-      {
-        title: "Reduced friction",
-        text: "Answers likely objections before they slow down decision-making.",
-        accent: "blue",
-      },
-      {
-        title: "Clearer understanding",
-        text: "Presents complex information in a simple, structured format.",
-        accent: "green",
-      },
-      {
-        title: "Governed consistency",
-        text: "Keeps answers aligned to approved messaging and brand tone.",
-        accent: "orange",
-      },
-    ];
-  }
-
-  if (contentLength === "Short") {
-    return basePoints.slice(0, 3);
-  }
-
-  return basePoints;
+  return contentLength === "Short" ? base.slice(0, 3) : base;
 }
 
 function buildDesign(params: {
-  componentType: string;
-  componentVariant: string;
+  component: ComponentSchema | null;
+  variantId: string;
   prompt: string;
 }): BlockData["design"] {
-  const { componentType, componentVariant, prompt } = params;
+  const { component, variantId, prompt } = params;
   const signals = getPromptSignals(prompt);
 
-  const baseDesign: BlockData["design"] = {
+  const layout =
+    variantId.includes("center") || variantId.includes("stacked")
+      ? "stacked"
+      : variantId.includes("grid")
+        ? "stacked"
+        : "split";
+
+  return {
     theme: signals.enterprise ? "enterprise" : "soft",
-    layout: "split",
-    cardStyle: "soft",
-    headingAlign: "left",
+    layout,
+    cardStyle:
+      component?.category === "proof" || component?.category === "content"
+        ? "outline"
+        : component?.category === "conversion"
+          ? "filled"
+          : "soft",
+    headingAlign:
+      variantId.includes("center") || component?.category === "conversion"
+        ? "center"
+        : "left",
     borderRadius: "xl",
     shadow: "soft",
     background: "#f5f7fb",
@@ -476,90 +218,19 @@ function buildDesign(params: {
       purple: "#8b5cf6",
     },
   };
-
-  if (componentType === "hero-standard" && componentVariant === "centered") {
-    return {
-      ...baseDesign,
-      layout: "stacked",
-      headingAlign: "center",
-    };
-  }
-
-  if (componentType === "hero-standard") {
-    return {
-      ...baseDesign,
-      layout: "split",
-      headingAlign: "left",
-    };
-  }
-
-  if (
-    isValuePointsComponent(componentType) ||
-    isStatsComponent(componentType) ||
-    isFaqComponent(componentType) ||
-    isLogoComponent(componentType)
-  ) {
-    return {
-      ...baseDesign,
-      layout: "stacked",
-      headingAlign: "left",
-      cardStyle: "outline",
-    };
-  }
-
-  if (isTestimonialComponent(componentType)) {
-    return {
-      ...baseDesign,
-      layout: "stacked",
-      headingAlign: "left",
-      cardStyle: "soft",
-    };
-  }
-
-  if (isCtaComponent(componentType) || isContactComponent(componentType)) {
-    return {
-      ...baseDesign,
-      layout: "stacked",
-      headingAlign: signals.conversion ? "center" : "left",
-      cardStyle: "filled",
-    };
-  }
-
-  if (isRichTextComponent(componentType)) {
-    return {
-      ...baseDesign,
-      layout: "stacked",
-      headingAlign: "left",
-      cardStyle: "soft",
-    };
-  }
-
-  if (isMediaTextComponent(componentType)) {
-    return {
-      ...baseDesign,
-      layout: componentVariant.includes("stacked") ? "stacked" : "split",
-      headingAlign: "left",
-      cardStyle: "soft",
-    };
-  }
-
-  return baseDesign;
 }
 
 function buildImageUrl(params: {
-  componentType: string;
+  component: ComponentSchema | null;
   imageSourceMode: ImageSourceMode;
 }) {
-  const { componentType, imageSourceMode } = params;
+  const { component, imageSourceMode } = params;
 
-  if (imageSourceMode === "none") {
-    return undefined;
-  }
-
+  if (imageSourceMode === "none") return undefined;
   if (
-    isLogoComponent(componentType) ||
-    isStatsComponent(componentType) ||
-    isFaqComponent(componentType)
+    component?.category === "proof" ||
+    component?.category === "navigation" ||
+    component?.category === "utility"
   ) {
     return undefined;
   }
@@ -568,52 +239,60 @@ function buildImageUrl(params: {
 }
 
 function buildExtraContent(params: {
-  componentType: string;
+  component: ComponentSchema | null;
   componentVariant: string;
   location: string;
   blockName: string;
-  contentLength: ContentLength;
 }): BlockExtraContent | undefined {
-  const { componentType, componentVariant, location, blockName } = params;
+  const { component, componentVariant, location, blockName } = params;
 
-  if (isTestimonialComponent(componentType)) {
+  if (!component) {
     return {
-      quote: `“${location} helped bring more consistency, confidence and clarity to our digital experience.”`,
-      authorName: "Jane Smith",
-      authorRole: "Marketing Director",
-      company: location,
+      generatedBlockLabel: blockName,
+      selectedVariant: componentVariant,
     };
   }
 
-  if (isCtaComponent(componentType)) {
-    return {
-      primaryCtaLabel: "Speak to an Expert",
-      primaryCtaUrl: "/contact",
-      secondaryCtaLabel: "Learn More",
-      secondaryCtaUrl: "/services",
-    };
-  }
+  const hasFaqItems = getFirstField(component, ["items", "faqItems"]);
+  const hasStats = getFirstField(component, ["stats"]);
+  const hasLogos = getFirstField(component, ["logos"]);
+  const hasQuote = getFirstField(component, ["quote"]);
+  const hasAddress = getFirstField(component, ["address", "mapEmbedUrl"]);
+  const hasForm = getFirstField(component, ["formTitle", "submitLabel"]);
 
-  if (isContactComponent(componentType)) {
+  if (hasFaqItems && component.name.toLowerCase().includes("faq")) {
     return {
-      formTitle: "Start Your Enquiry",
-      submitLabel: "Submit Enquiry",
-      primaryCtaLabel: "Contact Us",
-      primaryCtaUrl: "/contact",
-    };
-  }
-
-  if (isStatsComponent(componentType)) {
-    return {
-      stats: [
-        { label: "Projects Delivered", value: "120+" },
-        { label: "Regions Supported", value: "42" },
-        { label: "Governed Components", value: "350+" },
+      faqItems: [
+        {
+          question: `What does ${location} include?`,
+          answer:
+            "It includes governed structure, clearer messaging and reusable content patterns aligned to enterprise standards.",
+        },
+        {
+          question: "How is consistency maintained?",
+          answer:
+            "Consistency is maintained through approved block types, locked design rules and approval controls.",
+        },
+        {
+          question: "Can this be reused across pages?",
+          answer:
+            "Yes. Once approved, this block type can be reused wherever the template and governance rules allow it.",
+        },
       ],
     };
   }
 
-  if (isLogoComponent(componentType)) {
+  if (hasStats) {
+    return {
+      stats: [
+        { label: "Governed Components", value: "350+" },
+        { label: "Regions Supported", value: "42" },
+        { label: "Reusable Templates", value: "120+" },
+      ],
+    };
+  }
+
+  if (hasLogos) {
     return {
       logos: [
         { name: `${location} Partner 1` },
@@ -624,64 +303,73 @@ function buildExtraContent(params: {
     };
   }
 
-  if (isFaqComponent(componentType)) {
+  if (hasQuote) {
     return {
-      faqItems: [
-        {
-          question: `What does ${location} include?`,
-          answer:
-            "It includes a governed structure, clearer messaging, and reusable content patterns aligned to enterprise standards.",
-        },
-        {
-          question: "How quickly can this be deployed?",
-          answer:
-            "Deployment timing depends on workflow stage, approvals, and the publishing destination, but the structure is designed to accelerate delivery.",
-        },
-        {
-          question: "How is consistency maintained?",
-          answer:
-            "Consistency is maintained through governed component structures, locked design tokens, and approval controls.",
-        },
-      ],
+      quote: `“${location} helped bring more consistency, confidence and clarity to our digital experience.”`,
+      authorName: "Jane Smith",
+      authorRole: "Marketing Director",
+      company: location,
     };
   }
 
-  if (isRichTextComponent(componentType)) {
+  if (hasAddress) {
     return {
-      body: `This supporting section gives additional context for ${location} in a clean, readable editorial format.`,
+      address: "123 Example Street, London, United Kingdom",
+      mapEmbedUrl: "https://maps.google.com",
+      primaryCtaLabel: "Get Directions",
+      primaryCtaUrl: "/contact",
     };
   }
 
-  if (isMediaTextComponent(componentType)) {
+  if (hasForm) {
     return {
-      body: `This section combines supporting media and explanatory content for ${location} to improve clarity and engagement.`,
-      primaryCtaLabel: "Learn More",
-      primaryCtaUrl: "/services",
+      formTitle: "Start Your Enquiry",
+      submitLabel: "Submit Enquiry",
+      primaryCtaLabel: "Contact Us",
+      primaryCtaUrl: "/contact",
     };
   }
 
-  if (isValuePointsComponent(componentType)) {
+  if (component.category === "conversion") {
     return {
-      sectionHeading: blockName,
+      primaryCtaLabel: "Speak to an Expert",
+      primaryCtaUrl: "/contact",
+      secondaryCtaLabel: "Learn More",
+      secondaryCtaUrl: "/services",
     };
   }
 
   return {
     generatedBlockLabel: blockName,
     selectedVariant: componentVariant,
+    schemaFields: component.fields.map((field) => field.id),
   };
 }
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as GenerateRequestBody;
 
-  const blockName = normaliseText(body?.blockName, "Why Choose Kiwa Agri-Food");
-  const location = normaliseText(body?.location, "Kiwa Agri-Food");
-  const componentType = normaliseText(body?.componentType, "hero-standard");
-  const componentVariant = normaliseText(
-    body?.componentVariant,
-    "left-content-right-image"
+  const registry = await getApprovedComponentRegistry();
+
+  const componentType = normaliseText(
+    body?.componentId || body?.componentType,
+    "hero-standard"
   );
+
+  const component = findComponent(registry, componentType);
+
+  const componentVariant = normaliseText(
+    body?.variantId || body?.componentVariant,
+    component?.variants[0]?.id || "default"
+  );
+
+  const blockName = normaliseText(
+    body?.blockName,
+    component?.name || "Governed Block"
+  );
+
+  const location = normaliseText(body?.location, "Kiwa Agri-Food");
+
   const prompt = normaliseText(
     body?.prompt,
     `Create a governed ${formatComponentLabel(componentType)} block for ${location}.`
@@ -722,44 +410,38 @@ export async function POST(request: Request) {
     imageSourceMode,
     eyebrow: buildEyebrow({
       location,
-      componentType,
+      component,
       sectionLabel,
     }),
-    headline: getVariantHeadline({
+    headline: buildHeadline({
       blockName,
-      componentType,
-      componentVariant,
+      component,
     }),
-    subheading: getVariantSubheading({
-      componentType,
-      componentVariant,
+    subheading: buildSubheading({
+      component,
       location,
       prompt,
-      blockName,
       contentLength,
     }),
     imageUrl: buildImageUrl({
-      componentType,
+      component,
       imageSourceMode,
     }),
     valuePoints: buildValuePoints({
-      componentType,
-      componentVariant,
+      component,
       location,
-      prompt,
       contentLength,
     }),
     design: buildDesign({
-      componentType,
-      componentVariant,
+      component,
+      variantId: componentVariant,
       prompt,
     }),
     extraContent: buildExtraContent({
-      componentType,
+      component,
       componentVariant,
       location,
       blockName,
-      contentLength,
     }),
   };
 
@@ -770,6 +452,9 @@ export async function POST(request: Request) {
       "Mock output generated successfully.",
       `Component type used: ${componentType}`,
       `Component variant used: ${componentVariant}`,
+      component
+        ? `Schema matched: ${component.name}`
+        : "Schema match unavailable; fallback generation used.",
       `Content length used: ${contentLength}`,
       `Image source mode used: ${imageSourceMode}`,
     ],

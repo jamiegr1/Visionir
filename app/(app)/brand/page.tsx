@@ -12,6 +12,7 @@ type Section =
   | "components"
   | "accessibility"
   | "governance"
+  | "approvals"
   | "localisation"
   | "examples";
 
@@ -363,7 +364,45 @@ function ColorRow({
     </div>
   );
 }
+function ApproverSelector({
+  value,
+  onChange,
+}: {
+  value: string[];
+  onChange: (value: string[]) => void;
+}) {
+  const roles = ["creator", "approver", "admin"];
 
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {roles.map((role) => {
+        const checked = value.includes(role);
+
+        return (
+          <button
+            key={role}
+            type="button"
+            onClick={() =>
+              onChange(
+                checked
+                  ? value.filter((item) => item !== role)
+                  : [...value, role]
+              )
+            }
+            className={cx(
+              "rounded-2xl border px-4 py-3 text-left text-sm font-medium transition",
+              checked
+                ? "border-[#5b7cff] bg-[#f7f9ff] text-[#4f6fff]"
+                : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white"
+            )}
+          >
+            {capitalize(role)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 export default function BrandPage() {
   const [active, setActive] = useState<Section>("identity");
 
@@ -536,6 +575,41 @@ export default function BrandPage() {
       allowAiStructuralChanges: true,
     },
 
+    approvals: {
+      blocks: {
+        enabled: true,
+        requireApprovalBeforePublish: true,
+        autoApproveLowRiskChanges: false,
+        requireApprovalForTextChanges: true,
+        requireApprovalForDesignChanges: true,
+        requireApprovalForNewVariants: true,
+        approvers: ["approver", "admin"],
+      },
+      pages: {
+        enabled: true,
+        requireApprovalBeforePublish: true,
+        requireApprovalForMajorEdits: true,
+        requireApprovalForTemplateChanges: true,
+        autoApproveMinorEdits: false,
+        approvers: ["approver", "admin"],
+      },
+      templates: {
+        enabled: true,
+        requireApprovalOnCreation: true,
+        requireApprovalOnStructureChanges: true,
+        requireApprovalBeforeUseInPages: true,
+        approvers: ["admin"],
+      },
+      blockTypes: {
+        enabled: true,
+        requireApprovalOnCreation: true,
+        requireApprovalBeforeUse: true,
+        requireApprovalBeforeTemplateUse: true,
+        requireApprovalForAiGeneratedTypes: true,
+        approvers: ["admin"],
+      },
+    },
+
     localisation: {
       defaultLocale: "en-GB",
       supportedLocales: ["en-GB", "en-US", "de-DE", "fr-FR"],
@@ -628,7 +702,12 @@ export default function BrandPage() {
     {
       id: "governance",
       label: "Governance",
-      helper: "Approval, lock rules and AI permissions",
+      helper: "Lock rules and AI permissions",
+    },
+    {
+      id: "approvals",
+      label: "Approvals",
+      helper: "Control what requires approval and who can approve it",
     },
     {
       id: "localisation",
@@ -1444,10 +1523,10 @@ export default function BrandPage() {
                 </FieldCard>
               )}
 
-              {active === "governance" && (
+{active === "governance" && (
                 <FieldCard
                   title="Governance"
-                  description="Set lock rules, approval rules and what the AI is allowed to change."
+                  description="Set lock rules and what the AI is allowed to change."
                 >
                   <div className="space-y-5">
                     <FieldGroup label="AI Edit Scope">
@@ -1500,6 +1579,7 @@ export default function BrandPage() {
                         }
                         label="Enable regional overrides"
                       />
+
                       <Toggle
                         checked={config.governance.legalReviewRequired}
                         onChange={(v) =>
@@ -1507,6 +1587,7 @@ export default function BrandPage() {
                         }
                         label="Require legal review for sensitive content"
                       />
+
                       <Toggle
                         checked={config.governance.autoApproveLowRiskChanges}
                         onChange={(v) =>
@@ -1514,13 +1595,13 @@ export default function BrandPage() {
                         }
                         label="Auto-approve low risk changes"
                       />
+
                       <Toggle
                         checked={config.governance.allowAiRewrite}
-                        onChange={(v) =>
-                          update("governance.allowAiRewrite", v)
-                        }
+                        onChange={(v) => update("governance.allowAiRewrite", v)}
                         label="Allow AI rewrite"
                       />
+
                       <Toggle
                         checked={config.governance.allowAiStructuralChanges}
                         onChange={(v) =>
@@ -1533,7 +1614,250 @@ export default function BrandPage() {
                 </FieldCard>
               )}
 
-              {active === "localisation" && (
+{active === "approvals" && (
+                <>
+                  <FieldCard
+                    title="Approval Policies"
+                    description="Define what needs approval across blocks, pages, templates and block types."
+                  >
+                    <div className="rounded-[24px] border border-[#dbe5ff] bg-[#f8faff] p-5">
+                      <p className="text-sm leading-6 text-slate-600">
+                        Approval settings control human review. Governance rules still apply automatically even when approval is relaxed.
+                      </p>
+                    </div>
+                  </FieldCard>
+
+                  <FieldCard
+                    title="Blocks"
+                    description="Control approval rules for individual generated block instances."
+                  >
+                    <div className="grid gap-4">
+                      <Toggle
+                        checked={config.approvals.blocks.enabled}
+                        onChange={(v) => update("approvals.blocks.enabled", v)}
+                        label="Enable block approvals"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blocks.requireApprovalBeforePublish}
+                        onChange={(v) =>
+                          update("approvals.blocks.requireApprovalBeforePublish", v)
+                        }
+                        label="Require approval before publish"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blocks.requireApprovalForTextChanges}
+                        onChange={(v) =>
+                          update("approvals.blocks.requireApprovalForTextChanges", v)
+                        }
+                        label="Require approval for text changes"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blocks.requireApprovalForDesignChanges}
+                        onChange={(v) =>
+                          update("approvals.blocks.requireApprovalForDesignChanges", v)
+                        }
+                        label="Require approval for design changes"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blocks.requireApprovalForNewVariants}
+                        onChange={(v) =>
+                          update("approvals.blocks.requireApprovalForNewVariants", v)
+                        }
+                        label="Require approval for new variants"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blocks.autoApproveLowRiskChanges}
+                        onChange={(v) =>
+                          update("approvals.blocks.autoApproveLowRiskChanges", v)
+                        }
+                        label="Auto-approve low-risk changes"
+                      />
+
+                      <FieldGroup label="Who can approve blocks">
+                        <ApproverSelector
+                          value={config.approvals.blocks.approvers}
+                          onChange={(v) => update("approvals.blocks.approvers", v)}
+                        />
+                      </FieldGroup>
+                    </div>
+                  </FieldCard>
+
+                  <FieldCard
+                    title="Pages"
+                    description="Control approval rules for full page publishing and major page edits."
+                  >
+                    <div className="grid gap-4">
+                      <Toggle
+                        checked={config.approvals.pages.enabled}
+                        onChange={(v) => update("approvals.pages.enabled", v)}
+                        label="Enable page approvals"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.pages.requireApprovalBeforePublish}
+                        onChange={(v) =>
+                          update("approvals.pages.requireApprovalBeforePublish", v)
+                        }
+                        label="Require approval before publish"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.pages.requireApprovalForMajorEdits}
+                        onChange={(v) =>
+                          update("approvals.pages.requireApprovalForMajorEdits", v)
+                        }
+                        label="Require approval for major edits"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.pages.requireApprovalForTemplateChanges}
+                        onChange={(v) =>
+                          update("approvals.pages.requireApprovalForTemplateChanges", v)
+                        }
+                        label="Require approval when template structure changes"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.pages.autoApproveMinorEdits}
+                        onChange={(v) =>
+                          update("approvals.pages.autoApproveMinorEdits", v)
+                        }
+                        label="Auto-approve minor edits"
+                      />
+
+                      <FieldGroup label="Who can approve pages">
+                        <ApproverSelector
+                          value={config.approvals.pages.approvers}
+                          onChange={(v) => update("approvals.pages.approvers", v)}
+                        />
+                      </FieldGroup>
+                    </div>
+                  </FieldCard>
+
+                  <FieldCard
+                    title="Templates"
+                    description="Control approval rules for creating, changing and releasing templates."
+                  >
+                    <div className="grid gap-4">
+                      <Toggle
+                        checked={config.approvals.templates.enabled}
+                        onChange={(v) => update("approvals.templates.enabled", v)}
+                        label="Enable template approvals"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.templates.requireApprovalOnCreation}
+                        onChange={(v) =>
+                          update("approvals.templates.requireApprovalOnCreation", v)
+                        }
+                        label="Require approval on creation"
+                      />
+
+                      <Toggle
+                        checked={
+                          config.approvals.templates.requireApprovalOnStructureChanges
+                        }
+                        onChange={(v) =>
+                          update(
+                            "approvals.templates.requireApprovalOnStructureChanges",
+                            v
+                          )
+                        }
+                        label="Require approval on structure changes"
+                      />
+
+                      <Toggle
+                        checked={
+                          config.approvals.templates.requireApprovalBeforeUseInPages
+                        }
+                        onChange={(v) =>
+                          update(
+                            "approvals.templates.requireApprovalBeforeUseInPages",
+                            v
+                          )
+                        }
+                        label="Require approval before templates can be used in pages"
+                      />
+
+                      <FieldGroup label="Who can approve templates">
+                        <ApproverSelector
+                          value={config.approvals.templates.approvers}
+                          onChange={(v) => update("approvals.templates.approvers", v)}
+                        />
+                      </FieldGroup>
+                    </div>
+                  </FieldCard>
+
+                  <FieldCard
+                    title="Block Types"
+                    description="Control approval rules for new block types created by users or AI."
+                  >
+                    <div className="grid gap-4">
+                      <Toggle
+                        checked={config.approvals.blockTypes.enabled}
+                        onChange={(v) => update("approvals.blockTypes.enabled", v)}
+                        label="Enable block type approvals"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blockTypes.requireApprovalOnCreation}
+                        onChange={(v) =>
+                          update("approvals.blockTypes.requireApprovalOnCreation", v)
+                        }
+                        label="Require approval when a new block type is created"
+                      />
+
+                      <Toggle
+                        checked={config.approvals.blockTypes.requireApprovalBeforeUse}
+                        onChange={(v) =>
+                          update("approvals.blockTypes.requireApprovalBeforeUse", v)
+                        }
+                        label="Require approval before first use"
+                      />
+
+                      <Toggle
+                        checked={
+                          config.approvals.blockTypes.requireApprovalBeforeTemplateUse
+                        }
+                        onChange={(v) =>
+                          update(
+                            "approvals.blockTypes.requireApprovalBeforeTemplateUse",
+                            v
+                          )
+                        }
+                        label="Require approval before adding to templates"
+                      />
+
+                      <Toggle
+                        checked={
+                          config.approvals.blockTypes.requireApprovalForAiGeneratedTypes
+                        }
+                        onChange={(v) =>
+                          update(
+                            "approvals.blockTypes.requireApprovalForAiGeneratedTypes",
+                            v
+                          )
+                        }
+                        label="Require approval for AI-generated block types"
+                      />
+
+                      <FieldGroup label="Who can approve block types">
+                        <ApproverSelector
+                          value={config.approvals.blockTypes.approvers}
+                          onChange={(v) => update("approvals.blockTypes.approvers", v)}
+                        />
+                      </FieldGroup>
+                    </div>
+                  </FieldCard>
+                </>
+              )}
+
+{active === "localisation" && (
                 <FieldCard
                   title="Localisation"
                   description="Control locale support and regional rule handling."
