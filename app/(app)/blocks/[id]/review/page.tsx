@@ -643,19 +643,38 @@ export default function BlockReviewPage() {
 
   async function handlePrimaryPageBuilderAction() {
     try {
+      const pageId = editable?.pageId || searchParams.get("pageId") || "";
+      const sectionId = editable?.sectionId || searchParams.get("sectionId") || "";
+  
       if (requiresApproval) {
         await saveBlock("pending_approval");
-        router.push(`/blocks/${id}/approval?role=${role}`);
+  
+        router.push(
+          `/blocks/${id}/approval?role=${role}` +
+            `&editMode=page_builder` +
+            (returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : "") +
+            (pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : "") +
+            (sectionId ? `&sectionId=${encodeURIComponent(String(sectionId))}` : "")
+        );
+  
         return;
       }
-
+  
       await saveBlock();
-
+  
+      // ✅ CRITICAL FIX — always return to page builder if possible
       if (returnTo) {
         router.push(returnTo);
         return;
       }
-
+  
+      if (pageId && sectionId) {
+        router.push(
+          `/pages/${pageId}?role=${role}&tab=sections&sectionId=${sectionId}#section-workspace`
+        );
+        return;
+      }
+  
       router.push(`/pages?role=${role}`);
     } catch (error) {
       console.error("Failed to finish page-builder edit:", error);
@@ -669,14 +688,13 @@ export default function BlockReviewPage() {
 const sectionId = editable?.sectionId || searchParams.get("sectionId") || "";
 
 router.push(
-  `/blocks/${id}/approval?role=${role}${
-    returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""
-  }${
-    pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : ""
-  }${
-    sectionId ? `&sectionId=${encodeURIComponent(String(sectionId))}` : ""
-  }`
+  `/blocks/${id}/approval?role=${role}` +
+    `&editMode=page_builder` +
+    (returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : "") +
+    (pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : "") +
+    (sectionId ? `&sectionId=${encodeURIComponent(String(sectionId))}` : "")
 );
+
     } catch (error) {
       console.error("Failed to submit for approval:", error);
     }

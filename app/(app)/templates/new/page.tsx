@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   CopyPlus,
   FileText,
   GripVertical,
@@ -16,7 +15,6 @@ import {
   Settings2,
   Sparkles,
   Trash2,
-  Wand2,
 } from "lucide-react";
 import type { ComponentSchema } from "@/lib/component-schema";
 
@@ -323,10 +321,6 @@ function mapComponentToOption(component: ComponentSchema): ComponentOption {
   };
 }
 
-function getComponentName(id: string, componentOptions: ComponentOption[]) {
-  return componentOptions.find((component) => component.id === id)?.name ?? id;
-}
-
 function createEmptySection(index: number): SectionForm {
   return {
     id: crypto.randomUUID(),
@@ -595,9 +589,9 @@ export default function NewTemplatePage() {
   const [sections, setSections] = useState<SectionForm[]>([]);
 
   const [componentOptions, setComponentOptions] = useState<ComponentOption[]>([]);
-const [loadingComponents, setLoadingComponents] = useState(true);
+  const [loadingComponents, setLoadingComponents] = useState(true);
 
-useEffect(() => {
+  useEffect(() => {
   let active = true;
 
   async function loadComponents() {
@@ -610,10 +604,15 @@ useEffect(() => {
       if (!active) return;
 
       const components = Array.isArray(json?.components)
-        ? (json.components as ComponentSchema[])
-        : [];
+  ? (json.components as ComponentSchema[])
+  : [];
 
-      setComponentOptions(components.map(mapComponentToOption));
+const approvedComponents = components.filter((component) => {
+  const status = (component as ComponentSchema & { status?: string }).status;
+  return !status || status === "approved";
+});
+
+setComponentOptions(approvedComponents.map(mapComponentToOption));
     } catch {
       if (active) {
         setComponentOptions([]);
@@ -651,9 +650,14 @@ useEffect(() => {
   const overviewComplete = Boolean(name.trim());
   const structureComplete =
     sections.length > 0 && sections.every((section) => section.label.trim());
-  const rulesComplete =
+    const rulesComplete =
     sections.length > 0 &&
-    sections.every((section) => section.allowedComponentIds.length > 0);
+    sections.every(
+      (section) =>
+        section.allowedComponentIds.length > 0 &&
+        (!section.defaultComponentId ||
+          section.allowedComponentIds.includes(section.defaultComponentId))
+    );
 
   function updateSection(id: string, patch: Partial<SectionForm>) {
     setSections((prev) =>
@@ -1573,19 +1577,19 @@ useEffect(() => {
                       </FieldLabel>
 
                       <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                       {loadingComponents ? (
-  <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
-    Loading approved block types…
-  </div>
-) : componentOptions.length === 0 ? (
-  <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-700">
-    No approved block types are available yet. Approve a block type first, then return to this template.
-  </div>
-) : (
-  componentOptions.map((component) => {
-    const checked = activeSection.allowedComponentIds.includes(component.id);
+                        {loadingComponents ? (
+                          <div className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-500">
+                            Loading approved block types…
+                          </div>
+                        ) : componentOptions.length === 0 ? (
+                          <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-700">
+                            No approved block types are available yet. Approve a block type first, then return to this template.
+                          </div>
+                        ) : (
+                          componentOptions.map((component) => {
+                            const checked = activeSection.allowedComponentIds.includes(component.id);
 
-    return (
+                            return (
                             <label
                               key={component.id}
                               className="flex cursor-pointer items-start gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import type { BlockData } from "@/lib/types";
 import { makePreviewHtml } from "@/lib/preview";
 
@@ -100,7 +100,13 @@ function ActionCard({
 export default function BlockDeployPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const id = params.id;
+  const role = searchParams.get("role") || "admin";
+  const returnTo = searchParams.get("returnTo") || "";
+  const pageId = searchParams.get("pageId") || "";
+  const sectionId = searchParams.get("sectionId") || "";
 
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
@@ -111,7 +117,10 @@ export default function BlockDeployPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+          cache: "no-store",
+        });
+
         const json = await res.json().catch(() => ({}));
 
         if (!res.ok || !json?.block?.data) {
@@ -131,7 +140,33 @@ export default function BlockDeployPage() {
     if (id) {
       void loadBlock();
     }
-  }, [id]);
+  }, [id, role]);
+
+  const isPageBuilderDeploy = Boolean(
+    returnTo ||
+      pageId ||
+      sectionId ||
+      editable?.pageId ||
+      editable?.sectionId
+  );
+
+  const resolvedPageId = pageId || String(editable?.pageId || "");
+  const resolvedSectionId = sectionId || String(editable?.sectionId || "");
+
+  const fallbackPageReturnTo =
+    resolvedPageId && resolvedSectionId
+      ? `/pages/${resolvedPageId}?role=${role}&tab=sections&sectionId=${resolvedSectionId}#section-workspace`
+      : `/pages?role=${role}`;
+
+  const doneHref = returnTo || (isPageBuilderDeploy ? fallbackPageReturnTo : `/blocks?role=${role}`);
+
+  const embedHref = `/blocks/${id}/deploy/embed?role=${role}${
+    returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""
+  }${
+    resolvedPageId ? `&pageId=${encodeURIComponent(resolvedPageId)}` : ""
+  }${
+    resolvedSectionId ? `&sectionId=${encodeURIComponent(resolvedSectionId)}` : ""
+  }`;
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
@@ -311,12 +346,21 @@ export default function BlockDeployPage() {
                     </p>
 
                     <div className="mt-3 space-y-3">
-                      <ActionCard
-                        title="Generate Optimizely Embed Code"
-                        description="Create production-ready embed output for approved CMS implementation."
-                        primary
-                        onClick={() => router.push(`/blocks/${id}/deploy/embed`)}
-                      />
+                      {isPageBuilderDeploy ? (
+                        <ActionCard
+                          title="Return to Page Builder"
+                          description="Go back to the page section using this approved block."
+                          primary
+                          onClick={() => router.push(doneHref)}
+                        />
+                      ) : (
+                        <ActionCard
+                          title="Generate Optimizely Embed Code"
+                          description="Create production-ready embed output for approved CMS implementation."
+                          primary
+                          onClick={() => router.push(embedHref)}
+                        />
+                      )}
 
                       <ActionCard
                         title="Save as Approved Block Template"
@@ -338,8 +382,9 @@ export default function BlockDeployPage() {
                   Block Approved — Ready for Deployment
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  This output has passed governance and is now ready to embed
-                  into your CMS or save as a reusable template.
+                  {isPageBuilderDeploy
+                    ? "This block has passed governance and is ready to use inside the selected page section."
+                    : "This output has passed governance and is now ready to embed into your CMS or save as a reusable template."}
                 </p>
               </div>
 
@@ -446,7 +491,7 @@ export default function BlockDeployPage() {
                   Status:{" "}
                   <span className="font-medium text-emerald-600">Approved</span>
                 </span>
-                <span>Deployment ready</span>
+                <span>{isPageBuilderDeploy ? "Page builder ready" : "Deployment ready"}</span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -457,13 +502,23 @@ export default function BlockDeployPage() {
                   Save Template
                 </button>
 
-                <button
-                  type="button"
-                  onClick={() => router.push(`/blocks/${id}/deploy/embed`)}
-                  className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
-                >
-                  Generate Embed Code
-                </button>
+                {isPageBuilderDeploy ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(doneHref)}
+                    className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                  >
+                    Return to Page
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => router.push(embedHref)}
+                    className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                  >
+                    Generate Embed Code
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -231,11 +231,23 @@ export default function BlockApprovalPage() {
   const id = params.id;
   const searchParams = useSearchParams();
 
-const returnTo = searchParams.get("returnTo") || "";
-const pageId = searchParams.get("pageId") || "";
-const sectionId = searchParams.get("sectionId") || "";
-
-const isPageBuilderApproval = Boolean(returnTo || (pageId && sectionId));
+  const returnTo = searchParams.get("returnTo") || "";
+  const pageId = searchParams.get("pageId") || "";
+  const sectionId = searchParams.get("sectionId") || "";
+  const editMode = searchParams.get("editMode") || "";
+  
+  const isPageBuilderApproval =
+    editMode === "page_builder" || Boolean(returnTo || (pageId && sectionId));
+  
+  function getPageBuilderReturnUrl(role: Role) {
+    if (returnTo) return returnTo;
+  
+    if (pageId && sectionId) {
+      return `/pages/${pageId}?role=${role}&tab=sections&sectionId=${sectionId}#section-workspace`;
+    }
+  
+    return `/pages?role=${role}`;
+  }
 
   const [currentUser, setCurrentUser] = useState<UserLike | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
@@ -344,8 +356,7 @@ const isPageBuilderApproval = Boolean(returnTo || (pageId && sectionId));
       redirectedRef.current = true;
       router.replace(
         isPageBuilderApproval
-          ? returnTo ||
-              `/pages/${pageId}?role=${currentUser.role}&tab=sections&sectionId=${sectionId}#section-workspace`
+          ? getPageBuilderReturnUrl(currentUser.role)
           : `/blocks/${id}/deploy?role=${currentUser.role}`
       );
     }
@@ -442,10 +453,7 @@ const isPageBuilderApproval = Boolean(returnTo || (pageId && sectionId));
             if (isPageBuilderApproval) {
               await attachBlockToPageSection();
             
-              router.replace(
-                returnTo ||
-                  `/pages/${pageId}?role=${currentRole}&tab=sections&sectionId=${sectionId}#section-workspace`
-              );
+              router.replace(getPageBuilderReturnUrl(currentRole));
               return;
             }
             
@@ -557,10 +565,7 @@ const isPageBuilderApproval = Boolean(returnTo || (pageId && sectionId));
         if (isPageBuilderApproval) {
           await attachBlockToPageSection();
         
-          router.replace(
-            returnTo ||
-              `/pages/${pageId}?role=${currentUser.role}&tab=sections&sectionId=${sectionId}#section-workspace`
-          );
+          router.replace(getPageBuilderReturnUrl(currentUser.role));
           return;
         }
         

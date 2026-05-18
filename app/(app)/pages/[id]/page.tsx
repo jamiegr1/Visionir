@@ -21,6 +21,8 @@ import {
   Blocks,
   ChevronRight,
   Library,
+  AlertTriangle,
+  TrendingUp,
 } from "lucide-react";
 import { makePreviewHtml } from "@/lib/preview";
 import type {
@@ -31,6 +33,37 @@ import type {
 
 type Role = "creator" | "approver" | "admin";
 type PageTab = "overview" | "sections" | "preview";
+
+type GovernanceRiskLevel = "low" | "medium" | "high";
+
+type GovernanceMetric = {
+  label: string;
+  score: number;
+  maxScore: number;
+  description: string;
+  status: "good" | "warning" | "risk";
+};
+
+type GovernanceRecommendation = {
+  title: string;
+  description: string;
+  priority: "High" | "Medium" | "Low";
+};
+
+type PageGovernanceInsights = {
+  score: number;
+  riskLevel: GovernanceRiskLevel;
+  riskLabel: string;
+  passedChecks: number;
+  totalChecks: number;
+  metrics: GovernanceMetric[];
+  recommendations: GovernanceRecommendation[];
+  approvedAttachedBlocks: number;
+  totalAttachedBlocks: number;
+  missingRequiredSections: number;
+  incompleteSections: number;
+  incompatibleBlocks: number;
+};
 
 type ApiBlockRecord = {
   id: string;
@@ -209,6 +242,66 @@ function normaliseComponentId(value: string) {
   return aliases[cleaned] || cleaned;
 }
 
+function isApprovedLikeStatus(status: string | undefined) {
+  return (
+    status === "approved" ||
+    status === "published" ||
+    status === "completed" ||
+    status === "deployed"
+  );
+}
+
+function getMetricTone(status: GovernanceMetric["status"]) {
+  switch (status) {
+    case "good":
+      return "bg-emerald-500";
+    case "warning":
+      return "bg-amber-500";
+    case "risk":
+    default:
+      return "bg-rose-500";
+  }
+}
+
+function getGovernanceRiskStyles(riskLevel: GovernanceRiskLevel) {
+  switch (riskLevel) {
+    case "low":
+      return {
+        dot: "bg-emerald-500",
+        pill: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+        bar: "bg-emerald-500",
+        card: "border-emerald-200 bg-emerald-50",
+      };
+    case "medium":
+      return {
+        dot: "bg-amber-500",
+        pill: "bg-amber-50 text-amber-700 ring-amber-200",
+        bar: "bg-amber-500",
+        card: "border-amber-200 bg-amber-50",
+      };
+    case "high":
+    default:
+      return {
+        dot: "bg-rose-500",
+        pill: "bg-rose-50 text-rose-700 ring-rose-200",
+        bar: "bg-rose-500",
+        card: "border-rose-200 bg-rose-50",
+      };
+  }
+}
+
+function getPriorityTone(priority: GovernanceRecommendation["priority"]) {
+  switch (priority) {
+    case "High":
+      return "bg-rose-50 text-rose-700 ring-rose-200";
+    case "Medium":
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+    case "Low":
+    default:
+      return "bg-blue-50 text-blue-700 ring-blue-200";
+  }
+}
+
 function getBlockName(block: ApiBlockRecord) {
   const headline = block.data?.headline;
   const eyebrow = block.data?.eyebrow;
@@ -256,6 +349,7 @@ function Panel({
   icon,
   children,
   className,
+  contentClassName,
   id,
 }: {
   title: string;
@@ -263,6 +357,7 @@ function Panel({
   icon: React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  contentClassName?: string;
   id?: string;
 }) {
   return (
@@ -288,7 +383,7 @@ function Panel({
         </div>
       </div>
 
-      {children}
+      <div className={contentClassName}>{children}</div>
     </section>
   );
 }
@@ -309,7 +404,7 @@ function TabButton({
       type="button"
       onClick={onClick}
       className={cx(
-        "group inline-flex h-[72px] min-w-[132px] items-center justify-center gap-2 rounded-[22px] px-6 text-sm font-semibold transition-all duration-200",
+        "group inline-flex h-[92px] min-w-[132px] items-center justify-center gap-2 rounded-[22px] px-6 text-sm font-semibold transition-all duration-200",
         active
           ? "bg-[#5b7cff] text-white shadow-[0_12px_28px_rgba(91,124,255,0.22)]"
           : "border border-slate-200 bg-white text-slate-700 shadow-sm hover:-translate-y-1 hover:scale-[1.02] hover:border-[#cfd8f6] hover:bg-[#f8faff] hover:text-slate-900 hover:shadow-[0_14px_30px_rgba(15,23,42,0.10)]"
@@ -368,6 +463,197 @@ function Badge({
     <span className={cx("inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold", styles)}>
       {children}
     </span>
+  );
+}
+
+function GovernanceScoreCard({
+  insights,
+  compact = false,
+  className,
+}: {
+  insights: PageGovernanceInsights;
+  compact?: boolean;
+  className?: string;
+}) {
+  const riskStyles = getGovernanceRiskStyles(insights.riskLevel);
+
+  if (compact) {
+    return (
+      <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm transition hover:border-slate-300 hover:shadow-[0_14px_30px_rgba(15,23,42,0.06)]">
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className={cx("h-2.5 w-2.5 rounded-full", riskStyles.dot)} />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                Governance Score
+              </p>
+            </div>
+            <p className="mt-2 text-xs font-medium text-slate-500">
+              {insights.riskLabel} risk profile
+            </p>
+          </div>
+
+          <div className="shrink-0 text-right">
+            <p className="text-[30px] font-semibold leading-none tracking-[-0.06em] text-slate-950">
+              {insights.score}%
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className={cx(
+        "flex h-full w-full flex-col rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm",
+        className
+      )}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className={cx("h-2.5 w-2.5 rounded-full", riskStyles.dot)} />
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+              Governance Score
+            </p>
+          </div>
+
+          <p className="mt-2 text-sm font-medium text-slate-500">
+            {insights.riskLabel} risk profile · {insights.passedChecks}/{insights.totalChecks} checks passed
+          </p>
+        </div>
+
+        <div className="shrink-0 text-right">
+          <p className="text-[44px] font-semibold leading-none tracking-[-0.07em] text-slate-950">
+            {insights.score}%
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
+        <div
+          className={cx("h-full rounded-full transition-all duration-500", riskStyles.bar)}
+          style={{ width: `${insights.score}%` }}
+        />
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+        {insights.metrics.slice(0, 4).map((metric) => (
+          <div key={metric.label} className="flex items-start gap-2 rounded-2xl border border-slate-100 px-3 py-3">
+            <span className={cx("mt-1 h-2 w-2 shrink-0 rounded-full", getMetricTone(metric.status))} />
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold text-slate-800">
+                {metric.label}
+              </p>
+              <p className="mt-0.5 text-xs font-medium text-slate-400">
+                {metric.score}/{metric.maxScore}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 grid w-full gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Checks passed
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-950">
+            {insights.passedChecks}/{insights.totalChecks}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Approval coverage
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-950">
+            {insights.totalAttachedBlocks > 0
+              ? `${Math.round(
+                  (insights.approvedAttachedBlocks /
+                    Math.max(insights.totalAttachedBlocks, 1)) *
+                    100
+                )}%`
+              : "0%"}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Required gaps
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-950">
+            {insights.missingRequiredSections}
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Template risks
+          </p>
+          <p className="mt-1 text-sm font-semibold text-slate-950">
+            {insights.incompatibleBlocks}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+}
+
+function RecommendedChangesList({
+  recommendations,
+}: {
+  recommendations: GovernanceRecommendation[];
+}) {
+  if (recommendations.length === 0) {
+    return (
+      <div className="rounded-[20px] border border-slate-200 bg-white px-4 py-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <div>
+            <p className="text-sm font-semibold text-slate-900">
+              No major changes recommended
+            </p>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              This page is in a strong governance position.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {recommendations.slice(0, 4).map((recommendation) => (
+        <div
+          key={`${recommendation.priority}-${recommendation.title}`}
+          className="rounded-[20px] border border-slate-200 bg-white px-4 py-4 shadow-sm"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-5 text-slate-900">
+                {recommendation.title}
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                {recommendation.description}
+              </p>
+            </div>
+
+            <span
+              className={cx(
+                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ring-1",
+                getPriorityTone(recommendation.priority)
+              )}
+            >
+              {recommendation.priority}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -1100,24 +1386,288 @@ export default function PageDetailPage() {
     router.push(`/blocks/new?${params.toString()}`);
   }
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
-        Loading page…
-      </div>
-    );
-  }
-
-  if (!page) {
-    return (
-      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
-        Page not found.
-      </div>
-    );
-  }
-
   const completedSections = sortedSections.filter((section) => section.completed);
   const incompleteSections = sortedSections.filter((section) => !section.completed);
+
+  const governanceInsights = useMemo<PageGovernanceInsights>(() => {
+    const requiredSections = sortedSections.filter((section) => section.required);
+    const missingRequiredSections = requiredSections.filter(
+      (section) => !section.completed || section.blockIds.length === 0
+    );
+
+    const attachedBlockIds = sortedSections.flatMap((section) => section.blockIds);
+    const attachedBlocks = attachedBlockIds
+      .map((blockId) => allBlocks.find((block) => block.id === blockId))
+      .filter((block): block is ApiBlockRecord => Boolean(block));
+
+    const approvedAttachedBlocks = attachedBlocks.filter((block) =>
+      isApprovedLikeStatus(block.status)
+    );
+
+    const incompatibleBlocks = sortedSections.reduce((count, section) => {
+      const allowed = new Set(
+        section.allowedComponentIds.map((componentId) =>
+          normaliseComponentId(componentId)
+        )
+      );
+
+      const invalidBlocksInSection = section.blockIds.filter((blockId) => {
+        const block = allBlocks.find((item) => item.id === blockId);
+        if (!block) return false;
+
+        const componentType = normaliseComponentId(getBlockComponentType(block));
+        if (!componentType || allowed.size === 0) return false;
+
+        return !allowed.has(componentType);
+      });
+
+      return count + invalidBlocksInSection.length;
+    }, 0);
+
+    const blocksWithPotentialAccessibilityRisk = attachedBlocks.filter((block) => {
+      const componentType = normaliseComponentId(getBlockComponentType(block));
+      const data = block.data ?? {};
+
+      const likelyNeedsAltText =
+        componentType === "media" ||
+        componentType === "team" ||
+        componentType === "testimonials" ||
+        typeof data.image === "string" ||
+        typeof data.imageUrl === "string" ||
+        typeof data.mediaUrl === "string";
+
+      const hasAltText =
+        typeof data.alt === "string" ||
+        typeof data.altText === "string" ||
+        typeof data.imageAlt === "string" ||
+        typeof data.mediaAlt === "string";
+
+      return likelyNeedsAltText && !hasAltText;
+    });
+
+    const sectionCompletionPercent =
+      sortedSections.length > 0
+        ? completedSections.length / sortedSections.length
+        : 1;
+
+    const requiredCompletionPercent =
+      requiredSections.length > 0
+        ? (requiredSections.length - missingRequiredSections.length) /
+          requiredSections.length
+        : 1;
+
+    const approvalPercent =
+      attachedBlocks.length > 0
+        ? approvedAttachedBlocks.length / attachedBlocks.length
+        : 0;
+
+    const compatibilityPercent =
+      attachedBlocks.length > 0
+        ? (attachedBlocks.length - incompatibleBlocks) / attachedBlocks.length
+        : 1;
+
+    const accessibilityPercent =
+      attachedBlocks.length > 0
+        ? (attachedBlocks.length - blocksWithPotentialAccessibilityRisk.length) /
+          attachedBlocks.length
+        : 1;
+
+    const workflowPercent =
+      pageStatus === "published"
+        ? 1
+        : pageStatus === "approved"
+          ? 0.9
+          : pageStatus === "pending_approval"
+            ? 0.75
+            : pageStatus === "in_progress"
+              ? 0.55
+              : pageStatus === "changes_requested"
+                ? 0.35
+                : 0.25;
+
+    const metrics: GovernanceMetric[] = [
+      {
+        label: "Page structure",
+        score: Math.round(requiredCompletionPercent * 30),
+        maxScore: 30,
+        status:
+          missingRequiredSections.length === 0 && sectionCompletionPercent >= 0.8
+            ? "good"
+            : missingRequiredSections.length <= 1
+              ? "warning"
+              : "risk",
+        description:
+          missingRequiredSections.length === 0
+            ? "All required sections have content attached."
+            : `${missingRequiredSections.length} required section${
+                missingRequiredSections.length === 1 ? "" : "s"
+              } still need content.`,
+      },
+      {
+        label: "Block approval",
+        score: Math.round(approvalPercent * 25),
+        maxScore: 25,
+        status:
+          attachedBlocks.length > 0 && approvalPercent === 1
+            ? "good"
+            : approvalPercent >= 0.7
+              ? "warning"
+              : "risk",
+        description:
+          attachedBlocks.length === 0
+            ? "No blocks are currently attached to this page."
+            : `${approvedAttachedBlocks.length} of ${attachedBlocks.length} attached blocks are approved or publish-ready.`,
+      },
+      {
+        label: "Template compatibility",
+        score: Math.round(compatibilityPercent * 20),
+        maxScore: 20,
+        status:
+          incompatibleBlocks === 0 ? "good" : incompatibleBlocks <= 1 ? "warning" : "risk",
+        description:
+          incompatibleBlocks === 0
+            ? "Attached blocks match the allowed section component rules."
+            : `${incompatibleBlocks} attached block${
+                incompatibleBlocks === 1 ? "" : "s"
+              } may not match this template's allowed section rules.`,
+      },
+      {
+        label: "Accessibility signals",
+        score: Math.round(accessibilityPercent * 15),
+        maxScore: 15,
+        status:
+          blocksWithPotentialAccessibilityRisk.length === 0
+            ? "good"
+            : blocksWithPotentialAccessibilityRisk.length <= 1
+              ? "warning"
+              : "risk",
+        description:
+          blocksWithPotentialAccessibilityRisk.length === 0
+            ? "No obvious media alt-text risks were found in attached block data."
+            : `${blocksWithPotentialAccessibilityRisk.length} media-heavy block${
+                blocksWithPotentialAccessibilityRisk.length === 1 ? "" : "s"
+              } may need alt text or accessibility review.`,
+      },
+      {
+        label: "Workflow readiness",
+        score: Math.round(workflowPercent * 10),
+        maxScore: 10,
+        status:
+          pageStatus === "approved" || pageStatus === "published"
+            ? "good"
+            : pageStatus === "pending_approval"
+              ? "warning"
+              : "risk",
+        description:
+          pageStatus === "approved" || pageStatus === "published"
+            ? "The page has reached an approved publishing state."
+            : pageStatus === "pending_approval"
+              ? "The page is submitted and awaiting approval."
+              : "The page has not yet reached approval.",
+      },
+    ];
+
+    const score = Math.min(
+      100,
+      Math.max(0, metrics.reduce((total, metric) => total + metric.score, 0))
+    );
+
+    const riskLevel: GovernanceRiskLevel =
+      score >= 80 && missingRequiredSections.length === 0 && incompatibleBlocks === 0
+        ? "low"
+        : score >= 60
+          ? "medium"
+          : "high";
+
+    const recommendations: GovernanceRecommendation[] = [];
+
+    if (missingRequiredSections.length > 0) {
+      recommendations.push({
+        priority: "High",
+        title: "Complete required page sections",
+        description: `Add or attach governed blocks to ${missingRequiredSections
+          .map((section) => section.label)
+          .slice(0, 3)
+          .join(", ")}${
+          missingRequiredSections.length > 3 ? " and other required sections" : ""
+        } before submitting or publishing.`,
+      });
+    }
+
+    if (attachedBlocks.length === 0) {
+      recommendations.push({
+        priority: "High",
+        title: "Attach governed blocks",
+        description:
+          "This page currently has no attached block content. Generate new governed blocks or reuse approved blocks from the library.",
+      });
+    }
+
+    const unapprovedBlocks = attachedBlocks.filter(
+      (block) => !isApprovedLikeStatus(block.status)
+    );
+
+    if (unapprovedBlocks.length > 0) {
+      recommendations.push({
+        priority: "High",
+        title: "Resolve unapproved blocks",
+        description: `${unapprovedBlocks.length} attached block${
+          unapprovedBlocks.length === 1 ? " is" : "s are"
+        } still draft, in review, or awaiting changes. Move them through approval before publishing.`,
+      });
+    }
+
+    if (incompatibleBlocks > 0) {
+      recommendations.push({
+        priority: "Medium",
+        title: "Review template compatibility",
+        description:
+          "One or more attached blocks may not match the allowed block types for their section. Replace them or update the template rules if this is intentional.",
+      });
+    }
+
+    if (blocksWithPotentialAccessibilityRisk.length > 0) {
+      recommendations.push({
+        priority: "Medium",
+        title: "Check accessibility metadata",
+        description:
+          "Some media-led blocks may need alt text or an accessibility review before this page is approved.",
+      });
+    }
+
+    if (
+      pageStatus !== "approved" &&
+      pageStatus !== "published" &&
+      missingRequiredSections.length === 0 &&
+      unapprovedBlocks.length === 0 &&
+      attachedBlocks.length > 0
+    ) {
+      recommendations.push({
+        priority: "Low",
+        title: "Submit page for approval",
+        description:
+          "The core page structure looks ready. Submit it so an approver can complete the governance workflow.",
+      });
+    }
+
+    const passedChecks = metrics.filter((metric) => metric.status === "good").length;
+
+    return {
+      score,
+      riskLevel,
+      riskLabel:
+        riskLevel === "low" ? "Low" : riskLevel === "medium" ? "Medium" : "High",
+      passedChecks,
+      totalChecks: metrics.length,
+      metrics,
+      recommendations,
+      approvedAttachedBlocks: approvedAttachedBlocks.length,
+      totalAttachedBlocks: attachedBlocks.length,
+      missingRequiredSections: missingRequiredSections.length,
+      incompleteSections: incompleteSections.length,
+      incompatibleBlocks,
+    };
+  }, [allBlocks, completedSections.length, incompleteSections.length, pageStatus, sortedSections]);
 
   const workflowSummary =
     pageStatus === "draft"
@@ -1133,6 +1683,23 @@ export default function PageDetailPage() {
               : pageStatus === "published"
                 ? "This page has been published."
                 : "This page is archived.";
+
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Loading page…
+      </div>
+    );
+  }
+
+  if (!page) {
+    return (
+      <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
+        Page not found.
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100dvh-72px)] bg-[#f5f7fb] text-slate-900">
@@ -1244,23 +1811,25 @@ export default function PageDetailPage() {
         </section>
 
         <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-stretch xl:justify-between">
-          <div className="grid flex-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+          <div className="grid flex-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
+            <div className="flex h-[92px] flex-col justify-center rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                 Template
               </p>
-              <p className="mt-2 truncate text-sm font-semibold text-slate-900">
+              <p className="mt-1.5 truncate text-sm font-semibold text-slate-900">
                 {page.templateName}
               </p>
+
+              <div className="mt-2.5 h-1.5 opacity-0" />
             </div>
 
-            <div className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
+            <div className="flex h-[92px] flex-col justify-center rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                     Page Progress
                   </p>
-                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                  <p className="mt-1.5 text-sm font-semibold text-slate-900">
                     {completedSections.length} / {sortedSections.length} sections complete
                   </p>
                 </div>
@@ -1270,7 +1839,7 @@ export default function PageDetailPage() {
                 </span>
               </div>
 
-              <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+              <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
                 <div
                   className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
                   style={{
@@ -1306,113 +1875,118 @@ export default function PageDetailPage() {
         </div>
 
         {activeTab === "overview" ? (
-          <div className="mt-4 grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-            <main className="min-w-0 space-y-6">
-              <Panel
-                title="Page Details"
-                subtitle="Manage the page name, URL slug and key publishing information."
-                icon={<Pencil className="h-5 w-5" />}
-              >
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <div>
-                    <FieldLabel>Page Name</FieldLabel>
-                    <TextInput
-                      value={pageName}
-                      onChange={(e) => setPageName(e.target.value)}
-                      placeholder="Service Page"
-                    />
+          <div className="mt-4 grid items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+            <main className="flex min-w-0">
+              <div className="grid flex-1 items-stretch gap-6 lg:grid-cols-2">
+                <Panel
+                  title="Page Details"
+                  subtitle="Core page information and readiness status."
+                  icon={<Pencil className="h-5 w-5" />}
+                  className="flex h-full flex-col"
+                  contentClassName="flex flex-1 flex-col"
+                >
+                  <div className="flex flex-1 flex-col gap-4">
+                    <div>
+                      <FieldLabel>Page Name</FieldLabel>
+                      <TextInput
+                        value={pageName}
+                        onChange={(e) => setPageName(e.target.value)}
+                        placeholder="Service Page"
+                      />
+                    </div>
+
+                    <div>
+                      <FieldLabel>Slug</FieldLabel>
+                      <TextInput
+                        value={pageSlug}
+                        onChange={(e) => setPageSlug(e.target.value)}
+                        placeholder="service-page"
+                      />
+                    </div>
+
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <OverviewCard label="Status" value={getStatusLabel(pageStatus)} />
+                      <OverviewCard
+                        label="Sections"
+                        value={`${completedSections.length} / ${sortedSections.length} complete`}
+                      />
+                      <OverviewCard
+                        label="Readiness"
+                        value={`${Math.round(
+                          (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+                        )}%`}
+                      />
+                    </div>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-5 py-5">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">
+                            Page readiness
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-500">
+                            {incompleteSections.length === 0
+                              ? "All required sections are complete."
+                              : `${incompleteSections.length} section${
+                                  incompleteSections.length === 1 ? "" : "s"
+                                } still need content.`}
+                          </p>
+                        </div>
+
+                        <span className="shrink-0 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700">
+                          {Math.round(
+                            (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+                          )}%
+                        </span>
+                      </div>
+
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-white">
+                        <div
+                          className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
+                          style={{
+                            width: `${Math.round(
+                              (completedSections.length / Math.max(sortedSections.length, 1)) * 100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
+                </Panel>
 
-                  <div>
-                    <FieldLabel>Slug</FieldLabel>
-                    <TextInput
-                      value={pageSlug}
-                      onChange={(e) => setPageSlug(e.target.value)}
-                      placeholder="service-page"
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <OverviewCard label="Status" value={getStatusLabel(pageStatus)} />
-                  <OverviewCard label="Template" value={page.templateName} />
-                  <OverviewCard label="Last Updated" value={formatDateTime(page.updatedAt)} />
-                </div>
-              </Panel>
-
-              <Panel
-                title="Page Readiness"
-                subtitle="Track whether the governed page structure is ready for approval."
-                icon={<CheckCircle2 className="h-5 w-5" />}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {completedSections.length} of {sortedSections.length} sections complete
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {incompleteSections.length === 0
-                        ? "All required sections are complete."
-                        : `${incompleteSections.length} section${
-                            incompleteSections.length === 1 ? "" : "s"
-                          } still need content.`}
-                    </p>
-                  </div>
-
-                  <span className="rounded-full bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
-                    {Math.round((completedSections.length / Math.max(sortedSections.length, 1)) * 100)}%
-                  </span>
-                </div>
-
-                <div className="mt-5 h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div
-                    className="h-full rounded-full bg-[#5b7cff] transition-all duration-500"
-                    style={{
-                      width: `${Math.round(
-                        (completedSections.length / Math.max(sortedSections.length, 1)) * 100
-                      )}%`,
-                    }}
-                  />
-                </div>
-              </Panel>
+                <Panel
+                  title="Governance Score"
+                  subtitle="Page-level governance summary."
+                  icon={<ShieldCheck className="h-5 w-5" />}
+                  className="flex h-full flex-col"
+                  contentClassName="flex w-full flex-1"
+                >
+                  <GovernanceScoreCard insights={governanceInsights} className="h-full" />
+                </Panel>
+              </div>
             </main>
 
-            <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
+            <aside className="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-stretch">
               <Panel
                 title="Workflow"
-                subtitle="Current approval and publishing position."
                 icon={<Sparkles className="h-5 w-5" />}
+                className="shrink-0"
               >
-                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-start gap-3 rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-4">
                   <StatusPill status={pageStatus} />
-                  <p className="mt-4 text-sm leading-6 text-slate-700">
+                  <p className="min-w-0 text-sm leading-6 text-slate-600">
                     {workflowSummary}
                   </p>
                 </div>
               </Panel>
 
               <Panel
-                title="Template"
-                subtitle="The governed structure this page follows."
-                icon={<LayoutTemplate className="h-5 w-5" />}
+                title="Recommended Changes"
+                subtitle="Highest-priority governance improvements."
+                icon={<TrendingUp className="h-5 w-5" />}
+                className="flex-1"
               >
-                <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-semibold text-slate-900">
-                    {page.templateName}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Version {page.templateVersion}
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
-                    className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <LayoutTemplate className="h-4 w-4" />
-                    View Template
-                  </button>
-                </div>
+                <RecommendedChangesList recommendations={governanceInsights.recommendations} />
               </Panel>
             </aside>
           </div>

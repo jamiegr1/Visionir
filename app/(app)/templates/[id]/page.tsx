@@ -371,9 +371,10 @@ function SectionSummaryCard({
 
 function getComponentNameFromRegistry(
   componentRegistry: ComponentSchema[],
-  componentId: string | null | undefined
+  componentId: string | null | undefined,
+  fallback = "—"
 ) {
-  if (!componentId) return "—";
+  if (!componentId) return fallback;
 
   const component = componentRegistry.find((item) => item.id === componentId);
 
@@ -626,7 +627,8 @@ export default function TemplateDetailPage() {
 
     const selectedSectionDefaultBlockName = getComponentNameFromRegistry(
       componentRegistry,
-      selectedSection?.defaultComponentId
+      selectedSection?.defaultComponentId,
+      "No default block set"
     );
 
   const totalAllowedBlocks = sortedSections.reduce(
@@ -880,8 +882,9 @@ export default function TemplateDetailPage() {
                           <p className="mt-1 text-sm text-slate-500">
                           {getComponentNameFromRegistry(
   componentRegistry,
-  section.defaultComponentId
-) || "No default component set"}
+  section.defaultComponentId,
+  "No default component set"
+)}
                           </p>
                         </div>
                       ))
@@ -1270,8 +1273,9 @@ export default function TemplateDetailPage() {
                           <p className="text-sm font-medium text-slate-700">
                           {getComponentNameFromRegistry(
   componentRegistry,
-  section.defaultComponentId
-) || "Representative block preview"}
+  section.defaultComponentId,
+  "Representative block preview"
+)}
                           </p>
                           <p className="mt-1 text-sm text-slate-500">
                             This is a placeholder preview area for the section.

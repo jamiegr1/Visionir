@@ -30,7 +30,16 @@ type BlockTypeOption = {
   description: string;
   bestFor: string;
   variants: BlockVariant[];
+  isCustom?: boolean;
 };
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(" ");
+}
+
+function isRole(value: string | null): value is Role {
+  return value === "creator" || value === "approver" || value === "admin";
+}
 
 function mapComponentToBlockTypeOption(
   component: ComponentSchema
@@ -49,39 +58,8 @@ function mapComponentToBlockTypeOption(
       name: variant.label,
       description: variant.description || "Approved layout variant.",
     })),
+    isCustom: component.visibility === "brand" || component.tags?.includes("custom"),
   };
-}
-
-const progressLabels = [
-  "Analysing prompt...",
-  "Applying governance...",
-  "Validating accessibility...",
-  "Generating layout structure...",
-  "Rendering preview...",
-  "Finalising block...",
-];
-
-const governanceChecks = [
-  "Enforce Brand Typography",
-  "Enforce Colour System",
-  "Enforce Spacing Guidelines",
-  "Enforce WCAG AA Accessibility",
-  "Optimise for Core Web Vitals",
-  "Language & Tone",
-  "Validate Semantic HTML Structure",
-  "Ensure Mobile Responsiveness",
-  "Asset Performance Optimisation",
-];
-
-const contentLengthOptions = ["Short", "Standard", "Detailed"];
-const MIN_GENERATION_TIME_MS = 5000;
-
-function cx(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
-}
-
-function isRole(value: string | null): value is Role {
-  return value === "creator" || value === "approver" || value === "admin";
 }
 
 function normaliseComponentId(value: string | null) {
@@ -123,6 +101,30 @@ function normaliseComponentId(value: string | null) {
   return aliases[cleaned] || cleaned;
 }
 
+const progressLabels = [
+  "Analysing prompt...",
+  "Applying governance...",
+  "Validating accessibility...",
+  "Generating layout structure...",
+  "Rendering preview...",
+  "Finalising block...",
+];
+
+const governanceChecks = [
+  "Enforce Brand Typography",
+  "Enforce Colour System",
+  "Enforce Spacing Guidelines",
+  "Enforce WCAG AA Accessibility",
+  "Optimise for Core Web Vitals",
+  "Language & Tone",
+  "Validate Semantic HTML Structure",
+  "Ensure Mobile Responsiveness",
+  "Asset Performance Optimisation",
+];
+
+const contentLengthOptions = ["Short", "Standard", "Detailed"];
+const MIN_GENERATION_TIME_MS = 5000;
+
 function getStepNumber(step: Step): 1 | 2 | 3 {
   if (step === "context") return 1;
   if (step === "block_type") return 2;
@@ -132,27 +134,14 @@ function getStepNumber(step: Step): 1 | 2 | 3 {
 function TopBar({ title, stepLabel }: { title: string; stepLabel: string }) {
   return (
     <div className="sticky top-0 z-40 shrink-0 border-b border-[#e8ebf3] bg-[#f6f7fb]/95 px-8 py-4 backdrop-blur-md">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#edf0f6] bg-white text-[#98a1ba] transition hover:text-slate-700"
-          >
-            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M5 7h14M5 12h14M5 17h14" />
-            </svg>
-          </button>
-
-          <div className="flex items-center gap-2">
-            <h1 className="text-[17px] font-semibold tracking-[-0.02em] text-[#111827] md:text-[18px]">
-              {title}
-            </h1>
-            <span className="text-[#b8c0d6]">•</span>
-            <span className="text-[13px] font-medium text-[#7d859d]">
-              {stepLabel}
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center gap-2">
+        <h1 className="text-[18px] font-semibold tracking-[-0.02em] text-[#111827]">
+          {title}
+        </h1>
+        <span className="text-[#b8c0d6]">•</span>
+        <span className="text-[13px] font-medium text-[#7d859d]">
+          {stepLabel}
+        </span>
       </div>
     </div>
   );
@@ -191,7 +180,6 @@ function ProgressHeader({
             style={{ width: `${percent}%` }}
           />
         </div>
-
         <span className="text-[12px] font-medium text-[#98a1ba]">
           {percent}%
         </span>
@@ -212,10 +200,17 @@ function FormRow({
   helper?: string;
 }) {
   return (
-    <div className={cx("border-t border-[#e9edf5] px-6 first:border-t-0", multiline ? "py-4" : "py-3")}>
+    <div
+      className={cx(
+        "border-t border-[#e9edf5] px-6 first:border-t-0",
+        multiline ? "py-4" : "py-3"
+      )}
+    >
       <div className="mb-2 flex items-center justify-between gap-4">
         <div className="text-[14px] font-medium text-[#20263a]">{label}</div>
-        {helper ? <div className="text-[12px] font-medium text-[#98a1ba]">{helper}</div> : null}
+        {helper ? (
+          <div className="text-[12px] font-medium text-[#98a1ba]">{helper}</div>
+        ) : null}
       </div>
       {children}
     </div>
@@ -290,6 +285,7 @@ function ImageSourceSelector({
     <div className="grid gap-3 md:grid-cols-3">
       {(["none", "upload", "gallery"] as ImageSourceMode[]).map((item) => {
         const selected = mode === item;
+
         const title =
           item === "none"
             ? "No Image"
@@ -311,24 +307,39 @@ function ImageSourceSelector({
               onClick={() => setMode("upload")}
               className={cx(
                 "flex cursor-pointer items-start justify-between gap-3 rounded-[16px] border px-4 py-3 transition-all",
-                selected ? "border-[#5b7cff] bg-[#f4f7ff]" : "border-[#e6eaf3] bg-white hover:border-[#d7def1] hover:bg-[#fafbff]"
+                selected
+                  ? "border-[#5b7cff] bg-[#f4f7ff]"
+                  : "border-[#e6eaf3] bg-white hover:border-[#d7def1] hover:bg-[#fafbff]"
               )}
             >
               <div className="w-full">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="text-[13px] font-semibold text-[#20263a]">{title}</div>
-                    <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">{description}</p>
+                    <div className="text-[13px] font-semibold text-[#20263a]">
+                      {title}
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">
+                      {description}
+                    </p>
                   </div>
 
-                  <span className={cx("mt-0.5 h-4 w-4 shrink-0 rounded-full border transition-all", selected ? "border-[#5b7cff] bg-[#5b7cff] shadow-[inset_0_0_0_4px_white]" : "border-[#cbd4ea] bg-white")} />
+                  <span
+                    className={cx(
+                      "mt-0.5 h-4 w-4 shrink-0 rounded-full border transition-all",
+                      selected
+                        ? "border-[#5b7cff] bg-[#5b7cff] shadow-[inset_0_0_0_4px_white]"
+                        : "border-[#cbd4ea] bg-white"
+                    )}
+                  />
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2.5">
                   <label
                     className={cx(
                       "inline-flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-[12px] font-semibold transition-all",
-                      selected ? "border-[#5b7cff] bg-[#5b7cff] text-white hover:bg-[#496bf4]" : "border-[#d9deea] bg-[#f7f9fc] text-[#4f5d7b] hover:bg-[#eef2f8]"
+                      selected
+                        ? "border-[#5b7cff] bg-[#5b7cff] text-white hover:bg-[#496bf4]"
+                        : "border-[#d9deea] bg-[#f7f9fc] text-[#4f5d7b] hover:bg-[#eef2f8]"
                     )}
                     onClick={(e) => e.stopPropagation()}
                   >
@@ -357,15 +368,28 @@ function ImageSourceSelector({
             onClick={() => setMode(item)}
             className={cx(
               "flex items-start justify-between gap-3 rounded-[16px] border px-4 py-3 text-left transition-all",
-              selected ? "border-[#5b7cff] bg-[#f4f7ff]" : "border-[#e6eaf3] bg-white hover:border-[#d7def1] hover:bg-[#fafbff]"
+              selected
+                ? "border-[#5b7cff] bg-[#f4f7ff]"
+                : "border-[#e6eaf3] bg-white hover:border-[#d7def1] hover:bg-[#fafbff]"
             )}
           >
             <div>
-              <div className="text-[13px] font-semibold text-[#20263a]">{title}</div>
-              <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">{description}</p>
+              <div className="text-[13px] font-semibold text-[#20263a]">
+                {title}
+              </div>
+              <p className="mt-1.5 text-[11px] leading-4 text-[#7d859d]">
+                {description}
+              </p>
             </div>
 
-            <span className={cx("mt-0.5 h-4 w-4 shrink-0 rounded-full border transition-all", selected ? "border-[#5b7cff] bg-[#5b7cff] shadow-[inset_0_0_0_4px_white]" : "border-[#cbd4ea] bg-white")} />
+            <span
+              className={cx(
+                "mt-0.5 h-4 w-4 shrink-0 rounded-full border transition-all",
+                selected
+                  ? "border-[#5b7cff] bg-[#5b7cff] shadow-[inset_0_0_0_4px_white]"
+                  : "border-[#cbd4ea] bg-white"
+              )}
+            />
           </button>
         );
       })}
@@ -376,7 +400,21 @@ function ImageSourceSelector({
 function VariantPreview({ variantId }: { variantId: string }) {
   const card = "rounded-md bg-white shadow-sm ring-1 ring-slate-200";
 
-  if (variantId === "faq-accordion") {
+  if (variantId.includes("map")) {
+    return (
+      <div className="grid grid-cols-[1.1fr_0.9fr] gap-2">
+        <div className={`${card} h-20 rounded-xl bg-slate-100`} />
+        <div className="space-y-2">
+          <div className="h-3 w-20 rounded-full bg-slate-400" />
+          <div className="h-2 w-full rounded-full bg-slate-300" />
+          <div className="h-2 w-4/5 rounded-full bg-slate-200" />
+          <div className="mt-3 h-6 w-16 rounded-lg bg-[#5b7cff]" />
+        </div>
+      </div>
+    );
+  }
+
+  if (variantId.includes("accordion")) {
     return (
       <div className="space-y-2">
         {[0, 1, 2].map((item) => (
@@ -387,37 +425,6 @@ function VariantPreview({ variantId }: { variantId: string }) {
             </div>
           </div>
         ))}
-      </div>
-    );
-  }
-
-  if (variantId === "faq-two-column") {
-    return (
-      <div className="grid grid-cols-2 gap-2">
-        {[0, 1, 2, 3].map((item) => (
-          <div key={item} className={`${card} p-2`}>
-            <div className="mb-2 h-2 w-14 rounded-full bg-slate-300" />
-            <div className="h-2 w-full rounded-full bg-slate-200" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  if (variantId === "faq-support") {
-    return (
-      <div className="grid grid-cols-[1.3fr_0.8fr] gap-2">
-        <div className="space-y-2">
-          {[0, 1, 2].map((item) => (
-            <div key={item} className={`${card} px-3 py-2`}>
-              <div className="h-2 w-20 rounded-full bg-slate-300" />
-            </div>
-          ))}
-        </div>
-        <div className="rounded-xl bg-[#5b7cff]/15 p-3 ring-1 ring-[#5b7cff]/20">
-          <div className="mb-2 h-2 w-12 rounded-full bg-[#5b7cff]/50" />
-          <div className="h-6 rounded-lg bg-white" />
-        </div>
       </div>
     );
   }
@@ -519,6 +526,10 @@ function BlockTypeSelector({
     lockedBlockType ? "variants" : "types"
   );
 
+  useEffect(() => {
+    if (lockedBlockType) setView("variants");
+  }, [lockedBlockType, selectedBlockTypeId]);
+
   const selectedBlockType =
     blockTypeOptions.find((item) => item.id === selectedBlockTypeId) ||
     blockTypeOptions[0];
@@ -533,15 +544,15 @@ function BlockTypeSelector({
       <div className="rounded-[24px] border border-[#e8ecf4] bg-white p-5">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-          {!lockedBlockType ? (
-  <button
-    type="button"
-    onClick={() => setView("types")}
-    className="mb-3 text-[13px] font-semibold text-[#5b7cff]"
-  >
-    ← Back to block types
-  </button>
-) : null}
+            {!lockedBlockType ? (
+              <button
+                type="button"
+                onClick={() => setView("types")}
+                className="mb-3 text-[13px] font-semibold text-[#5b7cff]"
+              >
+                ← Back to block types
+              </button>
+            ) : null}
 
             <div className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#5b7cff]">
               Selected type
@@ -610,18 +621,6 @@ function BlockTypeSelector({
             );
           })}
         </div>
-
-        <div className="mt-5 rounded-[18px] border border-[#e8ecf4] bg-[#fafbff] px-4 py-3">
-          <div className="text-[12px] font-semibold text-[#20263a]">
-            Selected generation structure
-          </div>
-          <p className="mt-1 text-[12px] text-[#7d859d]">
-            {selectedBlockType.name} /{" "}
-            {selectedBlockType.variants.find(
-              (item) => item.id === selectedVariantId
-            )?.name || "No variant selected"}
-          </p>
-        </div>
       </div>
     );
   }
@@ -650,7 +649,7 @@ function BlockTypeSelector({
                 </div>
 
                 <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-[#5b7cff] ring-1 ring-[#dfe5ff]">
-                  {option.category}
+                  {option.isCustom ? "Custom" : option.category}
                 </span>
               </div>
 
@@ -680,23 +679,51 @@ function NewBlockPageContent() {
 
   const currentUser = useMemo(() => ({ id: "user-1", role }), [role]);
   const canCreate = hasPermission(currentUser.role, "block.create");
-  const pageId = searchParams.get("pageId") || "";
-const sectionId = searchParams.get("sectionId") || "";
-const pageNameFromUrl = searchParams.get("pageName") || "";
-const sectionLabelFromUrl = searchParams.get("sectionLabel") || "";
-const sectionKeyFromUrl = searchParams.get("sectionKey") || "";
-const lockedComponentIdFromUrl = normaliseComponentId(
-  searchParams.get("lockedComponentId") ||
-    searchParams.get("defaultComponentId") ||
-    sectionKeyFromUrl ||
-    sectionLabelFromUrl
-);
 
-const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUrl);
+  const pageId = searchParams.get("pageId") || "";
+  const sectionId = searchParams.get("sectionId") || "";
+  const pageNameFromUrl = searchParams.get("pageName") || "";
+  const sectionLabelFromUrl = searchParams.get("sectionLabel") || "";
+  const sectionKeyFromUrl = searchParams.get("sectionKey") || "";
+
+  const lockedComponentIdFromUrl = normaliseComponentId(
+    searchParams.get("lockedComponentId") ||
+      searchParams.get("defaultComponentId") ||
+      sectionKeyFromUrl ||
+      sectionLabelFromUrl
+  );
+
+  const returnToFromUrl = searchParams.get("returnTo") || "";
+
+const isPageBuilderMode = Boolean(pageId && sectionId);
+   
+const shouldLockComponentSelection = Boolean(
+  pageId && sectionId && lockedComponentIdFromUrl
+);
 
   const [step, setStep] = useState<Step>("context");
   const [blockTypeOptions, setBlockTypeOptions] = useState<BlockTypeOption[]>([]);
   const [loadingBlockTypes, setLoadingBlockTypes] = useState(true);
+
+  const [blockName, setBlockName] = useState("Why Choose Us");
+  const [location, setLocation] = useState("Food, Feed & Agriculture");
+  const [contentLength, setContentLength] = useState("Standard");
+
+  const [selectedBlockTypeId, setSelectedBlockTypeId] = useState("");
+  const [selectedVariantId, setSelectedVariantId] = useState("");
+
+  const [imageSourceMode, setImageSourceMode] = useState<ImageSourceMode>("none");
+  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
+
+  const [prompt, setPrompt] = useState(
+    "Create a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone."
+  );
+
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState(progressLabels[0]);
+  const [error, setError] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
   useEffect(() => {
     let active = true;
 
@@ -704,7 +731,10 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
       try {
         setLoadingBlockTypes(true);
 
-        const res = await fetch("/api/component-registry");
+        const res = await fetch("/api/component-registry", {
+          cache: "no-store",
+        });
+
         const json = await res.json().catch(() => ({}));
 
         if (!active) return;
@@ -719,13 +749,9 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
 
         setBlockTypeOptions(mapped);
       } catch {
-        if (active) {
-          setBlockTypeOptions([]);
-        }
+        if (active) setBlockTypeOptions([]);
       } finally {
-        if (active) {
-          setLoadingBlockTypes(false);
-        }
+        if (active) setLoadingBlockTypes(false);
       }
     }
 
@@ -735,12 +761,6 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
       active = false;
     };
   }, []);
-  const [blockName, setBlockName] = useState("Why Choose Us");
-  const [location, setLocation] = useState("Food, Feed & Agriculture");
-  const [contentLength, setContentLength] = useState("Standard");
-
-  const [selectedBlockTypeId, setSelectedBlockTypeId] = useState("");
-  const [selectedVariantId, setSelectedVariantId] = useState("");
 
   const selectedBlockType = useMemo(
     () =>
@@ -760,7 +780,7 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
     if (!blockTypeOptions.length) return;
 
     const lockedType = blockTypeOptions.find(
-      (item) => item.id === lockedComponentIdFromUrl
+      (item) => normaliseComponentId(item.id) === lockedComponentIdFromUrl
     );
 
     const initialType = lockedType || blockTypeOptions[0];
@@ -782,7 +802,7 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
     if (!isPageBuilderMode || !blockTypeOptions.length) return;
 
     const lockedType = blockTypeOptions.find(
-      (item) => item.id === lockedComponentIdFromUrl
+      (item) => normaliseComponentId(item.id) === lockedComponentIdFromUrl
     );
 
     if (!lockedType) return;
@@ -805,18 +825,6 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
     pageNameFromUrl,
     blockTypeOptions,
   ]);
-
-  const [imageSourceMode, setImageSourceMode] = useState<ImageSourceMode>("none");
-  const [uploadedImageFile, setUploadedImageFile] = useState<File | null>(null);
-
-  const [prompt, setPrompt] = useState(
-    "Create a professional, conversion-focused block using the selected block type and variant. Maintain a clear hierarchy, concise messaging, strong visual structure and an enterprise-grade tone."
-  );
-
-  const [progress, setProgress] = useState(0);
-  const [progressLabel, setProgressLabel] = useState(progressLabels[0]);
-  const [error, setError] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     if (step !== "generating") return;
@@ -885,6 +893,11 @@ const isPageBuilderMode = Boolean(pageId && sectionId && lockedComponentIdFromUr
       return;
     }
 
+    if (!selectedBlockType || !selectedVariant) {
+      setError("Please choose a block type and variant.");
+      return;
+    }
+
     setError(null);
     setIsGenerating(true);
     setStep("generating");
@@ -949,14 +962,14 @@ ${prompt}
           body: JSON.stringify({
             data: {
               ...generateJson.blockData,
-          
+
               componentType: selectedBlockType.id,
               componentVariant: selectedVariant.id,
               componentId: selectedBlockType.id,
               variantId: selectedVariant.id,
               componentName: selectedBlockType.name,
               variantName: selectedVariant.name,
-          
+
               pageId,
               sectionId,
               pageName: pageNameFromUrl,
@@ -984,15 +997,22 @@ ${prompt}
       setProgressLabel("Block ready");
 
       window.setTimeout(() => {
-        router.push(
-          `/blocks/${blockId}/review?role=${role}${
-            isPageBuilderMode
-              ? `&returnTo=${encodeURIComponent(
-                  `/pages/${pageId}?role=${role}&sectionId=${sectionId}`
-                )}`
-              : ""
-          }`
-        );
+        const reviewParams = new URLSearchParams({
+          role,
+        });
+        
+        if (isPageBuilderMode) {
+          reviewParams.set("editMode", "page_builder");
+          reviewParams.set("pageId", pageId);
+          reviewParams.set("sectionId", sectionId);
+          reviewParams.set(
+            "returnTo",
+            returnToFromUrl ||
+              `/pages/${pageId}?role=${role}&tab=sections&sectionId=${sectionId}#section-workspace`
+          );
+        }
+        
+        router.push(`/blocks/${blockId}/review?${reviewParams.toString()}`);
       }, 250);
     } catch (e: any) {
       setError(e?.message || "Something went wrong");
@@ -1017,10 +1037,11 @@ ${prompt}
       </div>
     );
   }
+
   if (loadingBlockTypes) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[#f6f7fb] text-sm font-medium text-slate-500">
-        Loading block types…
+        Loading approved block types…
       </div>
     );
   }
@@ -1028,17 +1049,25 @@ ${prompt}
   if (!blockTypeOptions.length || !selectedBlockType || !selectedVariant) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[#f6f7fb] px-6">
-        <div className="w-full max-w-[520px] rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
+        <div className="w-full max-w-[560px] rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_10px_35px_rgba(15,23,42,0.04)]">
           <h1 className="text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
             No approved block types available
           </h1>
           <p className="mt-3 text-sm leading-6 text-slate-500">
-            Create and approve a block type before generating blocks.
+            Create and approve at least one block type before generating blocks.
           </p>
+          <button
+            type="button"
+            onClick={() => router.push(`/block-types?role=${role}`)}
+            className="mt-5 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3f5ff0]"
+          >
+            Go to Block Type Library
+          </button>
         </div>
       </div>
     );
   }
+
   if (step === "generating") {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
@@ -1057,26 +1086,38 @@ ${prompt}
       <TopBar title="Create Block" stepLabel={`Step ${stepNumber} of 3`} />
 
       <div className="flex flex-1 items-center justify-center overflow-hidden px-8 py-6">
-      <div className="mx-auto flex max-h-[calc(100dvh-150px)] w-full max-w-[1040px] flex-col rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
+        <div className="mx-auto flex max-h-[calc(100dvh-150px)] w-full max-w-[1040px] flex-col rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
           {step === "context" ? (
             <>
               <ProgressHeader
                 currentStep={1}
                 title="Block Context"
-                subtitle="Define the core block details before choosing the component type."
+                subtitle="Define the core block details before choosing the governed block type."
               />
 
               <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
                 <FormRow label="Block Name">
-                  <TextInput value={blockName} onChange={setBlockName} placeholder="Why Choose Us" />
+                  <TextInput
+                    value={blockName}
+                    onChange={setBlockName}
+                    placeholder="Why Choose Us"
+                  />
                 </FormRow>
 
                 <FormRow label="Where will this block be used">
-                  <TextInput value={location} onChange={setLocation} placeholder="Food, Feed & Agriculture" />
+                  <TextInput
+                    value={location}
+                    onChange={setLocation}
+                    placeholder="Food, Feed & Agriculture"
+                  />
                 </FormRow>
 
                 <FormRow label="Content Length">
-                  <SegmentedOptions value={contentLength} onChange={setContentLength} options={contentLengthOptions} />
+                  <SegmentedOptions
+                    value={contentLength}
+                    onChange={setContentLength}
+                    options={contentLengthOptions}
+                  />
                 </FormRow>
 
                 <FormRow label="Image Source" multiline>
@@ -1089,25 +1130,23 @@ ${prompt}
                 </FormRow>
               </div>
 
-              {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
               <div className="mt-5 flex items-center justify-center gap-3">
-              <button
-  type="button"
-  onClick={() => {
-    const returnTo = searchParams.get("returnTo");
-
-    if (returnTo) {
-      router.push(returnTo);
-      return;
-    }
-
-    router.push(`/dashboard?role=${role}`);
-  }}
-  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
->
-  Cancel
-</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const returnTo = searchParams.get("returnTo");
+                    router.push(returnTo || `/dashboard?role=${role}`);
+                  }}
+                  className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
+                >
+                  Cancel
+                </button>
 
                 <button
                   type="button"
@@ -1124,27 +1163,31 @@ ${prompt}
           {step === "block_type" ? (
             <>
               <ProgressHeader
-  currentStep={2}
-  title={isPageBuilderMode ? "Choose Variant" : "Block Type & Variant"}
-  subtitle={
-    isPageBuilderMode
-      ? `This block type has been set by the ${sectionLabelFromUrl || "selected"} section. Choose the layout variant you want to generate.`
-      : "Choose the type of section you want to generate, then select its preferred layout variant."
-  }
-/>
+                currentStep={2}
+                title={isPageBuilderMode ? "Choose Variant" : "Block Type & Variant"}
+                subtitle={
+                  isPageBuilderMode
+                    ? `This section requires ${selectedBlockType.name}. Choose the layout variant to generate.`
+                    : "Choose the governed block type, then select its approved layout variant."
+                }
+              />
 
-<div className="relative min-h-0 flex-1 overflow-y-auto pr-2 max-h-[490px]">
-<BlockTypeSelector
-  blockTypeOptions={blockTypeOptions}
-  selectedBlockTypeId={selectedBlockTypeId}
-  selectedVariantId={selectedVariantId}
-  onSelectBlockType={handleSelectBlockType}
-  onSelectVariant={setSelectedVariantId}
-  lockedBlockType={isPageBuilderMode}
-/>
-</div>
+              <div className="relative min-h-0 max-h-[490px] flex-1 overflow-y-auto pr-2">
+                <BlockTypeSelector
+                  blockTypeOptions={blockTypeOptions}
+                  selectedBlockTypeId={selectedBlockTypeId}
+                  selectedVariantId={selectedVariantId}
+                  onSelectBlockType={handleSelectBlockType}
+                  onSelectVariant={setSelectedVariantId}
+                  lockedBlockType={isPageBuilderMode}
+                />
+              </div>
 
-              {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
               <div className="mt-5 flex items-center justify-center gap-3">
                 <button
@@ -1203,7 +1246,8 @@ ${prompt}
                   Governance & Output Controls
                 </h3>
                 <p className="mt-2 text-[13px] text-[#7d859d]">
-                  All generated blocks are validated against organisational design, accessibility, performance, and content standards.
+                  All generated blocks are validated against organisational design,
+                  accessibility, performance, and content standards.
                 </p>
 
                 <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-4">
@@ -1220,7 +1264,11 @@ ${prompt}
                 </div>
               </div>
 
-              {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+              {error ? (
+                <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {error}
+                </div>
+              ) : null}
 
               <div className="mt-5 flex items-center justify-center gap-3">
                 <button

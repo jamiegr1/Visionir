@@ -38,7 +38,11 @@ function mapBlockTypeToComponentSchema(blockType: any) {
       .filter((blockType) => blockType.status === "approved")
       .map(mapBlockTypeToComponentSchema);
   
-    return [...COMPONENT_REGISTRY, ...approvedCustomBlockTypes];
+      const approvedCoreComponents = COMPONENT_REGISTRY.filter((component: any) => {
+        return !component.status || component.status === "approved";
+      });
+      
+      return [...approvedCoreComponents, ...approvedCustomBlockTypes];
   }
   
   export async function getAllComponentRegistryItems() {

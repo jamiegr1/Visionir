@@ -5,7 +5,13 @@ export async function GET() {
   try {
     const registry = await getApprovedComponentRegistry();
 
-    return NextResponse.json({ components: registry });
+const approved = Array.isArray(registry)
+  ? registry.filter((component: any) => {
+      return !component.status || component.status === "approved";
+    })
+  : [];
+
+return NextResponse.json({ components: approved });
   } catch (error) {
     console.error("GET /api/component-registry failed:", error);
 
