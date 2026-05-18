@@ -142,6 +142,16 @@ function escapeScriptContent(value: string) {
     .replace(/<\/script>/gi, "<\\/script>");
 }
 
+function extractPreviewHtmlFragment(html: string) {
+  const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+
+  const headContent = headMatch ? headMatch[1] : "";
+  const bodyContent = bodyMatch ? bodyMatch[1] : html;
+
+  return `${headContent}\n${bodyContent}`;
+}
+
 function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
   const blockMap = new Map(blocks.map((block) => [block.id, block]));
 
@@ -156,10 +166,10 @@ function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
       const blocksHtml = sectionBlocks
         .map((block) => {
           try {
-            return makePreviewHtml(block.data as any);
+            return extractPreviewHtmlFragment(makePreviewHtml(block.data as any));
           } catch {
             return `
-              <section style="padding:48px;border:1px solid #e5e7eb;border-radius:24px;margin:24px 0;font-family:Inter,Arial,sans-serif;">
+              <section style="padding:40px;border:1px solid #e5e7eb;border-radius:24px;margin:0;font-family:Inter,Arial,sans-serif;background:#ffffff;">
                 <p style="margin:0;color:#64748b;font-size:14px;">Unable to render block</p>
                 <h2 style="margin:8px 0 0;color:#0f172a;">${getBlockName(block)}</h2>
               </section>
@@ -169,7 +179,7 @@ function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
         .join("\n");
 
       return `
-        <section data-visionir-section="${section.key}" data-visionir-section-name="${section.label}">
+        <section class="visionir-page-section" data-visionir-section="${section.key}" data-visionir-section-name="${section.label}">
           ${blocksHtml}
         </section>
       `;
@@ -318,16 +328,74 @@ export default function PagePublishPage() {
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>
-            html, body {
+            * {
+              box-sizing: border-box;
+            }
+
+            html,
+            body {
+              margin: 0;
+              padding: 0;
+              width: 100%;
+              min-height: 100%;
+              background: #ffffff;
+              font-family: Inter, Arial, sans-serif;
+              overflow-x: hidden;
+            }
+
+            body {
+              -webkit-font-smoothing: antialiased;
+              text-rendering: geometricPrecision;
+            }
+
+            .visionir-preview-shell {
+              width: 100%;
+              min-height: 100%;
               margin: 0;
               padding: 0;
               background: #ffffff;
-              font-family: Inter, Arial, sans-serif;
+              overflow: hidden;
+            }
+
+            main[data-visionir-page] {
+              display: block;
+              width: 100%;
+              margin: 0;
+              padding: 0;
+              background: #ffffff;
+              overflow: hidden;
+            }
+
+            main[data-visionir-page] > .visionir-page-section {
+              display: block;
+              width: 100%;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: transparent;
+            }
+
+            main[data-visionir-page] > .visionir-page-section + .visionir-page-section {
+              margin-top: 0 !important;
+            }
+
+            main[data-visionir-page] > .visionir-page-section > *:first-child {
+              margin-top: 0 !important;
+            }
+
+            main[data-visionir-page] > .visionir-page-section > *:last-child {
+              margin-bottom: 0 !important;
+            }
+
+            main[data-visionir-page] > .visionir-page-section img,
+            main[data-visionir-page] > .visionir-page-section video {
+              max-width: 100%;
             }
           </style>
         </head>
         <body>
-          ${buildFullPageHtml(page, blocks)}
+          <div class="visionir-preview-shell">
+            ${buildFullPageHtml(page, blocks)}
+          </div>
         </body>
       </html>
     `;
@@ -687,13 +755,13 @@ export default function PagePublishPage() {
                 <div className="flex h-full items-center justify-center">
                   <div
                     className={cx(
-                      "w-full rounded-[40px] border border-slate-200 bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      "w-full overflow-hidden rounded-[36px] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
                       shellWidthClass
                     )}
                   >
                     <div
                       className={cx(
-                        "rounded-[28px] bg-white",
+                        "rounded-[26px] border border-slate-100 bg-white shadow-inner",
                         viewport === "desktop"
                           ? "overflow-y-auto overflow-x-hidden"
                           : "overflow-y-auto overflow-x-hidden"
