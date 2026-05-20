@@ -67,46 +67,52 @@ export default function Sidebar() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const role = isRole(searchParams.get("role")) ? searchParams.get("role") : "admin";
+  const role = isRole(searchParams.get("role"))
+    ? searchParams.get("role")
+    : "admin";
+
   const resolvedRole = role as Role;
+  const currentRegion = searchParams.get("region") || "mediascout-uk";
 
   const canAccessApprovals =
     hasPermission(resolvedRole, "block.approve") ||
     hasPermission(resolvedRole, "page.approve");
 
+  const showGlobalSettings = currentRegion === "mediascout-uk";
+
   const navItems = [
     {
-      href: `/dashboard?role=${resolvedRole}`,
+      href: `/dashboard?role=${resolvedRole}&region=${currentRegion}`,
       match: "/dashboard",
       label: "Dashboard",
       icon: <LayoutDashboard className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: `/blocks/new?role=${resolvedRole}`,
+      href: `/blocks/new?role=${resolvedRole}&region=${currentRegion}`,
       match: "/blocks/new",
       label: "Generate Block",
       icon: <Sparkles className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: `/blocks?role=${resolvedRole}`,
+      href: `/blocks?role=${resolvedRole}&region=${currentRegion}`,
       match: "/blocks",
       label: "Block Library",
       icon: <Blocks className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: `/brand?role=${resolvedRole}`,
+      href: `/brand?role=${resolvedRole}&region=${currentRegion}`,
       match: "/brand",
-      label: "Brand System",
+      label: "Governance",
       icon: <Palette className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: `/templates?role=${resolvedRole}`,
+      href: `/templates?role=${resolvedRole}&region=${currentRegion}`,
       match: "/templates",
       label: "Templates",
       icon: <LayoutTemplate className="h-5 w-5" strokeWidth={1.9} />,
     },
     {
-      href: `/pages?role=${resolvedRole}`,
+      href: `/pages?role=${resolvedRole}&region=${currentRegion}`,
       match: "/pages",
       label: "Pages",
       icon: <FileText className="h-5 w-5" strokeWidth={1.9} />,
@@ -114,17 +120,23 @@ export default function Sidebar() {
     ...(canAccessApprovals
       ? [
           {
-            href: `/approvals?role=${resolvedRole}`,
+            href: `/approvals?role=${resolvedRole}&region=${currentRegion}`,
             match: "/approvals",
             label: "Approvals",
-            icon: <ClipboardCheck className="h-5 w-5" strokeWidth={1.9} />,
+            icon: (
+              <ClipboardCheck
+                className="h-5 w-5"
+                strokeWidth={1.9}
+              />
+            ),
           },
         ]
       : []),
   ];
 
   const isActive = (href: string) => {
-    const match = navItems.find((item) => item.href === href)?.match ?? href;
+    const match =
+      navItems.find((item) => item.href === href)?.match ?? href;
 
     if (match === "/dashboard") {
       return pathname === "/dashboard" || pathname.startsWith("/dashboard/");
@@ -137,7 +149,8 @@ export default function Sidebar() {
     if (match === "/blocks") {
       return (
         pathname === "/blocks" ||
-        (pathname.startsWith("/blocks/") && !pathname.startsWith("/blocks/new"))
+        (pathname.startsWith("/blocks/") &&
+          !pathname.startsWith("/blocks/new"))
       );
     }
 
@@ -165,7 +178,7 @@ export default function Sidebar() {
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent" />
 
       <Link
-        href={`/dashboard?role=${resolvedRole}`}
+        href={`/dashboard?role=${resolvedRole}&region=${currentRegion}`}
         prefetch={false}
         className="mb-8 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-white/5 shadow-[0_8px_20px_rgba(0,0,0,0.25)]"
         aria-label="Visionir dashboard"
@@ -189,14 +202,19 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="mt-4 flex flex-col items-center gap-3">
-        <NavItem
-          href={`/settings?role=${resolvedRole}`}
-          label="Settings"
-          icon={<Settings className="h-5 w-5" strokeWidth={1.9} />}
-          active={pathname === "/settings" || pathname.startsWith("/settings/")}
-        />
-      </div>
+      {showGlobalSettings ? (
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <NavItem
+            href={`/settings/global?role=${resolvedRole}&region=mediascout-global`}
+            label="Global Settings"
+            icon={<Settings className="h-5 w-5" strokeWidth={1.9} />}
+            active={
+              pathname === "/settings/global" ||
+              pathname.startsWith("/settings/global/")
+            }
+          />
+        </div>
+      ) : null}
     </aside>
   );
 }

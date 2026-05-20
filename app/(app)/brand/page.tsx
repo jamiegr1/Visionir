@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 type Section =
   | "identity"
@@ -15,6 +16,53 @@ type Section =
   | "approvals"
   | "localisation"
   | "examples";
+
+type RegionConfig = {
+  id: string;
+  name: string;
+  country: string;
+  locale: string;
+  workspaceType: "global" | "regional";
+};
+
+const REGIONS: RegionConfig[] = [
+  {
+    id: "mediascout-global",
+    name: "Mediascout Global",
+    country: "Global",
+    locale: "Global",
+    workspaceType: "global",
+  },
+  {
+    id: "mediascout-uk",
+    name: "Mediascout UK",
+    country: "United Kingdom",
+    locale: "en-GB",
+    workspaceType: "regional",
+  },
+  {
+    id: "mediascout-dubai",
+    name: "Mediascout Dubai",
+    country: "United Arab Emirates",
+    locale: "en-AE",
+    workspaceType: "regional",
+  },
+  {
+    id: "mediascout-france",
+    name: "Mediascout France",
+    country: "France",
+    locale: "fr-FR",
+    workspaceType: "regional",
+  },
+];
+
+function getRegion(regionId: string | null) {
+  return (
+    REGIONS.find((region) => region.id === regionId) ||
+    REGIONS.find((region) => region.id === "mediascout-uk") ||
+    REGIONS[0]
+  );
+}
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -40,7 +88,7 @@ function StatusPill({
   tone = "blue",
 }: {
   children: React.ReactNode;
-  tone?: "blue" | "green" | "slate" | "amber";
+  tone?: "blue" | "green" | "slate" | "amber" | "rose";
 }) {
   return (
     <span
@@ -49,11 +97,86 @@ function StatusPill({
         tone === "blue" && "bg-[#eef3ff] text-[#4f6fff]",
         tone === "green" && "bg-emerald-50 text-emerald-700",
         tone === "slate" && "bg-slate-100 text-slate-600",
-        tone === "amber" && "bg-amber-50 text-amber-700"
+        tone === "amber" && "bg-amber-50 text-amber-700",
+        tone === "rose" && "bg-rose-50 text-rose-700"
       )}
     >
       {children}
     </span>
+  );
+}
+
+function GovernanceScopePill({
+  scope,
+}: {
+  scope: "locked" | "inherited" | "override" | "regional";
+}) {
+  const label =
+    scope === "locked"
+      ? "Locked globally"
+      : scope === "inherited"
+        ? "Inherited from global"
+        : scope === "override"
+          ? "Regional override"
+          : "Regional setting";
+
+  const tone =
+    scope === "locked"
+      ? "slate"
+      : scope === "inherited"
+        ? "blue"
+        : scope === "override"
+          ? "amber"
+          : "green";
+
+  return <StatusPill tone={tone}>{label}</StatusPill>;
+}
+
+function InheritanceNotice({
+  regionLabel,
+  activeSection,
+}: {
+  regionLabel: string;
+  activeSection: Section;
+}) {
+  const isMostlyGlobal =
+    activeSection === "visual" ||
+    activeSection === "accessibility" ||
+    activeSection === "components";
+
+  const isRegionalOverride =
+    activeSection === "localisation" ||
+    activeSection === "cta" ||
+    activeSection === "approvals" ||
+    activeSection === "terminology";
+
+  return (
+    <div className="rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8faff_100%)] p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusPill tone="blue">{regionLabel}</StatusPill>
+            {isMostlyGlobal ? <GovernanceScopePill scope="locked" /> : null}
+            {isRegionalOverride ? <GovernanceScopePill scope="override" /> : null}
+            {!isMostlyGlobal && !isRegionalOverride ? (
+              <GovernanceScopePill scope="inherited" />
+            ) : null}
+          </div>
+
+          <h2 className="mt-3 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+            Regional Brand & Governance
+          </h2>
+
+          <p className="mt-2 max-w-[900px] text-sm leading-6 text-slate-500">
+            This workspace inherits global brand and governance rules. Regional teams can only adjust approved local settings such as localisation, contact language, regional CTAs, disclaimers, and local approval routing.
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3 text-sm font-semibold text-[#4f6fff]">
+          Global inheritance enabled
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -62,19 +185,25 @@ function Input({
   onChange,
   type = "text",
   placeholder,
+  disabled = false,
 }: {
   value: string | number;
   onChange: (value: string) => void;
   type?: string;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <input
       type={type}
       value={value}
       placeholder={placeholder}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white"
+      className={cx(
+        "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white",
+        disabled ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-slate-50"
+      )}
     />
   );
 }
@@ -84,19 +213,25 @@ function Textarea({
   onChange,
   rows = 4,
   placeholder,
+  disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   rows?: number;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <textarea
       value={value}
       rows={rows}
       placeholder={placeholder}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white"
+      className={cx(
+        "w-full resize-none rounded-2xl border border-slate-200 px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white",
+        disabled ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-slate-50"
+      )}
     />
   );
 }
@@ -105,16 +240,22 @@ function Select({
   value,
   onChange,
   options,
+  disabled = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   options: string[];
+  disabled?: boolean;
 }) {
   return (
     <select
       value={value}
+      disabled={disabled}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white"
+      className={cx(
+        "w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:bg-white",
+        disabled ? "cursor-not-allowed bg-slate-100 text-slate-400" : "bg-slate-50"
+      )}
     >
       {options.map((option) => (
         <option key={option}>{option}</option>
@@ -176,7 +317,7 @@ function FieldCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
+    <div className="rounded-[28px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)] lg:p-6">
       <div className="mb-4">
         <div className="text-[15px] font-semibold tracking-[-0.02em] text-slate-900">
           {title}
@@ -195,21 +336,26 @@ function FieldCard({
 function FieldGroup({
   label,
   helper,
+  scope,
   children,
 }: {
   label: string;
   helper?: string;
+  scope?: "locked" | "inherited" | "override" | "regional";
   children: React.ReactNode;
 }) {
   return (
     <div>
       <div className="mb-2 flex items-center justify-between gap-3">
         <label className="text-sm font-medium text-slate-800">{label}</label>
-        {helper ? (
-          <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
-            {helper}
-          </span>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {scope ? <GovernanceScopePill scope={scope} /> : null}
+          {helper ? (
+            <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-slate-400">
+              {helper}
+            </span>
+          ) : null}
+        </div>
       </div>
       {children}
     </div>
@@ -241,26 +387,32 @@ function LeftPanelNav({
   sections,
   active,
   setActive,
+  regionLabel,
 }: {
   sections: Array<{ id: Section; label: string; helper: string }>;
   active: Section;
   setActive: (section: Section) => void;
+  regionLabel: string;
 }) {
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
-      <div className="border-b border-slate-200 px-6 py-6">
+    <div className="space-y-5">
+      <div className="rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
         <div>
-          <h2 className="text-[19px] font-semibold tracking-[-0.03em] text-slate-900">
-            Brand System
+          <h2 className="text-[22px] font-semibold tracking-[-0.05em] text-slate-900">
+            {regionLabel}
           </h2>
-          <p className="mt-1.5 max-w-[260px] text-[13px] leading-5 text-slate-500">
-            Configure the rules Visionir uses for generation, validation and governance.
+          <p className="mt-1.5 text-sm leading-6 text-slate-500">
+            Regional brand, governance and localisation controls.
           </p>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <StatusPill tone="blue">Regional Workspace</StatusPill>
+            <StatusPill tone="green">Inherited Rules</StatusPill>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-5 pr-3">
-        <div className="rounded-[26px] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] p-2 shadow-[0_10px_30px_rgba(15,23,42,0.035)]">
+      <div className="rounded-[28px] border border-slate-200 bg-white p-2 shadow-[0_10px_30px_rgba(15,23,42,0.035)]">
           {sections.map((section, index) => {
             const isActive = active === section.id;
             const isLast = index === sections.length - 1;
@@ -321,13 +473,12 @@ function LeftPanelNav({
               </button>
             );
           })}
-        </div>
+      </div>
 
-        <div className="mt-5 rounded-[22px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#f8faff_0%,#f3f7ff_100%)] px-4 py-3.5 shadow-[0_6px_18px_rgba(79,108,255,0.04)]">
-          <p className="text-[13px] leading-5 text-[#4f6fff]">
-            These settings define the rules the API uses to generate, validate and govern enterprise blocks.
-          </p>
-        </div>
+      <div className="rounded-[22px] border border-[#dbe5ff] bg-[#f8faff] px-4 py-3.5">
+        <p className="text-[13px] leading-5 text-[#4f6fff]">
+          Regional settings inherit global rules. Locked global rules cannot be changed from this workspace.
+        </p>
       </div>
     </div>
   );
@@ -404,6 +555,12 @@ function ApproverSelector({
   );
 }
 export default function BrandPage() {
+  const searchParams = useSearchParams();
+  const regionId = searchParams.get("region") || "mediascout-uk";
+  const activeRegion = getRegion(regionId);
+  const regionLabel = activeRegion.name;
+  const isGlobalWorkspace = activeRegion.workspaceType === "global";
+
   const [active, setActive] = useState<Section>("identity");
 
   const [config, setConfig] = useState({
@@ -728,83 +885,101 @@ export default function BrandPage() {
 
   return (
     <div className="h-[calc(100dvh-72px)] overflow-hidden bg-[#f5f7fb] text-slate-900">
-      <div className="flex h-[calc(100dvh-72px)] overflow-hidden">
-        <aside className="w-full max-w-[360px] shrink-0 border-r border-slate-200 bg-white">
-          <LeftPanelNav
-            sections={sections}
-            active={active}
-            setActive={setActive}
-          />
-        </aside>
+      <main className="grid h-full min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden">
+        <header className="border-b border-slate-200 bg-[#f5f7fb] px-6 py-5 lg:px-8">
+          <div className="mx-auto max-w-[1800px]">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-[#4f6fff] shadow-sm">
+                    <svg
+                      className="h-5 w-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4Z" />
+                      <path d="M9 12l2 2 4-4" />
+                    </svg>
+                  </div>
 
-        <main className="grid min-w-0 flex-1 min-h-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden bg-[#f5f7fb]">
-          <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <button
-                  type="button"
-                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-400 shadow-sm hover:text-slate-600"
-                >
-                  <svg
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  >
-                    <path d="M5 7h14M5 12h14M5 17h14" />
-                  </svg>
-                </button>
-
-                <div>
-                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                    {activeSection?.label || "Brand System"}
-                  </h1>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Define the structured rules Visionir uses to generate and validate governed enterprise blocks.
-                  </p>
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                      Regional Settings
+                    </p>
+                    <h1 className="mt-1 text-[28px] font-semibold tracking-[-0.05em] text-slate-900">
+                      {activeSection?.label || "Regional Brand & Governance"}
+                    </h1>
+                  </div>
                 </div>
+
+                <p className="mt-3 max-w-[900px] text-sm leading-6 text-slate-500">
+                  Manage {regionLabel} settings, inherited global rules, and approved regional overrides.
+                </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <StatusPill tone="blue">Brand Governance</StatusPill>
-                <StatusPill tone="green">Structured Schema</StatusPill>
-                <StatusPill tone="amber">Validation Ready</StatusPill>
+              <div className="flex flex-wrap gap-2">
+                <StatusPill tone="blue">{regionLabel}</StatusPill>
+                <StatusPill tone="green">Inherited Global Rules</StatusPill>
+                <StatusPill tone="amber">Regional Overrides</StatusPill>
               </div>
             </div>
           </div>
+        </header>
 
-          <div className="min-h-0 overflow-y-auto px-8 py-6">
-            <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-5">
+        <div className="min-h-0 overflow-y-auto px-6 py-6 lg:px-8">
+          <div className="mx-auto grid max-w-[1800px] gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+            <aside className="hidden xl:block">
+              <div className="sticky top-0">
+                <LeftPanelNav
+                  sections={sections}
+                  active={active}
+                  setActive={setActive}
+                  regionLabel={regionLabel}
+                />
+              </div>
+            </aside>
+
+            <section className="min-w-0 space-y-5">
+              {isGlobalWorkspace ? (
+                <div className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-800">
+                  You are currently viewing the global workspace. Global governance is managed in Global Settings. Switch to a regional workspace to edit regional brand and governance overrides.
+                </div>
+              ) : null}
+
+              <InheritanceNotice regionLabel={regionLabel} activeSection={active} />
+
               {active === "identity" && (
                 <>
                   <FieldCard
-                    title="Brand Identity"
-                    description="Core business and brand context used by the API when generating blocks."
+                    title={`${regionLabel} Brand Identity`}
+                    description="Regional identity settings inherit global brand context, with selected fields available for local adaptation."
                   >
                     <FieldGrid cols={2}>
-                      <FieldGroup label="Brand Name">
+                      <FieldGroup label="Brand Name" scope="inherited">
                         <Input
                           value={config.identity.brandName}
                           onChange={(v) => update("identity.brandName", v)}
                         />
                       </FieldGroup>
 
-                      <FieldGroup label="Industry">
+                      <FieldGroup label="Industry" scope="locked">
                         <Input
                           value={config.identity.industry}
                           onChange={(v) => update("identity.industry", v)}
+                          disabled
                         />
                       </FieldGroup>
 
-                      <FieldGroup label="Primary Offering">
+                      <FieldGroup label="Primary Offering" scope="inherited">
                         <Input
                           value={config.identity.primaryOffering}
                           onChange={(v) => update("identity.primaryOffering", v)}
                         />
                       </FieldGroup>
 
-                      <FieldGroup label="Website Objective">
+                      <FieldGroup label="Website Objective" scope="override">
                         <Input
                           value={config.identity.websiteObjective}
                           onChange={(v) => update("identity.websiteObjective", v)}
@@ -813,7 +988,7 @@ export default function BrandPage() {
                     </FieldGrid>
 
                     <div className="mt-5 space-y-5">
-                      <FieldGroup label="Short Description" helper="GENERATION CONTEXT">
+                      <FieldGroup label="Short Description" helper="GENERATION CONTEXT" scope="override">
                         <Textarea
                           value={config.identity.shortDescription}
                           onChange={(v) => update("identity.shortDescription", v)}
@@ -821,7 +996,7 @@ export default function BrandPage() {
                         />
                       </FieldGroup>
 
-                      <FieldGroup label="Long Description" helper="SYSTEM CONTEXT">
+                      <FieldGroup label="Long Description" helper="SYSTEM CONTEXT" scope="inherited">
                         <Textarea
                           value={config.identity.longDescription}
                           onChange={(v) => update("identity.longDescription", v)}
@@ -832,8 +1007,8 @@ export default function BrandPage() {
                   </FieldCard>
 
                   <FieldCard
-                    title="Preview"
-                    description="How this brand identity will be passed into the generation layer."
+                    title="Regional Preview"
+                    description={`How ${regionLabel} context will be passed into the generation layer.`}
                   >
                     <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
                       <p className="text-sm leading-7 text-slate-600">
@@ -851,11 +1026,11 @@ export default function BrandPage() {
 
               {active === "audience" && (
                 <FieldCard
-                  title="Audience & Positioning"
-                  description="Define who the brand is for and how Visionir should position it."
+                  title={`${regionLabel} Audience & Positioning`}
+                  description="Adapt regional audience context while keeping the global market position intact."
                 >
                   <div className="space-y-5">
-                    <FieldGroup label="Primary Audience">
+                    <FieldGroup label="Primary Audience" scope="override">
                       <Textarea
                         value={config.audience.primaryAudience}
                         onChange={(v) => update("audience.primaryAudience", v)}
@@ -863,7 +1038,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Secondary Audience">
+                    <FieldGroup label="Secondary Audience" scope="override">
                       <Textarea
                         value={config.audience.secondaryAudience}
                         onChange={(v) => update("audience.secondaryAudience", v)}
@@ -871,7 +1046,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Market Position">
+                    <FieldGroup label="Market Position" scope="inherited">
                       <Textarea
                         value={config.audience.marketPosition}
                         onChange={(v) => update("audience.marketPosition", v)}
@@ -879,7 +1054,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Value Proposition">
+                    <FieldGroup label="Value Proposition" scope="inherited">
                       <Textarea
                         value={config.audience.valueProposition}
                         onChange={(v) => update("audience.valueProposition", v)}
@@ -920,11 +1095,11 @@ export default function BrandPage() {
               {active === "messaging" && (
                 <>
                   <FieldCard
-                    title="Tone & Messaging"
-                    description="Define how generated copy should sound, read and behave."
+                    title={`${regionLabel} Tone & Messaging`}
+                    description="Localise language and messaging within the approved global tone system."
                   >
                     <FieldGrid cols={2}>
-                      <FieldGroup label="Tone Style">
+                      <FieldGroup label="Tone Style" scope="inherited">
                         <Select
                           value={config.messaging.toneStyle}
                           onChange={(v) => update("messaging.toneStyle", v)}
@@ -956,7 +1131,7 @@ export default function BrandPage() {
                         />
                       </FieldGroup>
 
-                      <FieldGroup label="Language Variant">
+                      <FieldGroup label="Language Variant" scope="override">
                         <Select
                           value={config.messaging.languageVariant}
                           onChange={(v) => update("messaging.languageVariant", v)}
@@ -1024,8 +1199,8 @@ export default function BrandPage() {
 
               {active === "terminology" && (
                 <FieldCard
-                  title="Terminology & Compliance"
-                  description="Define approved language, restricted claims and compliance constraints."
+                  title={`${regionLabel} Terminology & Compliance`}
+                  description="Manage local terminology, disclaimers and compliance notes while inheriting global claim rules."
                 >
                   <div className="space-y-5">
                     <FieldGroup label="Approved Terms" helper="COMMA SEPARATED">
@@ -1097,18 +1272,18 @@ export default function BrandPage() {
 
               {active === "cta" && (
                 <FieldCard
-                  title="CTA Rules"
-                  description="Control allowed CTA language, structure and limits."
+                  title={`${regionLabel} CTA Rules`}
+                  description="Set approved regional CTA language while respecting global CTA limits and tone."
                 >
                   <FieldGrid cols={2}>
-                    <FieldGroup label="Default CTA">
+                    <FieldGroup label="Default CTA" scope="override">
                       <Input
                         value={config.cta.defaultCta}
                         onChange={(v) => update("cta.defaultCta", v)}
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="CTA Tone">
+                    <FieldGroup label="CTA Tone" scope="inherited">
                       <Select
                         value={config.cta.ctaTone}
                         onChange={(v) => update("cta.ctaTone", v)}
@@ -1146,7 +1321,7 @@ export default function BrandPage() {
                   </FieldGrid>
 
                   <div className="mt-5 space-y-5">
-                    <FieldGroup label="Allowed CTAs" helper="COMMA SEPARATED">
+                    <FieldGroup label="Allowed CTAs" helper="COMMA SEPARATED" scope="override">
                       <Textarea
                         value={stringifyList(config.cta.allowedCtas)}
                         onChange={(v) => update("cta.allowedCtas", parseList(v))}
@@ -1154,7 +1329,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Secondary CTAs" helper="COMMA SEPARATED">
+                    <FieldGroup label="Secondary CTAs" helper="COMMA SEPARATED" scope="override">
                       <Textarea
                         value={stringifyList(config.cta.secondaryCtas)}
                         onChange={(v) => update("cta.secondaryCtas", parseList(v))}
@@ -1187,7 +1362,7 @@ export default function BrandPage() {
                 <>
                   <FieldCard
                     title="Colour Tokens"
-                    description="Manage the core colour system used across layouts, highlights and interactive elements."
+                    description="Core colour tokens are inherited from global governance and should remain locked for regional users."
                   >
                     <div className="grid gap-3 md:grid-cols-2">
                       {Object.entries(config.visual.colors).map(([key, value]) => (
@@ -1203,15 +1378,16 @@ export default function BrandPage() {
 
                   <FieldCard
                     title="Typography & Style Rules"
-                    description="Set the visual language used by generated components."
+                    description="Visual rules are primarily controlled globally to keep every regional site consistent."
                   >
                     <FieldGrid cols={2}>
-                      <FieldGroup label="Font Family">
+                      <FieldGroup label="Font Family" scope="locked">
                         <Input
                           value={config.visual.typography.fontFamily}
                           onChange={(v) =>
                             update("visual.typography.fontFamily", v)
                           }
+                          disabled
                         />
                       </FieldGroup>
 
@@ -1338,7 +1514,7 @@ export default function BrandPage() {
               {active === "components" && (
                 <FieldCard
                   title="Component & Layout Rules"
-                  description="Define which block types, layouts and behaviours are allowed."
+                  description="Component rules are inherited globally so regional pages remain structurally consistent."
                 >
                   <div className="space-y-5">
                     <FieldGroup label="Allowed Block Types" helper="COMMA SEPARATED">
@@ -1454,14 +1630,15 @@ export default function BrandPage() {
               {active === "accessibility" && (
                 <FieldCard
                   title="Accessibility"
-                  description="Set the accessibility and readability rules blocks must follow."
+                  description="Accessibility standards are locked globally and inherited by every regional workspace."
                 >
                   <FieldGrid cols={2}>
-                    <FieldGroup label="Accessibility Standard">
+                    <FieldGroup label="Accessibility Standard" scope="locked">
                       <Select
                         value={config.accessibility.standard}
                         onChange={(v) => update("accessibility.standard", v)}
                         options={["WCAG AA", "WCAG AAA"]}
+                        disabled
                       />
                     </FieldGroup>
 
@@ -1525,8 +1702,8 @@ export default function BrandPage() {
 
 {active === "governance" && (
                 <FieldCard
-                  title="Governance"
-                  description="Set lock rules and what the AI is allowed to change."
+                  title={`${regionLabel} Governance`}
+                  description="View inherited lock rules and control permitted regional AI behaviour."
                 >
                   <div className="space-y-5">
                     <FieldGroup label="AI Edit Scope">
@@ -1617,8 +1794,8 @@ export default function BrandPage() {
 {active === "approvals" && (
                 <>
                   <FieldCard
-                    title="Approval Policies"
-                    description="Define what needs approval across blocks, pages, templates and block types."
+                    title={`${regionLabel} Approval Policies`}
+                    description="Regional approval settings inherit global defaults and can route work to local approvers where allowed."
                   >
                     <div className="rounded-[24px] border border-[#dbe5ff] bg-[#f8faff] p-5">
                       <p className="text-sm leading-6 text-slate-600">
@@ -1859,18 +2036,18 @@ export default function BrandPage() {
 
 {active === "localisation" && (
                 <FieldCard
-                  title="Localisation"
-                  description="Control locale support and regional rule handling."
+                  title={`${regionLabel} Localisation`}
+                  description="Localisation is the main regional override area for language, disclaimers, imagery and CTAs."
                 >
                   <FieldGrid cols={2}>
-                    <FieldGroup label="Default Locale">
+                    <FieldGroup label="Default Locale" scope="override">
                       <Input
                         value={config.localisation.defaultLocale}
                         onChange={(v) => update("localisation.defaultLocale", v)}
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Locale Fallback">
+                    <FieldGroup label="Locale Fallback" scope="inherited">
                       <Input
                         value={config.localisation.localeFallback}
                         onChange={(v) => update("localisation.localeFallback", v)}
@@ -1879,7 +2056,7 @@ export default function BrandPage() {
                   </FieldGrid>
 
                   <div className="mt-5 space-y-5">
-                    <FieldGroup label="Supported Locales" helper="COMMA SEPARATED">
+                    <FieldGroup label="Supported Locales" helper="COMMA SEPARATED" scope="override">
                       <Textarea
                         value={stringifyList(config.localisation.supportedLocales)}
                         onChange={(v) =>
@@ -1889,7 +2066,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Region-Specific Imagery Rules">
+                    <FieldGroup label="Region-Specific Imagery Rules" scope="regional">
                       <Textarea
                         value={config.localisation.regionSpecificImageryRules}
                         onChange={(v) =>
@@ -1899,7 +2076,7 @@ export default function BrandPage() {
                       />
                     </FieldGroup>
 
-                    <FieldGroup label="Region-Specific CTA Rules" helper="COMMA SEPARATED">
+                    <FieldGroup label="Region-Specific CTA Rules" helper="COMMA SEPARATED" scope="regional">
                       <Textarea
                         value={stringifyList(config.localisation.regionSpecificCTAs)}
                         onChange={(v) =>
@@ -1989,36 +2166,38 @@ export default function BrandPage() {
                   </div>
                 </FieldCard>
               )}
-            </div>
+            </section>
           </div>
+        </div>
 
-          <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
-                <span>Brand Schema: Structured</span>
-                <span>Validation Rules: Enabled</span>
-                <span>Governance Layer: Active</span>
+        <footer className="border-t border-slate-200 bg-[#f5f7fb] px-6 py-4 lg:px-8">
+          <div className="mx-auto max-w-[1800px]">
+            <div className="flex flex-col gap-3 text-sm text-slate-500 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap gap-5">
+                <span>Region: {regionLabel}</span>
+                <span>Global Inheritance: Enabled</span>
+                <span>Regional Overrides: Controlled</span>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  className="rounded-2xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   Reset
                 </button>
 
                 <button
                   type="button"
-                  className="rounded-2xl bg-[#5b7cff] px-6 py-3 text-sm font-medium text-white transition-colors duration-200 hover:bg-[#1f36b8] active:bg-[#2642c7]"
+                  className="rounded-2xl bg-[#5b7cff] px-5 py-2.5 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                 >
-                  Save Brand System
+                  Save regional settings
                 </button>
               </div>
             </div>
           </div>
-        </main>
-      </div>
+        </footer>
+      </main>
     </div>
   );
 }

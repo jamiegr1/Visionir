@@ -410,6 +410,19 @@ export default function TemplateDetailPage() {
       : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const id = params.id;
 
   const [loading, setLoading] = useState(true);
@@ -427,7 +440,7 @@ export default function TemplateDetailPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/templates/${id}?role=${role}`, {
+        const res = await fetch(`/api/templates/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -450,7 +463,7 @@ export default function TemplateDetailPage() {
     if (id) {
       void loadTemplate();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   useEffect(() => {
     async function loadComponentRegistry() {
@@ -488,7 +501,7 @@ export default function TemplateDetailPage() {
   }, [template]);
 
   async function refreshTemplate() {
-    const res = await fetch(`/api/templates/${id}?role=${role}`, {
+    const res = await fetch(`/api/templates/${id}?role=${role}&region=${region}`, {
       cache: "no-store",
     });
 
@@ -503,12 +516,14 @@ export default function TemplateDetailPage() {
     try {
       setIsPublishing(true);
 
-      const res = await fetch(`/api/templates/${id}?role=${role}`, {
+      const res = await fetch(`/api/templates/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "publish",
           updatedByUserId: "user-1",
+          regionId: region,
+          regionName: regionLabel,
         }),
       });
 
@@ -531,12 +546,14 @@ export default function TemplateDetailPage() {
     try {
       setIsArchiving(true);
 
-      const res = await fetch(`/api/templates/${id}?role=${role}`, {
+      const res = await fetch(`/api/templates/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "archive",
           updatedByUserId: "user-1",
+          regionId: region,
+          regionName: regionLabel,
         }),
       });
 
@@ -561,7 +578,7 @@ export default function TemplateDetailPage() {
     try {
       setIsCreatingPage(true);
 
-      const res = await fetch(`/api/pages?role=${role}`, {
+      const res = await fetch(`/api/pages?role=${role}&region=${region}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -569,6 +586,8 @@ export default function TemplateDetailPage() {
           name: `${template.name} Page`,
           createdByUserId: "user-1",
           updatedByUserId: "user-1",
+          regionId: region,
+          regionName: regionLabel,
         }),
       });
 
@@ -578,7 +597,7 @@ export default function TemplateDetailPage() {
         throw new Error(json?.error || "Failed to create page from template.");
       }
 
-      router.push(`/pages/${json.page.id}?role=${role}`);
+      router.push(`/pages/${json.page.id}?role=${role}&region=${region}`);
     } catch (error) {
       console.error(error);
       alert(
@@ -648,7 +667,7 @@ export default function TemplateDetailPage() {
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates"))}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -659,16 +678,52 @@ export default function TemplateDetailPage() {
               </div>
 
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                Template Workspace
+                Global Template Workspace
               </p>
 
-              <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
-                {template.name}
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
+                  {template.name}
+                </h1>
+
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  Global template
+                </span>
+
+                <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+                  Active region: {regionLabel}
+                </span>
+              </div>
 
               <p className="mt-3 max-w-[920px] text-sm leading-7 text-slate-500">
                 {template.description || "No description provided for this template yet."}
+
+                <span className="mt-3 block">
+                  This template is governed globally and shared across all regional workspaces. Pages and blocks created from this template remain isolated to the selected region.
+                </span>
               </p>
+
+              <div className="mt-6 rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)]">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4f6fff]">
+                      Global Governance Asset
+                    </p>
+
+                    <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                      Shared template across all regions
+                    </h2>
+
+                    <p className="mt-2 max-w-[900px] text-sm leading-6 text-slate-500">
+                      {regionLabel} can create localised pages and governed blocks from this template without changing the global template structure. In production, organisations will be able to choose whether templates are global or region-specific.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3 text-sm font-semibold text-[#4f6fff]">
+                    Active region: {regionLabel}
+                  </div>
+                </div>
+              </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[980px]">
                 <OverviewCard
@@ -676,7 +731,7 @@ export default function TemplateDetailPage() {
                   value={formatCategoryLabel(template.category)}
                 />
                 <OverviewCard label="Version" value={`v${template.version}`} />
-                <OverviewCard label="Sections" value={`${sortedSections.length}`} />
+                <OverviewCard label="Global sections" value={`${sortedSections.length}`} />
                 <OverviewCard label="Required" value={`${requiredSections.length}`} />
               </div>
             </div>
@@ -690,12 +745,12 @@ export default function TemplateDetailPage() {
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus className="h-4 w-4" />
-                  {isCreatingPage ? "Creating Page…" : "Use Template"}
+                  {isCreatingPage ? "Creating Regional Page…" : `Use Template in ${regionLabel}`}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates/new"))}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <Pencil className="h-4 w-4" />
@@ -771,7 +826,7 @@ export default function TemplateDetailPage() {
             <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
                 title="Template Metadata"
-                subtitle="Ownership and publishing information."
+                subtitle="Global ownership and publishing information."
                 icon={<LayoutTemplate className="h-5 w-5" />}
               >
                 <div>
@@ -795,7 +850,7 @@ export default function TemplateDetailPage() {
 
               <Panel
                 title="AI Guidance"
-                subtitle="Template-level generation direction."
+                subtitle="Global AI guidance inherited by all regional pages created from this template."
                 icon={<Sparkles className="h-5 w-5" />}
               >
                 <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
@@ -809,7 +864,7 @@ export default function TemplateDetailPage() {
             <main className="min-w-0 space-y-6">
               <Panel
                 title="Template Summary"
-                subtitle="High-level structure and governance signals."
+                subtitle="Global structure and governance signals shared across regions."
                 icon={<FileText className="h-5 w-5" />}
               >
                 <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -934,12 +989,12 @@ export default function TemplateDetailPage() {
             <main className="min-w-0">
               <Panel
                 title="Page Structure"
-                subtitle="A clearer page blueprint showing how this template is assembled."
+                subtitle="A governed global blueprint showing how regional pages are assembled."
                 icon={<FileText className="h-5 w-5" />}
               >
                 <div className="mb-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <OverviewCard
-                    label="Sections"
+                    label="Global sections"
                     value={`${sortedSections.length}`}
                   />
                   <OverviewCard
@@ -1229,7 +1284,7 @@ export default function TemplateDetailPage() {
             <main className="min-w-0">
               <Panel
                 title="Template Preview"
-                subtitle="A simplified page-level preview showing how the template is structured."
+                subtitle="A simplified global page-level preview showing how regional pages are structured."
                 icon={<Eye className="h-5 w-5" />}
               >
                 {sortedSections.length === 0 ? (
@@ -1291,7 +1346,7 @@ export default function TemplateDetailPage() {
             <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
               <Panel
                 title="Preview Modes"
-                subtitle="A foundation for richer visualisation in the next iteration."
+                subtitle="Future enterprise preview capabilities across regions and localised workspaces."
                 icon={<Wand2 className="h-5 w-5" />}
               >
                 <div className="space-y-3">

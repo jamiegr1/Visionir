@@ -142,14 +142,44 @@ function escapeScriptContent(value: string) {
     .replace(/<\/script>/gi, "<\\/script>");
 }
 
-function extractPreviewHtmlFragment(html: string) {
-  const headMatch = html.match(/<head[^>]*>([\s\S]*?)<\/head>/i);
+function extractPreviewBody(html: string) {
   const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+  const body = bodyMatch?.[1] ?? html;
 
-  const headContent = headMatch ? headMatch[1] : "";
-  const bodyContent = bodyMatch ? bodyMatch[1] : html;
+  return body
+    .replace(/<!doctype[^>]*>/gi, "")
+    .replace(/<html[^>]*>/gi, "")
+    .replace(/<\/html>/gi, "")
+    .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, "")
+    .replace(/<body[^>]*>/gi, "")
+    .replace(/<\/body>/gi, "")
+    .trim();
+}
 
-  return `${headContent}\n${bodyContent}`;
+function extractPreviewStyles(html: string) {
+  const matches = html.match(/<style[^>]*>[\s\S]*?<\/style>/gi);
+  return matches ? matches.join("\n") : "";
+}
+
+function renderBlockForPreview(block: ApiBlockRecord) {
+  try {
+    const html = makePreviewHtml(block.data as any);
+
+    return {
+      styles: extractPreviewStyles(html),
+      body: extractPreviewBody(html),
+    };
+  } catch {
+    return {
+      styles: "",
+      body: `
+        <section class="visionir-render-fallback">
+          <p>Unable to render block</p>
+          <h2>${getBlockName(block)}</h2>
+        </section>
+      `,
+    };
+  }
 }
 
 function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
@@ -166,10 +196,10 @@ function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
       const blocksHtml = sectionBlocks
         .map((block) => {
           try {
-            return extractPreviewHtmlFragment(makePreviewHtml(block.data as any));
+            return makePreviewHtml(block.data as any);
           } catch {
             return `
-              <section style="padding:40px;border:1px solid #e5e7eb;border-radius:24px;margin:0;font-family:Inter,Arial,sans-serif;background:#ffffff;">
+              <section style="padding:48px;border:1px solid #e5e7eb;border-radius:24px;margin:24px 0;font-family:Inter,Arial,sans-serif;">
                 <p style="margin:0;color:#64748b;font-size:14px;">Unable to render block</p>
                 <h2 style="margin:8px 0 0;color:#0f172a;">${getBlockName(block)}</h2>
               </section>
@@ -179,7 +209,7 @@ function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
         .join("\n");
 
       return `
-        <section class="visionir-page-section" data-visionir-section="${section.key}" data-visionir-section-name="${section.label}">
+        <section data-visionir-section="${section.key}" data-visionir-section-name="${section.label}">
           ${blocksHtml}
         </section>
       `;
@@ -188,6 +218,52 @@ function buildFullPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
 
   return `
     <main data-visionir-page="${page.id}" data-visionir-page-name="${page.name}">
+      ${sectionsHtml}
+    </main>
+  `;
+}
+
+function buildPreviewPageHtml(page: PageRecord, blocks: ApiBlockRecord[]) {
+  const blockMap = new Map(blocks.map((block) => [block.id, block]));
+  const collectedStyles: string[] = [];
+
+  const sectionsHtml = (page.sections ?? [])
+    .slice()
+    .sort((a, b) => a.order - b.order)
+    .map((section) => {
+      const sectionBlocks = (section.blockIds ?? [])
+        .map((blockId) => blockMap.get(blockId))
+        .filter(Boolean) as ApiBlockRecord[];
+
+      const blocksHtml = sectionBlocks
+        .map((block) => {
+          const rendered = renderBlockForPreview(block);
+
+          if (rendered.styles) {
+            collectedStyles.push(rendered.styles);
+          }
+
+          return `
+            <div class="visionir-preview-block" data-visionir-block="${block.id}">
+              ${rendered.body}
+            </div>
+          `;
+        })
+        .join("");
+
+      return `
+        <section class="visionir-preview-section" data-visionir-section="${section.key}" data-visionir-section-name="${section.label}">
+          ${blocksHtml}
+        </section>
+      `;
+    })
+    .join("");
+
+  const uniqueStyles = Array.from(new Set(collectedStyles)).join("\n");
+
+  return `
+    ${uniqueStyles ? `<style>${uniqueStyles}</style>` : ""}
+    <main class="visionir-preview-page" data-visionir-page="${page.id}" data-visionir-page-name="${page.name}">
       ${sectionsHtml}
     </main>
   `;
@@ -216,6 +292,19 @@ export default function PagePublishPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const [page, setPage] = useState<PageRecord | null>(null);
   const [blocks, setBlocks] = useState<ApiBlockRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -234,7 +323,7 @@ export default function PagePublishPage() {
         setLoading(true);
         setError(null);
 
-        const pageRes = await fetch(`/api/pages/${id}?role=${role}`, {
+        const pageRes = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -249,7 +338,7 @@ export default function PagePublishPage() {
 
         const blockResults = await Promise.all(
           blockIds.map(async (blockId) => {
-            const res = await fetch(`/api/blocks/${blockId}?role=${role}`, {
+            const res = await fetch(`/api/blocks/${blockId}?role=${role}&region=${region}`, {
               cache: "no-store",
             });
 
@@ -284,7 +373,7 @@ export default function PagePublishPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, role]);
+  }, [id, role, region]);
 
   const sortedSections = useMemo(() => {
     return (page?.sections ?? []).slice().sort((a, b) => a.order - b.order);
@@ -328,74 +417,91 @@ export default function PagePublishPage() {
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <style>
-            * {
-              box-sizing: border-box;
-            }
-
             html,
             body {
-              margin: 0;
-              padding: 0;
               width: 100%;
-              min-height: 100%;
+              margin: 0 !important;
+              padding: 0 !important;
               background: #ffffff;
               font-family: Inter, Arial, sans-serif;
               overflow-x: hidden;
             }
 
-            body {
-              -webkit-font-smoothing: antialiased;
-              text-rendering: geometricPrecision;
+            * {
+              box-sizing: border-box;
             }
 
-            .visionir-preview-shell {
-              width: 100%;
-              min-height: 100%;
-              margin: 0;
-              padding: 0;
-              background: #ffffff;
-              overflow: hidden;
-            }
-
-            main[data-visionir-page] {
-              display: block;
-              width: 100%;
-              margin: 0;
-              padding: 0;
-              background: #ffffff;
-              overflow: hidden;
-            }
-
-            main[data-visionir-page] > .visionir-page-section {
+            .visionir-preview-page,
+            .visionir-preview-section,
+            .visionir-preview-block {
               display: block;
               width: 100%;
               margin: 0 !important;
               padding: 0 !important;
+              border: 0 !important;
               background: transparent;
             }
 
-            main[data-visionir-page] > .visionir-page-section + .visionir-page-section {
+            .visionir-preview-section + .visionir-preview-section,
+            .visionir-preview-block + .visionir-preview-block {
               margin-top: 0 !important;
             }
 
-            main[data-visionir-page] > .visionir-page-section > *:first-child {
+            .visionir-preview-block > *:first-child,
+            .visionir-preview-section > *:first-child {
               margin-top: 0 !important;
             }
 
-            main[data-visionir-page] > .visionir-page-section > *:last-child {
+            .visionir-preview-block > *:last-child,
+            .visionir-preview-section > *:last-child {
               margin-bottom: 0 !important;
             }
 
-            main[data-visionir-page] > .visionir-page-section img,
-            main[data-visionir-page] > .visionir-page-section video {
-              max-width: 100%;
+            .visionir-preview-block [style*="min-height: 100vh"],
+            .visionir-preview-block [style*="min-height:100vh"],
+            .visionir-preview-block [style*="height: 100vh"],
+            .visionir-preview-block [style*="height:100vh"] {
+              min-height: auto !important;
+              height: auto !important;
+            }
+
+            .visionir-preview-block [style*="margin-top"],
+            .visionir-preview-block [style*="margin-bottom"] {
+              margin-top: 0 !important;
+              margin-bottom: 0 !important;
+            }
+
+            .visionir-preview-block > section,
+            .visionir-preview-block > main,
+            .visionir-preview-block > article,
+            .visionir-preview-block > div {
+              margin-top: 0 !important;
+              margin-bottom: 0 !important;
+            }
+
+            .visionir-render-fallback {
+              margin: 0 !important;
+              padding: 40px;
+              border: 1px solid #e5e7eb;
+              border-radius: 20px;
+              background: #ffffff;
+              font-family: Inter, Arial, sans-serif;
+            }
+
+            .visionir-render-fallback p {
+              margin: 0;
+              color: #64748b;
+              font-size: 14px;
+            }
+
+            .visionir-render-fallback h2 {
+              margin: 8px 0 0;
+              color: #0f172a;
             }
           </style>
         </head>
         <body>
-          <div class="visionir-preview-shell">
-            ${buildFullPageHtml(page, blocks)}
-          </div>
+          ${buildPreviewPageHtml(page, blocks)}
         </body>
       </html>
     `;
@@ -433,6 +539,8 @@ export default function PagePublishPage() {
         cache: "no-store",
         body: JSON.stringify({
           action: "publish",
+          regionId: region,
+          regionName: regionLabel,
           updatedByUserId: "user-1",
         }),
       });
@@ -444,7 +552,7 @@ export default function PagePublishPage() {
       }
 
       setPage(json.page as PageRecord);
-      router.push(`/pages/${page.id}?role=${role}`);
+      router.push(`/pages/${page.id}?role=${role}&region=${region}`);
       router.refresh();
     } catch (error) {
       console.error("Failed to complete page deployment:", error);
@@ -490,7 +598,7 @@ export default function PagePublishPage() {
 
           <button
             type="button"
-            onClick={() => router.push(`/pages?role=${role}`)}
+            onClick={() => router.push(`/pages?role=${role}&region=${region}`)}
             className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -511,7 +619,7 @@ export default function PagePublishPage() {
             <div className="border-b border-slate-200 px-5 py-5">
               <button
                 type="button"
-                onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+                onClick={() => router.push(`/pages/${page.id}?role=${role}&region=${region}`)}
                 className="mb-4 inline-flex items-center gap-2 text-[13px] font-medium text-slate-500 transition hover:text-slate-900"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -523,7 +631,7 @@ export default function PagePublishPage() {
                   Publish Page to CMS
                 </h2>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                  Add this approved Visionir page into your CMS using one JavaScript or
+                  Add this approved {regionLabel} Visionir page into your CMS using one JavaScript or
                   embed block.
                 </p>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -586,7 +694,7 @@ export default function PagePublishPage() {
                       Helpful Note
                     </p>
                     <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
-                      This embed contains all approved page sections and blocks in the
+                      This embed contains all approved {regionLabel} page sections and regional blocks in the
                       governed template order. No manual code edits should be needed.
                     </p>
                   </div>
@@ -602,11 +710,31 @@ export default function PagePublishPage() {
 
                     <button
                       type="button"
-                      onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+                      onClick={() => router.push(`/pages/${page.id}?role=${role}&region=${region}`)}
                       className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
                     >
                       Back to Page Workspace
                     </button>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Regional Workspace
+                      </p>
+
+                      <p className="mt-2 text-[16px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {regionLabel}
+                      </p>
+
+                      <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                        This published page belongs to the {regionLabel} regional workspace. Templates remain globally governed while deployed pages and blocks stay region-specific.
+                      </p>
+                    </div>
+
+                    <StatusPill tone="blue">Region</StatusPill>
                   </div>
                 </div>
 
@@ -646,6 +774,13 @@ export default function PagePublishPage() {
                   </p>
 
                   <div className="mt-4 space-y-3 text-[12.5px]">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-400">Region</span>
+                      <span className="max-w-[190px] truncate text-right font-medium text-slate-700">
+                        {regionLabel}
+                      </span>
+                    </div>
+
                     <div className="flex justify-between gap-4">
                       <span className="text-slate-400">Template</span>
                       <span className="max-w-[190px] truncate text-right font-medium text-slate-700">
@@ -699,10 +834,14 @@ export default function PagePublishPage() {
                   <StatusPill tone={isPublished ? "green" : "blue"}>
                     {isPublished ? "Published" : "Ready For CMS"}
                   </StatusPill>
+
+                  <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
                 </div>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Preview the full approved page before adding the generated embed into the CMS.
+                  Preview the full approved {regionLabel} page before adding the generated embed into the CMS.
                 </p>
               </div>
 
@@ -752,16 +891,16 @@ export default function PagePublishPage() {
           <div className="min-h-0 overflow-hidden px-8 py-5">
             <div className="flex h-full min-h-0 flex-col">
               <div className="min-h-0 flex-1 overflow-hidden">
-                <div className="flex h-full items-center justify-center">
+                <div className="flex h-full items-start justify-center">
                   <div
                     className={cx(
-                      "w-full overflow-hidden rounded-[36px] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
+                      "w-full rounded-[36px] border border-slate-200 bg-white p-4 shadow-[0_24px_80px_rgba(15,23,42,0.08)]",
                       shellWidthClass
                     )}
                   >
                     <div
                       className={cx(
-                        "rounded-[26px] border border-slate-100 bg-white shadow-inner",
+                        "rounded-[28px] bg-white",
                         viewport === "desktop"
                           ? "overflow-y-auto overflow-x-hidden"
                           : "overflow-y-auto overflow-x-hidden"
@@ -796,7 +935,7 @@ export default function PagePublishPage() {
           <div className="shrink-0 border-t border-slate-200 bg-[#f5f7fb] px-8 py-4">
             <div className="flex items-center justify-between gap-4">
               <div className="flex flex-wrap items-center gap-6 text-sm text-slate-500">
-                <span>This page embed remains governed after deployment.</span>
+                <span>This {regionLabel} page embed remains governed after deployment.</span>
                 <span>Version 1.0</span>
                 <span>
                   Status:{" "}
@@ -804,12 +943,19 @@ export default function PagePublishPage() {
                     {isPublished ? "Published" : "Ready For Production"}
                   </span>
                 </span>
+
+                <span>
+                  Region:{" "}
+                  <span className="font-medium text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
+                </span>
               </div>
 
               <div className="flex items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+                  onClick={() => router.push(`/pages/${page.id}?role=${role}&region=${region}`)}
                   className="rounded-2xl border border-slate-200 bg-white px-6 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   Back

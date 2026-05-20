@@ -234,16 +234,43 @@ export default function BlockReviewPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
+  function appendRegionToUrl(value: string) {
+    if (!value) return value;
+
+    try {
+      const url = new URL(value, window.location.origin);
+      url.searchParams.set("role", role);
+      url.searchParams.set("region", region);
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      const joiner = value.includes("?") ? "&" : "?";
+      return `${value}${joiner}role=${role}&region=${region}`;
+    }
+  }
+
   const editMode = useMemo<EditMode>(() => {
     return searchParams.get("editMode") === "page_builder"
       ? "page_builder"
       : "standard";
   }, [searchParams]);
 
-  const returnTo = useMemo(
-    () => searchParams.get("returnTo") || "",
-    [searchParams]
-  );
+  const returnTo = useMemo(() => {
+    const rawReturnTo = searchParams.get("returnTo") || "";
+    return rawReturnTo ? appendRegionToUrl(rawReturnTo) : "";
+  }, [searchParams, role, region]);
 
   const isPageBuilderEdit = editMode === "page_builder" || Boolean(returnTo);
 
@@ -271,7 +298,7 @@ export default function BlockReviewPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
         const json = await res.json().catch(() => ({}));
@@ -283,7 +310,17 @@ export default function BlockReviewPage() {
         }
 
         const loadedBlock = json.block as ApiBlockRecord;
-        const loaded = cloneBlockData(loadedBlock.data as BlockData);
+        const loaded = cloneBlockData({
+          ...(loadedBlock.data as BlockData),
+          regionId:
+            typeof loadedBlock.data?.regionId === "string"
+              ? loadedBlock.data.regionId
+              : region,
+          regionName:
+            typeof loadedBlock.data?.regionName === "string"
+              ? loadedBlock.data.regionName
+              : regionLabel,
+        } as BlockData);
         const currentStatus = String(loadedBlock?.status || "");
 
         setBlockRecord(loadedBlock);
@@ -312,7 +349,7 @@ export default function BlockReviewPage() {
     if (id) {
       void loadBlock();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   useEffect(() => {
     if (!editable) return;
@@ -462,11 +499,17 @@ export default function BlockReviewPage() {
   async function saveBlock(nextStatus?: string) {
     if (!editable) return;
 
-    const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+    const res = await fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        data: editable,
+        data: {
+          ...editable,
+          regionId: region,
+          regionName: regionLabel,
+        },
+        regionId: region,
+        regionName: regionLabel,
         ...(nextStatus ? { status: nextStatus } : {}),
         editMode: isPageBuilderEdit ? "page_builder" : "standard",
         requiresApproval,
@@ -516,6 +559,8 @@ export default function BlockReviewPage() {
         body: JSON.stringify({
           field,
           text: source,
+          regionId: region,
+          regionName: regionLabel,
           componentType: editable?.componentType,
           componentVariant: editable?.componentVariant,
         }),
@@ -552,6 +597,8 @@ export default function BlockReviewPage() {
         body: JSON.stringify({
           instructions: describe,
           blockData: editable,
+          regionId: region,
+          regionName: regionLabel,
           componentType: editable.componentType,
           componentVariant: editable.componentVariant,
         }),
@@ -569,6 +616,8 @@ export default function BlockReviewPage() {
       const mergedPatched: BlockData = {
         ...editable,
         ...patched,
+        regionId: region,
+        regionName: regionLabel,
         valuePoints: patched.valuePoints ?? editable.valuePoints,
         design: patched.design ?? editable.design,
         extraContent: patched.extraContent ?? editable.extraContent,
@@ -650,7 +699,7 @@ export default function BlockReviewPage() {
         await saveBlock("pending_approval");
   
         router.push(
-          `/blocks/${id}/approval?role=${role}` +
+          `/blocks/${id}/approval?role=${role}&region=${region}` +
             `&editMode=page_builder` +
             (returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : "") +
             (pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : "") +
@@ -670,12 +719,12 @@ export default function BlockReviewPage() {
   
       if (pageId && sectionId) {
         router.push(
-          `/pages/${pageId}?role=${role}&tab=sections&sectionId=${sectionId}#section-workspace`
+          `/pages/${pageId}?role=${role}&region=${region}&tab=sections&sectionId=${sectionId}#section-workspace`
         );
         return;
       }
   
-      router.push(`/pages?role=${role}`);
+      router.push(withRegion("/pages"));
     } catch (error) {
       console.error("Failed to finish page-builder edit:", error);
     }
@@ -688,7 +737,7 @@ export default function BlockReviewPage() {
 const sectionId = editable?.sectionId || searchParams.get("sectionId") || "";
 
 router.push(
-  `/blocks/${id}/approval?role=${role}` +
+  `/blocks/${id}/approval?role=${role}&region=${region}` +
     `&editMode=page_builder` +
     (returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : "") +
     (pageId ? `&pageId=${encodeURIComponent(String(pageId))}` : "") +
@@ -706,7 +755,7 @@ router.push(
       return;
     }
 
-    router.push(`/blocks/${id}/details?role=${role}`);
+    router.push(withRegion(`/blocks/${id}/details`));
   }
 
   if (loading) {

@@ -8,8 +8,11 @@ import {
   BadgeCheck,
   CircleDashed,
   Clock3,
+  ExternalLink,
   Filter,
+  FileText,
   LayoutGrid,
+  Link2,
   Plus,
   Search,
   Shield,
@@ -37,6 +40,56 @@ function formatComponentLabel(value?: string | null) {
     .trim();
 }
 
+function normaliseUrlSearchValue(value: string | null | undefined) {
+  if (!value) return "";
+
+  let cleaned = value.trim().toLowerCase();
+
+  try {
+    cleaned = decodeURIComponent(cleaned);
+  } catch {
+    // Keep original value if decoding fails.
+  }
+
+  cleaned = cleaned
+    .replace(/^https?:\/\//, "")
+    .replace(/^www\./, "")
+    .split("?")[0]
+    .split("#")[0];
+
+  const firstSlashIndex = cleaned.indexOf("/");
+
+  if (firstSlashIndex >= 0) {
+    cleaned = cleaned.slice(firstSlashIndex);
+  }
+
+  return cleaned.replace(/^\/+/, "").replace(/\/+$/, "");
+}
+
+function getSlugLastSegment(value: string | null | undefined) {
+  const normalised = normaliseUrlSearchValue(value);
+  const parts = normalised.split("/").filter(Boolean);
+
+  return parts[parts.length - 1] || normalised;
+}
+
+function includesSearchTerm(value: string | null | undefined, query: string) {
+  return (value || "").toLowerCase().includes(query);
+}
+
+function matchesUrlAwareValue(value: string | null | undefined, rawQuery: string) {
+  const q = rawQuery.trim().toLowerCase();
+  const normalisedQuery = normaliseUrlSearchValue(q);
+  const normalisedValue = normaliseUrlSearchValue(value);
+  const valueLastSegment = getSlugLastSegment(value);
+
+  return (
+    includesSearchTerm(value, q) ||
+    (!!normalisedQuery && normalisedValue.includes(normalisedQuery)) ||
+    (!!normalisedQuery && valueLastSegment.includes(normalisedQuery))
+  );
+}
+
 type ApiBlockRecord = {
   id: string;
   status?: string;
@@ -46,6 +99,34 @@ type ApiBlockRecord = {
   createdByName?: string;
   createdByUserId?: string;
   data?: BlockData | null;
+};
+
+type PageSummary = {
+  id: string;
+  name: string;
+  slug?: string;
+  status?: string;
+  templateName?: string;
+  sections?: Array<{
+    sectionId: string;
+    key: string;
+    label: string;
+    order: number;
+    required: boolean;
+    blockIds: string[];
+  }>;
+};
+
+type BlockUsage = {
+  pageId: string;
+  pageName: string;
+  pageSlug: string;
+  pageStatus: string;
+  templateName: string;
+  sectionId: string;
+  sectionKey: string;
+  sectionLabel: string;
+  sectionOrder: number;
 };
 
 type LibraryBlock = {
@@ -62,6 +143,7 @@ type LibraryBlock = {
   pageName: string;
   templateName: string;
   sectionLabel: string;
+  usedInPages: BlockUsage[];
 };
 
 type FilterStatus =
@@ -71,6 +153,38 @@ type FilterStatus =
   | "approved"
   | "published"
   | "changes_requested";
+
+function getPageUsageMap(pages: PageSummary[]) {
+  const map = new Map<string, BlockUsage[]>();
+
+  pages.forEach((page) => {
+    const sortedSections = (page.sections ?? [])
+      .slice()
+      .sort((a, b) => a.order - b.order);
+
+    sortedSections.forEach((section) => {
+      (section.blockIds ?? []).forEach((blockId) => {
+        const existing = map.get(blockId) ?? [];
+
+        existing.push({
+          pageId: page.id,
+          pageName: page.name,
+          pageSlug: page.slug || "",
+          pageStatus: page.status || "draft",
+          templateName: page.templateName || "—",
+          sectionId: section.sectionId,
+          sectionKey: section.key,
+          sectionLabel: section.label,
+          sectionOrder: section.order,
+        });
+
+        map.set(blockId, existing);
+      });
+    });
+  });
+
+  return map;
+}
 
 function formatDate(value: string | null) {
   if (!value) return "—";
@@ -195,8 +309,8 @@ function getStatusPillClass(status: string) {
   }
 }
 
-function getActionHref(block: LibraryBlock, role: Role) {
-  return `/blocks/${block.id}/details?role=${role}`;
+function getActionHref(block: LibraryBlock, role: Role, region: string) {
+  return `/blocks/${block.id}/details?role=${role}&region=${region}`;
 }
 
 function MetricCard({
@@ -305,27 +419,95 @@ function EmptyState({ text }: { text: string }) {
   );
 }
 
+function UsageContext({ usage }: { usage: BlockUsage | null }) {
+  if (!usage) return null;
+
+  return (
+    <div className="mt-3 rounded-2xl border border-[#dbe5ff] bg-[#f7f9ff] px-3 py-2.5">
+      <div className="flex items-start gap-2">
+        <Link2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#4f6fff]" />
+        <div className="min-w-0">
+          <p className="truncate text-xs font-semibold text-slate-800">
+            Used on {usage.pageName}
+          </p>
+          <p className="mt-0.5 truncate text-[11px] text-slate-500">
+            {usage.pageSlug ? `/${normaliseUrlSearchValue(usage.pageSlug)}` : "No slug"} · {usage.sectionLabel} · {usage.templateName}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PageMatchBanner({ matchedPages }: { matchedPages: PageSummary[] }) {
+  if (matchedPages.length === 0) return null;
+
+  const shownPages = matchedPages.slice(0, 3);
+  const remainingCount = matchedPages.length - shownPages.length;
+
+  return (
+    <div className="mt-4 rounded-[24px] border border-[#dbe5ff] bg-[#f7f9ff] p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-[#4f6fff]" />
+            <p className="text-sm font-semibold text-slate-900">
+              Page URL match found
+            </p>
+          </div>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Showing blocks used on the matching page{matchedPages.length === 1 ? "" : "s"}.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {shownPages.map((page) => (
+            <span
+              key={page.id}
+              className="inline-flex items-center gap-2 rounded-full border border-[#dbe5ff] bg-white px-3 py-1.5 text-xs font-semibold text-[#4f6fff]"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              {page.slug ? `/${normaliseUrlSearchValue(page.slug)}` : page.name}
+            </span>
+          ))}
+
+          {remainingCount > 0 ? (
+            <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500">
+              +{remainingCount} more
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BlockRow({
   block,
   role,
+  region,
 }: {
   block: LibraryBlock;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
+
+  const primaryUsage = block.usedInPages[0] ?? null;
 
   const metaParts = [
     block.component !== "—" ? block.component : null,
     block.variant && block.variant !== "Default" ? block.variant : null,
-    block.pageName !== "—" ? block.pageName : null,
-    block.sectionLabel !== "—" ? block.sectionLabel : null,
+    primaryUsage?.pageName || (block.pageName !== "—" ? block.pageName : null),
+    primaryUsage?.sectionLabel || (block.sectionLabel !== "—" ? block.sectionLabel : null),
+    block.usedInPages.length > 1 ? `Used in ${block.usedInPages.length} pages` : null,
     `Created ${formatDate(block.createdAt)}`,
   ].filter(Boolean);
 
   return (
     <button
       type="button"
-      onClick={() => router.push(getActionHref(block, role))}
+      onClick={() => router.push(getActionHref(block, role, region))}
       className="grid w-full grid-cols-[minmax(0,1.7fr)_180px_150px_140px_140px] gap-4 px-5 py-4 text-left transition hover:bg-slate-50"
     >
       <div className="min-w-0">
@@ -373,16 +555,19 @@ function BlockRow({
 function CompactBlockCard({
   block,
   role,
+  region,
 }: {
   block: LibraryBlock;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
+  const primaryUsage = block.usedInPages[0] ?? null;
 
   return (
     <button
       type="button"
-      onClick={() => router.push(getActionHref(block, role))}
+      onClick={() => router.push(getActionHref(block, role, region))}
       className="w-full rounded-[24px] border border-slate-200 bg-white p-4 text-left transition hover:border-slate-300 hover:bg-slate-50"
     >
       <div className="flex items-start justify-between gap-3">
@@ -408,6 +593,8 @@ function CompactBlockCard({
         </span>
       </div>
 
+      <UsageContext usage={primaryUsage} />
+
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -430,7 +617,7 @@ function CompactBlockCard({
             Page
           </p>
           <p className="mt-1 truncate text-sm text-slate-700">
-            {block.pageName}
+            {primaryUsage?.pageName || block.pageName}
           </p>
         </div>
 
@@ -575,6 +762,7 @@ function BlockTableSection({
   page,
   onPageChange,
   perPage,
+  region,
 }: {
   blocks: LibraryBlock[];
   role: Role;
@@ -583,6 +771,7 @@ function BlockTableSection({
   page: number;
   onPageChange: (page: number) => void;
   perPage: number;
+  region: string;
 }) {
   const paginated = useMemo(
     () => paginateBlocks(blocks, page, perPage),
@@ -611,7 +800,7 @@ function BlockTableSection({
             </div>
           ) : (
             paginated.items.map((block) => (
-              <BlockRow key={block.id} block={block} role={role} />
+              <BlockRow key={block.id} block={block} role={role} region={region} />
             ))
           )}
         </div>
@@ -636,6 +825,7 @@ function CompactBlockSection({
   page,
   onPageChange,
   perPage,
+  region,
 }: {
   blocks: LibraryBlock[];
   role: Role;
@@ -644,6 +834,7 @@ function CompactBlockSection({
   page: number;
   onPageChange: (page: number) => void;
   perPage: number;
+  region: string;
 }) {
   const paginated = useMemo(
     () => paginateBlocks(blocks, page, perPage),
@@ -662,7 +853,7 @@ function CompactBlockSection({
         ) : (
           <div className="space-y-3">
             {paginated.items.map((block) => (
-              <CompactBlockCard key={block.id} block={block} role={role} />
+              <CompactBlockCard key={block.id} block={block} role={role} region={region} />
             ))}
           </div>
         )}
@@ -688,10 +879,25 @@ export default function BlocksPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const isActiveDataRegion = region === "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const refreshKey = searchParams.get("refresh") ?? "";
 
   const [loading, setLoading] = useState(true);
   const [blocks, setBlocks] = useState<LibraryBlock[]>([]);
+  const [pages, setPages] = useState<PageSummary[]>([]);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("all");
 
@@ -705,50 +911,73 @@ export default function BlocksPage() {
   const CHANGES_REQUESTED_PER_PAGE = 4;
 
   useEffect(() => {
-    async function loadBlocks() {
+    async function loadLibraryData() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
-          cache: "no-store",
-        });
+        const [blocksRes, pagesRes] = await Promise.all([
+          fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/pages?role=${role}`, {
+            cache: "no-store",
+          }),
+        ]);
 
-        const json = await res.json().catch(() => ({}));
+        const blocksJson = await blocksRes.json().catch(() => ({}));
+        const pagesJson = await pagesRes.json().catch(() => ({}));
 
-        if (!res.ok) {
-          throw new Error(json?.error || `Failed to load blocks (${res.status})`);
+        if (!blocksRes.ok) {
+          throw new Error(
+            blocksJson?.error || `Failed to load blocks (${blocksRes.status})`
+          );
         }
 
-        const rawBlocks = Array.isArray(json?.blocks)
-          ? (json.blocks as ApiBlockRecord[])
+        const rawBlocks = Array.isArray(blocksJson?.blocks)
+          ? (blocksJson.blocks as ApiBlockRecord[])
           : [];
 
-        const mapped: LibraryBlock[] = rawBlocks.map((block) => ({
-          id: block.id,
-          name: getBlockName(block.data ?? null, block.id),
-          component: getComponentName(block.data ?? null),
-          variant: getComponentVariant(block.data ?? null),
-          status: block.status || "draft",
-          governanceScore: getGovernanceScore(block.data ?? null),
-          updatedAt: block.updatedAt || null,
-          createdAt: block.createdAt || null,
-          owner: getOwnerName(block),
-          data: block.data ?? null,
-          pageName:
-            typeof block.data?.pageName === "string" && block.data.pageName.trim()
-              ? block.data.pageName
-              : "—",
-          templateName:
-            typeof block.data?.templateName === "string" &&
-            block.data.templateName.trim()
-              ? block.data.templateName
-              : "—",
-          sectionLabel:
-            typeof block.data?.sectionLabel === "string" &&
-            block.data.sectionLabel.trim()
-              ? block.data.sectionLabel
-              : "—",
-        }));
+        const rawPages = Array.isArray(pagesJson?.pages)
+          ? (pagesJson.pages as PageSummary[])
+          : [];
+
+        const usageMap = getPageUsageMap(rawPages);
+
+        const mapped: LibraryBlock[] = rawBlocks.map((block) => {
+          const usedInPages = usageMap.get(block.id) ?? [];
+          const primaryUsage = usedInPages[0] ?? null;
+
+          return {
+            id: block.id,
+            name: getBlockName(block.data ?? null, block.id),
+            component: getComponentName(block.data ?? null),
+            variant: getComponentVariant(block.data ?? null),
+            status: block.status || "draft",
+            governanceScore: getGovernanceScore(block.data ?? null),
+            updatedAt: block.updatedAt || null,
+            createdAt: block.createdAt || null,
+            owner: getOwnerName(block),
+            data: block.data ?? null,
+            pageName:
+              primaryUsage?.pageName ||
+              (typeof block.data?.pageName === "string" && block.data.pageName.trim()
+                ? block.data.pageName
+                : "—"),
+            templateName:
+              primaryUsage?.templateName ||
+              (typeof block.data?.templateName === "string" &&
+              block.data.templateName.trim()
+                ? block.data.templateName
+                : "—"),
+            sectionLabel:
+              primaryUsage?.sectionLabel ||
+              (typeof block.data?.sectionLabel === "string" &&
+              block.data.sectionLabel.trim()
+                ? block.data.sectionLabel
+                : "—"),
+            usedInPages,
+          };
+        });
 
         mapped.sort((a, b) => {
           const aTime = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
@@ -756,17 +985,54 @@ export default function BlocksPage() {
           return bTime - aTime;
         });
 
-        setBlocks(mapped);
+        setBlocks(isActiveDataRegion ? mapped : []);
+        setPages(isActiveDataRegion ? rawPages : []);
       } catch (error) {
-        console.error("Failed to load blocks:", error);
+        console.error("Failed to load block library data:", error);
         setBlocks([]);
+        setPages([]);
       } finally {
         setLoading(false);
       }
     }
 
-    void loadBlocks();
-  }, [role, refreshKey]);
+    void loadLibraryData();
+  }, [role, refreshKey, isActiveDataRegion]);
+
+  const matchedPagesFromQuery = useMemo(() => {
+    if (!query.trim()) return [];
+
+    const q = query.toLowerCase();
+
+    return pages.filter((page) => {
+      const searchableValues = [
+        page.name,
+        page.slug,
+        page.templateName,
+        page.status,
+        ...(page.sections ?? []).flatMap((section) => [
+          section.label,
+          section.key,
+        ]),
+      ];
+
+      return searchableValues.some(
+        (value) =>
+          includesSearchTerm(value, q) ||
+          matchesUrlAwareValue(value, query)
+      );
+    });
+  }, [pages, query]);
+
+  const matchedPageBlockIds = useMemo(() => {
+    if (matchedPagesFromQuery.length === 0) return new Set<string>();
+
+    return new Set(
+      matchedPagesFromQuery.flatMap((page) =>
+        (page.sections ?? []).flatMap((section) => section.blockIds ?? [])
+      )
+    );
+  }, [matchedPagesFromQuery]);
 
   const searchedBlocks = useMemo(() => {
     return blocks.filter((block) => {
@@ -774,18 +1040,34 @@ export default function BlocksPage() {
 
       const q = query.toLowerCase();
 
-      return (
-        block.name.toLowerCase().includes(q) ||
-        block.owner.toLowerCase().includes(q) ||
-        block.component.toLowerCase().includes(q) ||
-        block.variant.toLowerCase().includes(q) ||
-        block.pageName.toLowerCase().includes(q) ||
-        block.templateName.toLowerCase().includes(q) ||
-        block.sectionLabel.toLowerCase().includes(q) ||
-        getStatusLabel(block.status).toLowerCase().includes(q)
+      if (matchedPageBlockIds.has(block.id)) return true;
+
+      const searchableValues = [
+        block.name,
+        block.owner,
+        block.component,
+        block.variant,
+        block.pageName,
+        block.templateName,
+        block.sectionLabel,
+        getStatusLabel(block.status),
+        ...(block.usedInPages ?? []).flatMap((usage) => [
+          usage.pageName,
+          usage.pageSlug,
+          usage.pageStatus,
+          usage.templateName,
+          usage.sectionLabel,
+          usage.sectionKey,
+        ]),
+      ];
+
+      return searchableValues.some(
+        (value) =>
+          includesSearchTerm(value, q) ||
+          matchesUrlAwareValue(value, query)
       );
     });
-  }, [blocks, query]);
+  }, [blocks, matchedPageBlockIds, query]);
 
   const filteredBlocks = useMemo(() => {
     if (statusFilter === "all") return searchedBlocks;
@@ -846,7 +1128,7 @@ export default function BlocksPage() {
     setApprovalPage(1);
     setDraftPage(1);
     setChangesRequestedPage(1);
-  }, [query, statusFilter, refreshKey]);
+  }, [query, statusFilter, refreshKey, region]);
 
   const totals = useMemo(() => {
     const live = blocks.filter((b) =>
@@ -893,11 +1175,17 @@ export default function BlocksPage() {
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
                 Visionir Library
               </p>
-              <h1 className="mt-2 text-[36px] font-semibold tracking-[-0.05em] text-slate-900">
-                Governed Block Library
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-[36px] font-semibold tracking-[-0.05em] text-slate-900">
+                  Governed Block Library
+                </h1>
+
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
+              </div>
               <p className="mt-2 max-w-[760px] text-sm leading-6 text-slate-500">
-                Manage all reusable blocks across the Visionir workflow — from
+                Manage all blocks for {regionLabel} across the Visionir workflow — from
                 draft creation through approval and into published,
                 deployment-ready assets.
               </p>
@@ -911,7 +1199,7 @@ export default function BlocksPage() {
 
               <button
                 type="button"
-                onClick={() => router.push(`/dashboard?role=${role}`)}
+                onClick={() => router.push(withRegion("/dashboard"))}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Back to Dashboard
@@ -919,7 +1207,7 @@ export default function BlocksPage() {
 
               <button
                 type="button"
-                onClick={() => router.push(`/blocks/new?role=${role}`)}
+                onClick={() => router.push(withRegion("/blocks/new"))}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
               >
                 Create Block
@@ -962,6 +1250,33 @@ export default function BlocksPage() {
           />
         </div>
 
+        {!isActiveDataRegion ? (
+          <section className="mb-6 rounded-[30px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#4f6fff]">
+                  Region Workspace
+                </p>
+                <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                  {regionLabel} has no regional blocks yet.
+                </h2>
+                <p className="mt-2 max-w-[840px] text-sm leading-6 text-slate-500">
+                  This region currently has no generated blocks. Global templates remain available, so the regional team can create governed blocks without affecting the UK workspace.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push(withRegion("/blocks/new"))}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+              >
+                Create first regional block
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <section className="mb-6 rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="relative max-w-[420px] flex-1">
@@ -969,7 +1284,7 @@ export default function BlocksPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search blocks, owners, types, variants, pages or statuses"
+                placeholder="Search blocks, page URLs, slugs, sections, templates or statuses"
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
               />
             </div>
@@ -1013,13 +1328,15 @@ export default function BlocksPage() {
             </div>
           </div>
 
+          <PageMatchBanner matchedPages={matchedPagesFromQuery} />
+
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
             <span>
               Showing{" "}
               <span className="font-semibold text-slate-900">
                 {filteredBlocks.length}
               </span>{" "}
-              matching blocks
+              matching blocks in {regionLabel}
             </span>
 
             <button
@@ -1039,7 +1356,7 @@ export default function BlocksPage() {
         <section className="mb-6 rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
           <SectionHeader
             title="Published Blocks"
-            subtitle="Reusable, governed assets ready for deployment and reuse across pages."
+            subtitle={`Published blocks available in ${regionLabel}.`}
             count={publishedBlocks.length}
             icon={<BadgeCheck className="h-5 w-5 text-emerald-500" />}
           />
@@ -1048,10 +1365,11 @@ export default function BlocksPage() {
             blocks={publishedBlocks}
             role={role}
             loading={loading}
-            emptyText="No published blocks match your current filters."
+            emptyText={`No published blocks exist for ${regionLabel} yet.`}
             page={publishedPage}
             onPageChange={setPublishedPage}
             perPage={PUBLISHED_PER_PAGE}
+            region={region}
           />
         </section>
 
@@ -1059,7 +1377,7 @@ export default function BlocksPage() {
           <section className="flex h-full flex-col self-start rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <SectionHeader
               title="Awaiting Approval"
-              subtitle="Blocks currently moving through governance review and sign-off."
+              subtitle={`Blocks currently moving through review in ${regionLabel}.`}
               count={approvalBlocks.length}
               icon={<Clock3 className="h-5 w-5 text-amber-500" />}
             />
@@ -1068,17 +1386,18 @@ export default function BlocksPage() {
               blocks={approvalBlocks}
               role={role}
               loading={loading}
-              emptyText="No blocks are currently awaiting approval."
+              emptyText={`No blocks are currently awaiting approval in ${regionLabel}.`}
               page={approvalPage}
               onPageChange={setApprovalPage}
               perPage={COMPACT_PER_PAGE}
+              region={region}
             />
           </section>
 
           <section className="flex h-full flex-col self-start rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
             <SectionHeader
               title="Drafts & In Progress"
-              subtitle="Blocks still being developed, refined or prepared for deployment."
+              subtitle={`Draft and in-progress blocks for ${regionLabel}.`}
               count={draftBlocks.length}
               icon={<CircleDashed className="h-5 w-5 text-slate-500" />}
             />
@@ -1087,10 +1406,11 @@ export default function BlocksPage() {
               blocks={draftBlocks}
               role={role}
               loading={loading}
-              emptyText="No draft or in-progress blocks match your current filters."
+              emptyText={`No draft or in-progress blocks exist for ${regionLabel} yet.`}
               page={draftPage}
               onPageChange={setDraftPage}
               perPage={COMPACT_PER_PAGE}
+              region={region}
             />
           </section>
         </div>
@@ -1098,7 +1418,7 @@ export default function BlocksPage() {
         <section className="mt-6 rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
           <SectionHeader
             title="Changes Requested"
-            subtitle="Blocks that need updates before they can continue through the workflow."
+            subtitle={`Blocks in ${regionLabel} that need updates before they can continue.`}
             count={changesRequestedBlocks.length}
             icon={<XCircle className="h-5 w-5 text-rose-500" />}
           />
@@ -1107,10 +1427,11 @@ export default function BlocksPage() {
             blocks={changesRequestedBlocks}
             role={role}
             loading={loading}
-            emptyText="No blocks with requested changes match your current filters."
+            emptyText={`No blocks with requested changes exist for ${regionLabel}.`}
             page={changesRequestedPage}
             onPageChange={setChangesRequestedPage}
             perPage={CHANGES_REQUESTED_PER_PAGE}
+            region={region}
           />
         </section>
       </div>

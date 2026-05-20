@@ -334,6 +334,20 @@ export default function ApprovalsPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const isActiveDataRegion = region === "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const refreshKey = searchParams.get("refresh") ?? "";
 
   const canAccessApprovals =
@@ -350,10 +364,10 @@ export default function ApprovalsPage() {
         setLoading(true);
 
         const [blocksRes, pagesRes] = await Promise.all([
-          fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
+          fetch(`/api/blocks?role=${role}&region=${region}&refresh=${refreshKey}`, {
             cache: "no-store",
           }),
-          fetch(`/api/pages?role=${role}&refresh=${refreshKey}`, {
+          fetch(`/api/pages?role=${role}&region=${region}&refresh=${refreshKey}`, {
             cache: "no-store",
           }),
         ]);
@@ -361,13 +375,16 @@ export default function ApprovalsPage() {
         const blocksJson = await blocksRes.json().catch(() => ({}));
         const pagesJson = await pagesRes.json().catch(() => ({}));
 
-        const rawBlocks = Array.isArray(blocksJson?.blocks)
+        const allBlocks = Array.isArray(blocksJson?.blocks)
           ? (blocksJson.blocks as ApiBlockRecord[])
           : [];
 
-        const rawPages = Array.isArray(pagesJson?.pages)
+        const allPages = Array.isArray(pagesJson?.pages)
           ? (pagesJson.pages as PageSummary[])
           : [];
+
+        const rawBlocks = isActiveDataRegion ? allBlocks : [];
+        const rawPages = isActiveDataRegion ? allPages : [];
 
         const blockItems: ApprovalItem[] = rawBlocks
           .filter((block) =>
@@ -390,8 +407,11 @@ export default function ApprovalsPage() {
             governanceScore: getGovernanceScore(block.data ?? null),
             updatedAt: block.updatedAt || null,
             createdAt: block.createdAt || null,
-            metadata: "Governed reusable block",
-            href: `/blocks/${block.id}?role=${role}`,
+            metadata: `${regionLabel} · Governed block`,
+            href:
+              block.status === "pending_approval" || block.status === "in_review"
+                ? `/blocks/${block.id}/approval?role=${role}&region=${region}`
+                : `/blocks/${block.id}/details?role=${role}&region=${region}`,
           }));
 
         const pageItems: ApprovalItem[] = rawPages
@@ -411,8 +431,8 @@ export default function ApprovalsPage() {
             governanceScore: null,
             updatedAt: page.updatedAt || null,
             createdAt: page.createdAt || null,
-            metadata: `${page.templateName} · ${page.sections.length} sections`,
-            href: `/pages/${page.id}/approval?role=${role}`,
+            metadata: `${regionLabel} · ${page.templateName} · ${page.sections.length} sections`,
+            href: `/pages/${page.id}/approval?role=${role}&region=${region}`,
           }));
 
         const merged = [...blockItems, ...pageItems].sort((a, b) => {
@@ -436,7 +456,7 @@ export default function ApprovalsPage() {
       setLoading(false);
       setItems([]);
     }
-  }, [role, refreshKey, canAccessApprovals]);
+  }, [role, region, refreshKey, canAccessApprovals, isActiveDataRegion]);
 
   const searchedItems = useMemo(() => {
     return items.filter((item) => {
@@ -514,7 +534,7 @@ export default function ApprovalsPage() {
 
             <button
               type="button"
-              onClick={() => router.push(`/dashboard?role=${role}`)}
+              onClick={() => router.push(withRegion("/dashboard"))}
               className="mt-6 inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
             >
               Back to Dashboard
@@ -535,12 +555,18 @@ export default function ApprovalsPage() {
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
                 Governance Workspace
               </p>
-              <h1 className="mt-2 text-[36px] font-semibold tracking-[-0.05em] text-slate-900">
-                Approval Queue
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-[36px] font-semibold tracking-[-0.05em] text-slate-900">
+                  Approval Queue
+                </h1>
+
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
+              </div>
               <p className="mt-2 max-w-[760px] text-sm leading-6 text-slate-500">
-                Manage approvals across blocks and pages from one governed workspace,
-                so reviewers can keep workflow moving without jumping between libraries.
+                Manage approvals for {regionLabel} across blocks and pages from one governed workspace,
+                so reviewers can keep regional workflow moving without jumping between libraries.
               </p>
             </div>
 
@@ -550,9 +576,13 @@ export default function ApprovalsPage() {
                 Role: <span className="font-semibold text-slate-900">{role}</span>
               </div>
 
+              <div className="inline-flex items-center gap-2 rounded-2xl border border-[#dbe5ff] bg-[#eef3ff] px-4 py-3 text-sm text-[#4f6fff] shadow-sm">
+                Region: <span className="font-semibold">{regionLabel}</span>
+              </div>
+
               <button
                 type="button"
-                onClick={() => router.push(`/dashboard?role=${role}`)}
+                onClick={() => router.push(withRegion("/dashboard"))}
                 className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
               >
                 Back to Dashboard
@@ -560,6 +590,33 @@ export default function ApprovalsPage() {
             </div>
           </div>
         </div>
+
+        {!isActiveDataRegion ? (
+          <section className="mb-6 rounded-[30px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#4f6fff]">
+                  Regional Approval Workspace
+                </p>
+                <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                  {regionLabel} has no approvals waiting yet.
+                </h2>
+                <p className="mt-2 max-w-[860px] text-sm leading-6 text-slate-500">
+                  This region currently has no pages or blocks in review. Once the regional team creates and submits work, approval items will appear here.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push(withRegion("/pages/new"))}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+              >
+                Create regional page
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </div>
+          </section>
+        ) : null}
 
         <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           <MetricCard
@@ -601,7 +658,7 @@ export default function ApprovalsPage() {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search approvals, owners, types or statuses"
+                placeholder={`Search ${regionLabel} approvals, owners, types or statuses`}
                 className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
               />
             </div>
@@ -631,7 +688,7 @@ export default function ApprovalsPage() {
               <span className="font-semibold text-slate-900">
                 {filteredItems.length}
               </span>{" "}
-              matching approval items
+              matching approval items in {regionLabel}
             </span>
 
             <button
@@ -660,7 +717,7 @@ export default function ApprovalsPage() {
                     Unified Review Queue
                   </h2>
                   <p className="mt-1 text-sm leading-6 text-slate-500">
-                    One place to review governed work across the platform.
+                    One place to review governed work across the {regionLabel} workspace.
                   </p>
                 </div>
               </div>
@@ -688,7 +745,13 @@ export default function ApprovalsPage() {
                 </div>
               ) : filteredItems.length === 0 ? (
                 <div className="p-4">
-                  <EmptyState text="No approval items match your current filters." />
+                  <EmptyState
+                    text={
+                      items.length === 0
+                        ? `No approval items found for ${regionLabel}.`
+                        : "No approval items match your current filters."
+                    }
+                  />
                 </div>
               ) : (
                 filteredItems.map((item) => (

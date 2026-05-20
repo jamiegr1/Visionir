@@ -161,16 +161,18 @@ function MetricCard({
 function TemplateCard({
   template,
   role,
+  region,
 }: {
   template: TemplateSummary;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
 
   return (
     <button
       type="button"
-      onClick={() => router.push(`/templates/${template.id}?role=${role}`)}
+      onClick={() => router.push(`/templates/${template.id}?role=${role}&region=${region}`)}
       className="group rounded-[28px] border border-slate-200 bg-white p-5 text-left shadow-[0_10px_30px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
     >
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -238,15 +240,17 @@ function TemplateCard({
 function TemplateRow({
   template,
   role,
+  region,
 }: {
   template: TemplateSummary;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/templates/${template.id}?role=${role}`)}
+      onClick={() => router.push(`/templates/${template.id}?role=${role}&region=${region}`)}
       className="grid cursor-pointer grid-cols-[minmax(0,1.4fr)_120px_120px_150px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="min-w-0">
@@ -287,6 +291,19 @@ export default function TemplatesPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const [loading, setLoading] = useState(true);
   const [templates, setTemplates] = useState<TemplateSummary[]>([]);
   const [query, setQuery] = useState("");
@@ -296,7 +313,7 @@ export default function TemplatesPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/templates?role=${role}`, {
+        const res = await fetch(`/api/templates?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -315,7 +332,7 @@ export default function TemplatesPage() {
     }
 
     void loadTemplates();
-  }, [role]);
+  }, [role, region]);
 
   const visibleTemplates = useMemo(() => {
     return templates.filter((template) => {
@@ -351,17 +368,22 @@ export default function TemplatesPage() {
           <div className="flex flex-col gap-6 2xl:flex-row 2xl:items-start 2xl:justify-between">
             <div className="min-w-0 flex-1">
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                Template System
+                Global Template System
               </p>
 
-              <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
-                Governed page templates
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
+                  Governed page templates
+                </h1>
+
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  Global templates · active region: {regionLabel}
+                </span>
+              </div>
 
               <p className="mt-3 max-w-[900px] text-sm leading-7 text-slate-500">
-                Create structured page types that marketing teams can use confidently.
-                Define the page blueprint, control allowed blocks, and keep every page
-                aligned to brand, governance, and workflow rules.
+                Create global page blueprints that every regional marketing team can use confidently.
+                Templates are shared across regions, while the pages and blocks created from them remain region-specific.
               </p>
             </div>
 
@@ -379,7 +401,7 @@ export default function TemplatesPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates/new"))}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
                 >
                   <Plus className="h-4.5 w-4.5" />
@@ -390,20 +412,40 @@ export default function TemplatesPage() {
           </div>
         </section>
 
+        <section className="mt-6 rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#4f6fff]">
+                Global governance asset
+              </p>
+              <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                Templates are shared across all regions.
+              </h2>
+              <p className="mt-2 max-w-[920px] text-sm leading-6 text-slate-500">
+                {regionLabel} can create its own pages and blocks from these templates without changing the global template library. In the production version, admins will choose whether templates are global or region-specific during organisation setup.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3 text-sm font-semibold text-[#4f6fff]">
+              Active region: {regionLabel}
+            </div>
+          </div>
+        </section>
+
         <div className="mt-6 grid grid-cols-2 gap-4 xl:grid-cols-4">
           <MetricCard
-            label="Total templates"
+            label="Global templates"
             value={totals.total}
             icon={<LayoutTemplate className="h-5 w-5" />}
           />
           <MetricCard
-            label="Published"
+            label="Published globally"
             value={totals.published}
             tone="emerald"
             icon={<CheckCircle2 className="h-5 w-5" />}
           />
           <MetricCard
-            label="Drafts"
+            label="Global drafts"
             value={totals.drafts}
             tone="slate"
             icon={<Clock3 className="h-5 w-5" />}
@@ -418,12 +460,12 @@ export default function TemplatesPage() {
         <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_420px]">
           <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
             <SectionHeader
-              title="Template library"
-              subtitle="Browse your most recent page types and governed blueprints."
+              title="Global template library"
+              subtitle={`Browse governed blueprints available to ${regionLabel} and every other region.`}
               right={
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates/new"))}
                   className="rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                 >
                   Create Template
@@ -441,15 +483,15 @@ export default function TemplatesPage() {
                   <LayoutTemplate className="h-5 w-5" />
                 </div>
                 <p className="mt-4 text-sm font-medium text-slate-700">
-                  No templates yet
+                  No global templates yet
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
-                  Start by creating a governed page type for your team.
+                  Start by creating a governed page type that can be used across all regions.
                 </p>
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates/new"))}
                   className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                 >
                   <Plus className="h-4 w-4" />
@@ -464,6 +506,7 @@ export default function TemplatesPage() {
                       key={template.id}
                       template={template}
                       role={role}
+                      region={region}
                     />
                   ))}
                 </div>
@@ -483,6 +526,7 @@ export default function TemplatesPage() {
                           key={template.id}
                           template={template}
                           role={role}
+                          region={region}
                         />
                       ))}
                     </div>
@@ -495,26 +539,26 @@ export default function TemplatesPage() {
           <aside className="space-y-6">
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
               <SectionHeader
-                title="How templates work"
-                subtitle="A simple governed workflow for structured page creation."
+                title="How global templates work"
+                subtitle="A governed workflow for consistent regional page creation."
               />
 
               <div className="space-y-3">
                 {[
                   {
                     step: "1",
-                    title: "Create the page blueprint",
-                    text: "Define the section order, required blocks, and allowed component types.",
+                    title: "Create the global blueprint",
+                    text: "Define the shared section order, required blocks, and allowed component types.",
                   },
                   {
                     step: "2",
-                    title: "Set section-level rules",
-                    text: "Control requirements like images, AI instructions, and optional or required sections.",
+                    title: "Set section-level governance",
+                    text: "Control requirements like images, AI instructions, allowed block types, and required sections.",
                   },
                   {
                     step: "3",
-                    title: "Let teams build against it",
-                    text: "Marketers use the template to complete each section with governed blocks.",
+                    title: "Let regions build against it",
+                    text: `Regional teams use the same global template to create local pages and governed regional blocks.`,
                   },
                 ].map((item) => (
                   <div
@@ -546,17 +590,17 @@ export default function TemplatesPage() {
               </div>
 
               <h3 className="mt-4 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
-                Build a new governed page type
+                Build a new global page type
               </h3>
 
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                Create an enterprise-ready template with structured sections,
-                allowed block types, AI guidance, and controlled page composition.
+                Create an enterprise-ready global template with structured sections,
+                allowed block types, AI guidance, and controlled regional page composition.
               </p>
 
               <button
                 type="button"
-                onClick={() => router.push(`/templates/new?role=${role}`)}
+                onClick={() => router.push(withRegion("/templates/new"))}
                 className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
               >
                 Create Template

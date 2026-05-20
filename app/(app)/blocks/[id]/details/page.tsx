@@ -12,8 +12,9 @@ import {
   Clock3,
   Copy,
   Eye,
+  ExternalLink,
   FileText,
-  LayoutTemplate,
+  Link2,
   ListChecks,
   Monitor,
   PenSquare,
@@ -51,6 +52,35 @@ type ApiBlockRecord = {
   changesRequestedNotes?: string | null;
   changesRequestedFields?: string[] | null;
   data?: BlockData | null;
+};
+
+type PageSummary = {
+  id: string;
+  name: string;
+  slug?: string;
+  status?: string;
+  templateName?: string;
+  sections?: Array<{
+    sectionId: string;
+    key: string;
+    label: string;
+    order: number;
+    required: boolean;
+    blockIds: string[];
+  }>;
+};
+
+type BlockUsage = {
+  pageId: string;
+  pageName: string;
+  pageSlug: string;
+  pageStatus: string;
+  templateName: string;
+  sectionId: string;
+  sectionKey: string;
+  sectionLabel: string;
+  sectionOrder: number;
+  isPublishedPage: boolean;
 };
 
 function cx(...classes: Array<string | false | null | undefined>) {
@@ -136,6 +166,76 @@ function getStatusPillClass(status: string) {
     default:
       return "bg-slate-100 text-slate-600 ring-slate-200";
   }
+}
+
+function getPageStatusLabel(status: string | undefined) {
+  switch (status) {
+    case "in_progress":
+      return "In Progress";
+    case "pending_approval":
+      return "Pending Approval";
+    case "changes_requested":
+      return "Changes Requested";
+    case "approved":
+      return "Approved";
+    case "published":
+      return "Published";
+    case "archived":
+      return "Archived";
+    case "rejected":
+      return "Rejected";
+    case "draft":
+    default:
+      return "Draft";
+  }
+}
+
+function getPageStatusPillClass(status: string | undefined) {
+  switch (status) {
+    case "published":
+      return "bg-emerald-50 text-emerald-700 ring-emerald-200";
+    case "approved":
+      return "bg-sky-50 text-sky-700 ring-sky-200";
+    case "pending_approval":
+      return "bg-violet-50 text-violet-700 ring-violet-200";
+    case "changes_requested":
+    case "rejected":
+      return "bg-rose-50 text-rose-700 ring-rose-200";
+    case "in_progress":
+      return "bg-blue-50 text-blue-700 ring-blue-200";
+    case "archived":
+      return "bg-slate-100 text-slate-600 ring-slate-200";
+    case "draft":
+    default:
+      return "bg-amber-50 text-amber-700 ring-amber-200";
+  }
+}
+
+function getBlockUsageForPages(blockId: string, pages: PageSummary[]) {
+  return pages
+    .flatMap((page) =>
+      (page.sections ?? []).flatMap((section) =>
+        (section.blockIds ?? [])
+          .filter((attachedBlockId) => attachedBlockId === blockId)
+          .map<BlockUsage>(() => ({
+            pageId: page.id,
+            pageName: page.name,
+            pageSlug: page.slug || "",
+            pageStatus: page.status || "draft",
+            templateName: page.templateName || "—",
+            sectionId: section.sectionId,
+            sectionKey: section.key,
+            sectionLabel: section.label,
+            sectionOrder: section.order,
+            isPublishedPage: page.status === "published",
+          }))
+      )
+    )
+    .sort((a, b) => {
+      const pageCompare = a.pageName.localeCompare(b.pageName);
+      if (pageCompare !== 0) return pageCompare;
+      return a.sectionOrder - b.sectionOrder;
+    });
 }
 
 function formatComponentLabel(value?: string | null) {
@@ -253,22 +353,72 @@ function StatTile({
   );
 }
 
-function MetaRow({
-  label,
-  value,
+function UsedInCard({
+  usage,
+  role,
+  region,
 }: {
-  label: string;
-  value: string;
+  usage: BlockUsage;
+  role: Role;
+  region: string;
 }) {
+  const router = useRouter();
+
   return (
-    <div className="flex items-start justify-between gap-4 border-b border-slate-100 py-3 first:pt-0 last:border-b-0 last:pb-0">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-        {label}
-      </p>
-      <p className="max-w-[62%] break-words text-right text-sm leading-6 text-slate-700">
-        {value}
-      </p>
-    </div>
+    <button
+      type="button"
+      onClick={() =>
+        router.push(
+          `/pages/${usage.pageId}?role=${role}&region=${region}&tab=sections&sectionId=${usage.sectionId}#section-workspace`
+        )
+      }
+      className="w-full rounded-[22px] border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#dbe5ff] hover:bg-[#f8faff] hover:shadow-[0_12px_28px_rgba(15,23,42,0.06)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-slate-900">
+            {usage.pageName}
+          </p>
+          <p className="mt-1 truncate text-xs text-slate-500">
+            {usage.pageSlug || "No slug"} · {usage.templateName}
+          </p>
+        </div>
+
+        <span
+          className={cx(
+            "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1",
+            getPageStatusPillClass(usage.pageStatus)
+          )}
+        >
+          {getPageStatusLabel(usage.pageStatus)}
+        </span>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Section
+          </p>
+          <p className="mt-1 truncate text-sm font-medium text-slate-800">
+            {usage.sectionLabel}
+          </p>
+        </div>
+
+        <div className="rounded-2xl bg-slate-50 px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+            Section Key
+          </p>
+          <p className="mt-1 truncate text-sm font-medium text-slate-800">
+            {usage.sectionKey}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[#4f6fff]">
+        Open page section
+        <ExternalLink className="h-4 w-4" />
+      </div>
+    </button>
   );
 }
 
@@ -611,6 +761,34 @@ export default function BlockDetailPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const isActiveDataRegion = region === "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
+  function appendRegionToUrl(value: string) {
+    if (!value) return value;
+
+    try {
+      const url = new URL(value, window.location.origin);
+      url.searchParams.set("role", role);
+      url.searchParams.set("region", region);
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      const joiner = value.includes("?") ? "&" : "?";
+      return `${value}${joiner}role=${role}&region=${region}`;
+    }
+  }
+
   const returnTo = searchParams.get("returnTo");
 
   const [loading, setLoading] = useState(true);
@@ -619,42 +797,64 @@ export default function BlockDetailPage() {
   const [copied, setCopied] = useState(false);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
   const [block, setBlock] = useState<ApiBlockRecord | null>(null);
+  const [pages, setPages] = useState<PageSummary[]>([]);
 
   useEffect(() => {
-    async function loadBlock() {
+    async function loadBlockDetailData() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
-          cache: "no-store",
-        });
+        const [blockRes, pagesRes] = await Promise.all([
+          fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
+            cache: "no-store",
+          }),
+          fetch(`/api/pages?role=${role}&region=${region}`, {
+            cache: "no-store",
+          }),
+        ]);
 
-        const json = await res.json().catch(() => ({}));
+        const blockJson = await blockRes.json().catch(() => ({}));
+        const pagesJson = await pagesRes.json().catch(() => ({}));
 
-        if (!res.ok || !json?.block) {
+        if (!blockRes.ok || !blockJson?.block) {
           setBlock(null);
+          setPages([]);
           return;
         }
 
-        setBlock(json.block as ApiBlockRecord);
+        setBlock(blockJson.block as ApiBlockRecord);
+        const rawPages = Array.isArray(pagesJson?.pages)
+          ? (pagesJson.pages as PageSummary[])
+          : [];
+
+        setPages(isActiveDataRegion ? rawPages : []);
       } catch (error) {
         console.error("Failed to load block detail:", error);
         setBlock(null);
+        setPages([]);
       } finally {
         setLoading(false);
       }
     }
 
     if (id) {
-      void loadBlock();
+      void loadBlockDetailData();
     }
-  }, [id, role]);
+  }, [id, role, region, isActiveDataRegion]);
 
   const data = block?.data ?? null;
   const blockName = getBlockName(data, id);
   const componentName = getComponentName(data);
   const componentVariant = getVariantName(data);
   const status = block?.status || "draft";
+
+  const blockUsage = useMemo(() => {
+    return getBlockUsageForPages(id, pages);
+  }, [id, pages]);
+
+  const liveUsageCount = blockUsage.filter((usage) => usage.isPublishedPage).length;
+  const hasLiveUsage = liveUsageCount > 0;
+  const hasSharedUsage = blockUsage.length > 1;
 
   const governance = useMemo(() => {
     if (!data) return null;
@@ -813,7 +1013,13 @@ export default function BlockDetailPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          data,
+          data: {
+            ...data,
+            regionId: region,
+            regionName: regionLabel,
+          },
+          regionId: region,
+          regionName: regionLabel,
           status: "draft",
         }),
       });
@@ -825,11 +1031,11 @@ export default function BlockDetailPage() {
       }
 
       const nextReturnTo = returnTo
-        ? `&returnTo=${encodeURIComponent(returnTo)}`
+        ? `&returnTo=${encodeURIComponent(appendRegionToUrl(returnTo))}`
         : "";
 
       router.push(
-        `/blocks/${json.block.id}/details?role=${role}&refresh=${Date.now()}${nextReturnTo}`
+        `/blocks/${json.block.id}/details?role=${role}&region=${region}&refresh=${Date.now()}${nextReturnTo}`
       );
     } catch (error) {
       console.error("Failed to duplicate block:", error);
@@ -845,13 +1051,15 @@ export default function BlockDetailPage() {
     try {
       setIsResubmitting(true);
 
-      const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+      const res = await fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
           status: "pending_approval",
+          regionId: region,
+          regionName: regionLabel,
         }),
       });
 
@@ -862,7 +1070,7 @@ export default function BlockDetailPage() {
       }
 
       router.push(
-        withReturnTo(`/blocks/${id}/approval?role=${role}&refresh=${Date.now()}`)
+        withReturnTo(`/blocks/${id}/approval?role=${role}&region=${region}&refresh=${Date.now()}`)
       );
     } catch (error) {
       console.error("Failed to resubmit block:", error);
@@ -876,38 +1084,42 @@ export default function BlockDetailPage() {
 
   function handleBack() {
     if (returnTo) {
-      router.push(returnTo);
+      router.push(appendRegionToUrl(returnTo));
       return;
     }
 
-    router.push(`/blocks?role=${role}`);
+    router.push(withRegion("/blocks"));
   }
 
   function withReturnTo(path: string) {
-    if (!returnTo) return path;
-    const joiner = path.includes("?") ? "&" : "?";
-    return `${path}${joiner}returnTo=${encodeURIComponent(returnTo)}`;
+    const regionPath = path.includes("region=") ? path : withRegion(path);
+    if (!returnTo) return regionPath;
+
+    const joiner = regionPath.includes("?") ? "&" : "?";
+    return `${regionPath}${joiner}returnTo=${encodeURIComponent(
+      appendRegionToUrl(returnTo)
+    )}`;
   }
 
   function handlePrimaryAction() {
     switch (status) {
       case "pending_approval":
       case "in_review":
-        router.push(withReturnTo(`/blocks/${id}/approval?role=${role}`));
+        router.push(withReturnTo(`/blocks/${id}/approval`));
         break;
       case "approved":
-        router.push(withReturnTo(`/blocks/${id}/deploy?role=${role}`));
+        router.push(withReturnTo(`/blocks/${id}/deploy`));
         break;
       case "published":
       case "deployed":
       case "completed":
-        router.push(withReturnTo(`/blocks/${id}/deploy/embed?role=${role}`));
+        router.push(withReturnTo(`/blocks/${id}/deploy/embed`));
         break;
       case "changes_requested":
       case "draft":
       case "generating":
       default:
-        router.push(withReturnTo(`/blocks/${id}/review?role=${role}`));
+        router.push(withReturnTo(`/blocks/${id}/review`));
         break;
     }
   }
@@ -972,6 +1184,10 @@ export default function BlockDetailPage() {
                 >
                   {getStatusLabel(status)}
                 </span>
+
+                <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-sm font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
               </div>
 
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
@@ -983,17 +1199,47 @@ export default function BlockDetailPage() {
               </h1>
 
               <p className="mt-3 max-w-[900px] text-sm leading-7 text-slate-500">
-                A cleaner detail view for preview, governance, workflow history
-                and deployment actions — designed so the preview is easy to read
-                and the supporting information stays structured and secondary.
+                Preview this {regionLabel} block, check where it is used, and take the right next action without digging through technical details.
               </p>
 
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-slate-500">
+                <span>
+                  Last edited{" "}
+                  <span className="font-medium text-slate-700">
+                    {relativeUpdatedLabel(block.updatedAt)}
+                  </span>
+                </span>
+
+                <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
+
+                <span>
+                  Edited by{" "}
+                  <span className="font-medium text-slate-700">
+                    {getOwnerName(block)}
+                  </span>
+                </span>
+
+                <span className="hidden h-1 w-1 rounded-full bg-slate-300 sm:block" />
+
+                <span>
+                  {block.approvedAt ? "Approved" : "Approval"}{" "}
+                  <span className="font-medium text-slate-700">
+                    {block.approvedAt
+                      ? `by ${getUserLabel(block.approvedByUserId)}`
+                      : "pending"}
+                  </span>
+                </span>
+              </div>
+
               <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4 xl:max-w-[920px]">
-                <StatTile label="Component" value={componentName} />
-                <StatTile label="Variant" value={componentVariant} />
+                <StatTile label="Type" value={componentName} />
                 <StatTile
-                  label="Updated"
-                  value={relativeUpdatedLabel(block.updatedAt)}
+                  label="Used In"
+                  value={`${blockUsage.length} page${blockUsage.length === 1 ? "" : "s"}`}
+                />
+                <StatTile
+                  label="Region"
+                  value={regionLabel}
                 />
                 <StatTile
                   label="Governance"
@@ -1100,7 +1346,7 @@ export default function BlockDetailPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    router.push(withReturnTo(`/blocks/${id}/review?role=${role}`))
+                    router.push(withReturnTo(`/blocks/${id}/review`))
                   }
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
                 >
@@ -1165,11 +1411,47 @@ export default function BlockDetailPage() {
           </section>
         ) : null}
 
+        {hasLiveUsage || hasSharedUsage ? (
+          <section className="mt-6 rounded-[30px] border border-amber-200 bg-[linear-gradient(180deg,#fffbeb_0%,#fff7ed_100%)] p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)] lg:p-6">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-white text-amber-600">
+                  <AlertCircle className="h-5 w-5" />
+                </div>
+
+                <div>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-amber-700">
+                    Editing Impact
+                  </p>
+                  <h2 className="mt-1 text-[22px] font-semibold tracking-[-0.04em] text-slate-900">
+                    This block appears on {blockUsage.length} {regionLabel} page{blockUsage.length === 1 ? "" : "s"}.
+                  </h2>
+                  <p className="mt-2 max-w-[920px] text-sm leading-7 text-slate-600">
+                    {hasLiveUsage
+                      ? `${liveUsageCount} published ${regionLabel} page${liveUsageCount === 1 ? "" : "s"} currently reference this block. Duplicate it before editing so published pages are not changed by mistake.`
+                      : "Review where this regional block is used before editing it, especially if it supports multiple governed pages."}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleDuplicateBlock}
+                disabled={isDuplicating}
+                className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-white px-5 text-sm font-medium text-slate-800 transition hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Copy className="h-4 w-4" />
+                {isDuplicating ? "Duplicating…" : "Duplicate before editing"}
+              </button>
+            </div>
+          </section>
+        ) : null}
+
         <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)] 2xl:grid-cols-[360px_minmax(0,1fr)]">
           <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Panel
               title="Governance Snapshot"
-              subtitle="Core enterprise controls for this version."
+              subtitle="Simple quality signals for brand, accessibility and readiness."
               icon={<Shield className="h-5 w-5" />}
             >
               <div className="rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(135deg,#f8faff_0%,#eef3ff_100%)] p-4">
@@ -1192,12 +1474,10 @@ export default function BlockDetailPage() {
 
               <div className="mt-4 space-y-3">
                 {[
-                  "Brand compliance aligned",
-                  "WCAG AA accessibility target",
-                  "Design tokens locked",
-                  "Semantic structure validated",
-                  "Mobile responsiveness checked",
-                  "Restricted scripts protected",
+                  "On-brand content",
+                  "Accessible layout",
+                  "Approved visual style",
+                  "Mobile-ready",
                 ].map((item) => (
                   <div
                     key={item}
@@ -1215,7 +1495,7 @@ export default function BlockDetailPage() {
 
             <Panel
               title="Workflow"
-              subtitle="Lifecycle milestones for this governed asset."
+              subtitle="Where this block is in the approval process."
               icon={<Clock3 className="h-5 w-5" />}
             >
               <div>
@@ -1274,65 +1554,13 @@ export default function BlockDetailPage() {
               </div>
             </Panel>
 
-            <Panel
-              title="Metadata"
-              subtitle="Ownership and audit information."
-              icon={<LayoutTemplate className="h-5 w-5" />}
-            >
-              <div>
-                <MetaRow label="Block ID" value={block.id} />
-                <MetaRow label="Component" value={componentName} />
-                <MetaRow label="Variant" value={componentVariant} />
-                <MetaRow label="Status" value={getStatusLabel(status)} />
-                <MetaRow label="Created By" value={getOwnerName(block)} />
-                <MetaRow
-                  label="Page"
-                  value={
-                    typeof data.pageName === "string" && data.pageName.trim()
-                      ? data.pageName
-                      : "—"
-                  }
-                />
-                <MetaRow
-                  label="Template"
-                  value={
-                    typeof data.templateName === "string" && data.templateName.trim()
-                      ? data.templateName
-                      : "—"
-                  }
-                />
-                <MetaRow
-                  label="Section"
-                  value={
-                    typeof data.sectionLabel === "string" && data.sectionLabel.trim()
-                      ? data.sectionLabel
-                      : "—"
-                  }
-                />
-                <MetaRow
-                  label="Approved By"
-                  value={getUserLabel(block.approvedByUserId)}
-                />
-                <MetaRow
-                  label="Changes Requested By"
-                  value={getUserLabel(block.changesRequestedByUserId)}
-                />
-                <MetaRow
-                  label="Created At"
-                  value={formatDateTime(block.createdAt)}
-                />
-                <MetaRow
-                  label="Updated At"
-                  value={formatDateTime(block.updatedAt)}
-                />
-              </div>
-            </Panel>
+
           </aside>
 
           <main className="min-w-0 space-y-6">
             <Panel
-              title="Live Preview"
-              subtitle="Responsive preview aligned to desktop, tablet and mobile modes."
+              title="Preview"
+              subtitle="See how this block will appear across desktop, tablet and mobile. Review layout, messaging and governance before publishing."
               icon={<Eye className="h-5 w-5" />}
               className="overflow-hidden"
             >
@@ -1385,7 +1613,7 @@ export default function BlockDetailPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      router.push(withReturnTo(`/blocks/${id}/review?role=${role}`))
+                      router.push(withReturnTo(`/blocks/${id}/review`))
                     }
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                   >
@@ -1397,7 +1625,7 @@ export default function BlockDetailPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        router.push(withReturnTo(`/blocks/${id}/approval?role=${role}`))
+                        router.push(withReturnTo(`/blocks/${id}/approval`))
                       }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
@@ -1412,7 +1640,7 @@ export default function BlockDetailPage() {
                     <button
                       type="button"
                       onClick={() =>
-                        router.push(withReturnTo(`/blocks/${id}/deploy?role=${role}`))
+                        router.push(withReturnTo(`/blocks/${id}/deploy`))
                       }
                       className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                     >
@@ -1442,180 +1670,70 @@ export default function BlockDetailPage() {
               />
             </Panel>
 
-            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <Panel
-                title="Content Summary"
-                subtitle="Core content and design setup used in this block."
-                icon={<FileText className="h-5 w-5" />}
-              >
+            <Panel
+              title="Where This Block Is Used"
+              subtitle={`See which ${regionLabel} pages this block appears on before making changes.`}
+              icon={<Link2 className="h-5 w-5" />}
+            >
+              <div className="mb-5 grid gap-3 md:grid-cols-3">
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Used On Pages
+                  </p>
+                  <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-900">
+                    {blockUsage.length}
+                  </p>
+                </div>
+
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Published Pages
+                  </p>
+                  <p className="mt-2 text-lg font-semibold tracking-[-0.03em] text-slate-900">
+                    {liveUsageCount}
+                  </p>
+                </div>
+
+                <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                    Safe Editing
+                  </p>
+                  <p className="mt-2 text-sm font-medium leading-5 text-slate-700">
+                    {hasLiveUsage || hasSharedUsage
+                      ? "Duplicate before editing"
+                      : "Safe to edit"}
+                  </p>
+                </div>
+              </div>
+
+              {blockUsage.length > 0 ? (
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Block Type
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium text-slate-900">
-                      {contentSummary.componentType}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Variant
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium text-slate-900">
-                      {contentSummary.componentVariant}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Page
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {contentSummary.pageName}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Template
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {contentSummary.templateName}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Section
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {contentSummary.sectionLabel}
-                      {contentSummary.sectionKey !== "—"
-                        ? ` (${contentSummary.sectionKey})`
-                        : ""}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Eyebrow
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {contentSummary.eyebrow}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Headline
-                    </p>
-                    <p className="mt-2.5 text-sm font-semibold leading-6 text-slate-900">
-                      {contentSummary.headline}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Subheading
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {contentSummary.subheading}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Value Points
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium text-slate-900">
-                      {contentSummary.valuePointCount}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Theme / Layout
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium text-slate-900">
-                      {contentSummary.theme} / {contentSummary.layout}
-                    </p>
-                  </div>
-
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 lg:col-span-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Card Style
-                    </p>
-                    <p className="mt-2.5 text-sm font-medium text-slate-900">
-                      {contentSummary.cardStyle}
-                    </p>
-                  </div>
+                  {blockUsage.map((usage) => (
+                    <UsedInCard
+                      key={`${usage.pageId}-${usage.sectionId}`}
+                      usage={usage}
+                      role={role}
+                      region={region}
+                    />
+                  ))}
                 </div>
-              </Panel>
-
-              <Panel
-                title="Deployment & Reuse"
-                subtitle="Primary rollout actions for this block."
-                icon={<Wand2 className="h-5 w-5" />}
-              >
-                <div className="space-y-3">
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
-                      Deployment Readiness
-                    </p>
-                    <p className="mt-2.5 text-sm leading-6 text-slate-700">
-                      {["published", "deployed", "completed"].includes(status)
-                        ? "This block is deployment-ready and can be reused through the embed workflow."
-                        : "This block is still moving through workflow and is not yet deployment-ready."}
-                    </p>
+              ) : (
+                <div className="rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-5 py-12 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-slate-400 ring-1 ring-slate-200">
+                    <Link2 className="h-5 w-5" />
                   </div>
-
-                  {["published", "deployed", "completed"].includes(status) ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={handleCopyEmbedCode}
-                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
-                      >
-                        <Clipboard className="h-4 w-4" />
-                        {copied ? "Embed Code Copied" : "Copy Embed Code"}
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          router.push(
-                            withReturnTo(`/blocks/${id}/deploy/embed?role=${role}`)
-                          )
-                        }
-                        className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                      >
-                        <Sparkles className="h-4 w-4" />
-                        Open Embed Instructions
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handlePrimaryAction}
-                      className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
-                    >
-                      <ArrowRight className="h-4 w-4" />
-                      {getPrimaryActionLabel()}
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleDuplicateBlock}
-                    disabled={isDuplicating}
-                    className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <Copy className="h-4 w-4" />
-                    {isDuplicating ? "Duplicating…" : "Duplicate as New Version"}
-                  </button>
+                  <p className="mt-4 text-sm font-semibold text-slate-800">
+                    This block is not used on any {regionLabel} pages yet.
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">
+                    Once it is attached to a page section, the relationship will appear here.
+                  </p>
                 </div>
-              </Panel>
+              )}
+            </Panel>
+
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)]">
+
             </div>
           </main>
         </div>

@@ -330,6 +330,19 @@ export default function NewPagePage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const [loadingTemplates, setLoadingTemplates] = useState(true);
   const [isCreatingPage, setIsCreatingPage] = useState(false);
 
@@ -430,6 +443,8 @@ export default function NewPagePage() {
           name: pageName.trim(),
           slug: pageSlug.trim() || slugify(pageName),
           description: pageDescription.trim(),
+          regionId: region,
+          regionName: regionLabel,
           createdByUserId: "user-1",
           updatedByUserId: "user-1",
         }),
@@ -441,7 +456,7 @@ export default function NewPagePage() {
         throw new Error(json?.error || "Failed to create page.");
       }
 
-      router.push(`/pages/${json.page.id}?role=${role}`);
+      router.push(withRegion(`/pages/${json.page.id}`));
     } catch (error) {
       console.error(error);
       alert(error instanceof Error ? error.message : "Failed to create page.");
@@ -459,7 +474,7 @@ export default function NewPagePage() {
               <div className="mb-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/pages?role=${role}`)}
+                  onClick={() => router.push(withRegion("/pages"))}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -471,13 +486,19 @@ export default function NewPagePage() {
                 </p>
               </div>
 
-              <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
-                Create a new page from a governed template
-              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
+                  Create a new page from a governed template
+                </h1>
+
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
+              </div>
 
               <p className="mt-2 max-w-[880px] text-sm leading-6 text-slate-500">
-                Choose the right template first, create the page, then move into the page
-                builder to assign blocks section by section.
+                Choose a global template first, create the page for {regionLabel}, then move into the page
+                builder to assign or generate regional blocks section by section.
               </p>
             </div>
 
@@ -493,7 +514,7 @@ export default function NewPagePage() {
               </button>
 
               <p className="text-sm text-slate-500">
-                Template first. Section block assignment comes next.
+                Global template first. Regional page building comes next.
               </p>
             </div>
           </div>
@@ -504,7 +525,7 @@ export default function NewPagePage() {
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
               <SectionHeader
                 title="Choose a template"
-                subtitle="Select the page blueprint this new page should use."
+                subtitle={`Select the global page blueprint this ${regionLabel} page should use.`}
                 right={
                   <div className="relative min-w-[240px] flex-1 xl:max-w-[320px]">
                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4.5 w-4.5 -translate-y-1/2 text-slate-400" />
@@ -537,7 +558,7 @@ export default function NewPagePage() {
 
                   <button
                     type="button"
-                    onClick={() => router.push(`/templates/new?role=${role}`)}
+                    onClick={() => router.push(withRegion("/templates/new"))}
                     className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                   >
                     <Plus className="h-4 w-4" />
@@ -564,9 +585,8 @@ export default function NewPagePage() {
                   New page details
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Give the page a clear identity now. After creation, the builder should
-                  guide users section by section to add existing blocks or generate new
-                  ones.
+                  Give this {regionLabel} page a clear identity now. After creation, the builder will
+                  guide users section by section to add or generate regional blocks.
                 </p>
               </div>
 
@@ -576,7 +596,7 @@ export default function NewPagePage() {
                   <TextInput
                     value={pageName}
                     onChange={(e) => setPageName(e.target.value)}
-                    placeholder="Kiwa UK Service Page"
+                    placeholder={`${regionLabel} Service Page`}
                   />
                 </div>
 
@@ -597,7 +617,7 @@ export default function NewPagePage() {
                     value={pageDescription}
                     onChange={(e) => setPageDescription(e.target.value)}
                     rows={4}
-                    placeholder="A new page created from the approved service page template."
+                    placeholder={`A new ${regionLabel} page created from the approved global template.`}
                   />
                 </div>
               </div>
@@ -605,10 +625,29 @@ export default function NewPagePage() {
           </main>
 
           <aside className="space-y-6">
+            <section className="rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
+                <FileText className="h-5 w-5" />
+              </div>
+
+              <h3 className="mt-4 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                Regional page workspace
+              </h3>
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                This page will be created inside <span className="font-semibold text-slate-700">{regionLabel}</span>. Templates are global, but the page and its blocks are regional.
+              </p>
+
+              <div className="mt-4 grid gap-3">
+                <MiniStat label="Region" value={regionLabel} />
+                <MiniStat label="Templates" value="Global" />
+              </div>
+            </section>
+
             <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
               <SectionHeader
                 title="Selected template"
-                subtitle="A quick summary of the page blueprint you are using."
+                subtitle="A quick summary of the global blueprint this regional page will use."
               />
 
               {!selectedTemplate ? (
@@ -691,12 +730,12 @@ export default function NewPagePage() {
                 <StepCard
                   index={2}
                   title="Create the page"
-                  text="A real page instance is created from that governed structure."
+                  text={`A real page instance is created inside ${regionLabel}.`}
                 />
                 <StepCard
                   index={3}
                   title="Build section by section"
-                  text="Inside the page builder, users should click Hero, Content, CTA and then choose or generate blocks for each section."
+                  text="Inside the page builder, users can create region-specific blocks for each required section."
                 />
               </div>
 
@@ -707,12 +746,10 @@ export default function NewPagePage() {
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-slate-900">
-                      Better block UX belongs in the builder
+                      Regional blocks belong in the builder
                     </p>
                     <p className="mt-1 text-sm leading-6 text-slate-500">
-                      This setup screen should stay simple. The real improvement should
-                      happen on the page detail builder where section-level block assignment
-                      happens.
+                      This setup screen stays simple. Region-specific block creation and section assignment happens in the page builder.
                     </p>
                   </div>
                 </div>

@@ -8,6 +8,7 @@ import {
   Check,
   CopyPlus,
   FileText,
+  Globe2,
   GripVertical,
   LayoutTemplate,
   Plus,
@@ -573,6 +574,19 @@ export default function NewTemplatePage() {
       : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const [isSaving, setIsSaving] = useState(false);
   const [step, setStep] = useState<BuilderStep>("overview");
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -819,6 +833,11 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
         purpose: purpose.trim(),
         defaultAiInstruction: defaultAiInstruction.trim(),
         status: "draft",
+        scope: "global",
+        globalTemplate: true,
+        sharedAcrossRegions: true,
+        activeRegionId: region,
+        activeRegionName: regionLabel,
         createdByUserId: "user-1",
         updatedByUserId: "user-1",
         sections: sections.map((section, index) => ({
@@ -860,7 +879,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
         })),
       };
 
-      const res = await fetch(`/api/templates?role=${role}`, {
+      const res = await fetch(`/api/templates?role=${role}&region=${region}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -874,7 +893,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
         throw new Error(json?.error || "Failed to create template.");
       }
 
-      router.push(`/templates/${json.template.id}?role=${role}`);
+      router.push(`/templates/${json.template.id}?role=${role}&region=${region}`);
     } catch (error) {
       console.error(error);
       alert(error instanceof Error ? error.message : "Failed to save template.");
@@ -892,25 +911,29 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
               <div className="mb-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates"))}
                   className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back to Templates
                 </button>
 
-                <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                  Template Builder
-                </p>
+                <span className="inline-flex rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  Global Template Builder
+                </span>
+
+                <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600">
+                  Active region: {regionLabel}
+                </span>
               </div>
 
               <h1 className="text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
-                Create a new governed template
+                Create a new governed global template
               </h1>
 
               <p className="mt-2 max-w-[880px] text-sm leading-6 text-slate-500">
-                Start with a page type, shape the structure visually, then refine the
-                rules section by section.
+                Start with a page type, shape the global structure visually, then refine the
+                rules section by section. Pages and blocks created from this template remain region-specific.
               </p>
             </div>
 
@@ -922,11 +945,41 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
-                {isSaving ? "Saving..." : "Save Template"}
+                {isSaving ? "Saving..." : "Save Global Template"}
               </button>
 
               <p className="text-sm text-slate-500">
-                Draft first. Publish once the structure and rules are ready.
+                Draft first. Once published, this template becomes available to all regional workspaces.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Globe2 className="h-5 w-5 text-[#4f6fff]" />
+                <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#4f6fff]">
+                  Global Governance Asset
+                </p>
+              </div>
+
+              <h2 className="mt-2 text-[22px] font-semibold tracking-[-0.03em] text-slate-900">
+                Shared across all regions
+              </h2>
+
+              <p className="mt-2 max-w-[920px] text-sm leading-6 text-slate-500">
+                {regionLabel} is the active workspace, but this template will be created as a global blueprint. Regional teams can use it to create local pages and blocks without changing the shared structure.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-[#dbe5ff] bg-white px-5 py-4">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                Template Scope
+              </p>
+              <p className="mt-1 text-sm font-semibold text-[#4f6fff]">
+                Global Enterprise Template
               </p>
             </div>
           </div>
@@ -937,7 +990,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
             <StepBarItem
               index={0}
               title="Overview"
-              subtitle="Template identity and preset"
+              subtitle="Global identity and preset"
               active={step === "overview"}
               complete={overviewComplete}
               onClick={() => setStep("overview")}
@@ -945,7 +998,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
             <StepBarItem
               index={1}
               title="Structure"
-              subtitle="Visual page blueprint"
+              subtitle="Global page blueprint"
               active={step === "structure"}
               complete={structureComplete}
               onClick={() => setStep("structure")}
@@ -966,16 +1019,16 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
             <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
               <div className="mb-8 max-w-[760px]">
                 <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Template overview
+                  Global template overview
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-500">
-                  Give the template a clear identity, then choose the closest starting
+                  Give the global template a clear identity, then choose the closest starting
                   point so admins are not building from scratch.
                 </p>
               </div>
 
               <div className="mb-8">
-                <FieldLabel hint="Start from a sensible structure, then refine it.">
+                <FieldLabel hint="Start from a sensible global structure, then refine it.">
                   Template Preset
                 </FieldLabel>
 
@@ -1086,7 +1139,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
                 </div>
 
                 <div className="lg:col-span-2">
-                  <FieldLabel hint="Applies across the full template unless section rules override it.">
+                  <FieldLabel hint="Applies globally across this template unless section rules override it.">
                     Default AI Instruction
                   </FieldLabel>
                   <TextArea
@@ -1102,22 +1155,22 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
             <aside className="space-y-6">
               <Panel
                 title="What happens next"
-                subtitle="A simpler creation flow."
+                subtitle="A governed global creation flow."
                 icon={<Sparkles className="h-5 w-5" />}
               >
                 <div className="space-y-3">
                   {[
                     {
-                      title: "Choose a page baseline",
-                      text: "Use a preset so admins are not starting from a blank template.",
+                      title: "Choose a global page baseline",
+                      text: "Use a preset so admins are not starting from a blank global template.",
                     },
                     {
-                      title: "Shape the structure visually",
-                      text: "Review section order and add or remove parts of the page.",
+                      title: "Shape the global structure",
+                      text: "Review section order and add or remove parts of the page blueprint shared by regions.",
                     },
                     {
-                      title: "Refine section rules",
-                      text: "Choose allowed blocks and define section-specific controls.",
+                      title: "Refine governance rules",
+                      text: "Choose allowed blocks and define section-specific controls inherited by regional pages.",
                     },
                   ].map((item) => (
                     <div
@@ -1136,7 +1189,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
               </Panel>
 
               <Panel
-                title="Current draft summary"
+                title="Global draft summary"
                 subtitle="A quick snapshot as you build."
                 icon={<LayoutTemplate className="h-5 w-5" />}
               >
@@ -1158,11 +1211,11 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
                 <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
                   <div className="max-w-[760px]">
                     <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                      Page structure
+                      Global page structure
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                      Shape the template as a visual page blueprint. Keep the main flow
-                      simple and scan-friendly.
+                      Shape the template as a global visual page blueprint. Keep the main flow
+                      simple, governed, and scan-friendly for regional teams.
                     </p>
                   </div>
 
@@ -1548,11 +1601,11 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
                 <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-7">
                   <div className="mb-6">
                     <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-slate-900">
-                      Section rules
+                      Global section rules
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
                       Control what this section is allowed to use and how it should
-                      behave.
+                      behave across regional pages created from this template.
                     </p>
                   </div>
 
@@ -1567,7 +1620,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
                           })
                         }
                         rows={3}
-                        placeholder="Guidance shown to the marketer using this template."
+                        placeholder="Guidance shown to regional marketers using this template."
                       />
                     </div>
 
@@ -1767,7 +1820,7 @@ setComponentOptions(approvedComponents.map(mapComponentToOption));
               className="inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
-              {isSaving ? "Saving..." : "Save Template"}
+              {isSaving ? "Saving..." : "Save Global Template"}
             </button>
           )}
         </div>

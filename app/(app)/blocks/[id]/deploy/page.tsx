@@ -104,6 +104,28 @@ export default function BlockDeployPage() {
 
   const id = params.id;
   const role = searchParams.get("role") || "admin";
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function appendRegionToUrl(value: string) {
+    if (!value) return value;
+
+    try {
+      const url = new URL(value, window.location.origin);
+      url.searchParams.set("role", role);
+      url.searchParams.set("region", region);
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      const joiner = value.includes("?") ? "&" : "?";
+      return `${value}${joiner}role=${role}&region=${region}`;
+    }
+  }
+
   const returnTo = searchParams.get("returnTo") || "";
   const pageId = searchParams.get("pageId") || "";
   const sectionId = searchParams.get("sectionId") || "";
@@ -117,7 +139,7 @@ export default function BlockDeployPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -140,7 +162,7 @@ export default function BlockDeployPage() {
     if (id) {
       void loadBlock();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   const isPageBuilderDeploy = Boolean(
     returnTo ||
@@ -155,13 +177,17 @@ export default function BlockDeployPage() {
 
   const fallbackPageReturnTo =
     resolvedPageId && resolvedSectionId
-      ? `/pages/${resolvedPageId}?role=${role}&tab=sections&sectionId=${resolvedSectionId}#section-workspace`
-      : `/pages?role=${role}`;
+      ? `/pages/${resolvedPageId}?role=${role}&region=${region}&tab=sections&sectionId=${resolvedSectionId}#section-workspace`
+      : `/pages?role=${role}&region=${region}`;
 
-  const doneHref = returnTo || (isPageBuilderDeploy ? fallbackPageReturnTo : `/blocks?role=${role}`);
+  const doneHref = returnTo
+    ? appendRegionToUrl(returnTo)
+    : isPageBuilderDeploy
+      ? fallbackPageReturnTo
+      : `/blocks?role=${role}&region=${region}`;
 
-  const embedHref = `/blocks/${id}/deploy/embed?role=${role}${
-    returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""
+  const embedHref = `/blocks/${id}/deploy/embed?role=${role}&region=${region}${
+    returnTo ? `&returnTo=${encodeURIComponent(appendRegionToUrl(returnTo))}` : ""
   }${
     resolvedPageId ? `&pageId=${encodeURIComponent(resolvedPageId)}` : ""
   }${
@@ -238,7 +264,7 @@ export default function BlockDeployPage() {
                   Deployment
                 </h2>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                  This block has passed governance and is now ready for deployment
+                  This {regionLabel} block has passed governance and is now ready for deployment
                   and reuse.
                 </p>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -249,7 +275,25 @@ export default function BlockDeployPage() {
 
             <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
               <section>
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                <div className="rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Regional Deployment
+                      </p>
+                      <p className="mt-2 text-[16px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {regionLabel}
+                      </p>
+                      <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                        This approved block belongs to the {regionLabel} regional workspace. Deployment and page-builder return actions will remain inside this region.
+                      </p>
+                    </div>
+
+                    <StatusPill tone="blue">Region</StatusPill>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
@@ -378,13 +422,19 @@ export default function BlockDeployPage() {
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Block Approved — Ready for Deployment
-                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Block Approved — Ready for Deployment
+                  </h1>
+
+                  <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
                   {isPageBuilderDeploy
-                    ? "This block has passed governance and is ready to use inside the selected page section."
-                    : "This output has passed governance and is now ready to embed into your CMS or save as a reusable template."}
+                    ? `This ${regionLabel} block has passed governance and is ready to use inside the selected page section.`
+                    : `This ${regionLabel} output has passed governance and is now ready to embed into your regional CMS or save as a reusable template.`}
                 </p>
               </div>
 
@@ -492,6 +542,9 @@ export default function BlockDeployPage() {
                   <span className="font-medium text-emerald-600">Approved</span>
                 </span>
                 <span>{isPageBuilderDeploy ? "Page builder ready" : "Deployment ready"}</span>
+                <span>
+                  Region: <span className="font-medium text-[#4f6fff]">{regionLabel}</span>
+                </span>
               </div>
 
               <div className="flex items-center gap-3">

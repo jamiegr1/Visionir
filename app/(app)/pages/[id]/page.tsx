@@ -943,6 +943,31 @@ export default function PageDetailPage() {
       : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const isActiveDataRegion = region === "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
+  function isBlockInCurrentRegion(block: ApiBlockRecord) {
+    const blockRegionId =
+      typeof block.data?.regionId === "string" ? block.data.regionId : "";
+
+    if (isActiveDataRegion) {
+      return !blockRegionId || blockRegionId === region;
+    }
+
+    return blockRegionId === region;
+  }
+
   const id = params.id;
 
   const [loading, setLoading] = useState(true);
@@ -971,7 +996,7 @@ export default function PageDetailPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/pages/${id}?role=${role}`, {
+        const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -998,14 +1023,14 @@ export default function PageDetailPage() {
     if (id) {
       void loadPage();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   useEffect(() => {
     async function loadBlocks() {
       try {
         setBlocksLoading(true);
 
-        const res = await fetch(`/api/blocks?role=${role}`, {
+        const res = await fetch(`/api/blocks?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -1014,7 +1039,7 @@ export default function PageDetailPage() {
           ? (json.blocks as ApiBlockRecord[])
           : [];
 
-        setAllBlocks(rawBlocks);
+        setAllBlocks(rawBlocks.filter(isBlockInCurrentRegion));
       } catch (error) {
         console.error("Failed to load blocks:", error);
         setAllBlocks([]);
@@ -1024,7 +1049,7 @@ export default function PageDetailPage() {
     }
 
     void loadBlocks();
-  }, [role]);
+  }, [role, region, isActiveDataRegion]);
 
   useEffect(() => {
     async function loadComponentOptions() {
@@ -1201,7 +1226,7 @@ export default function PageDetailPage() {
   }
 
   async function refreshPage() {
-    const res = await fetch(`/api/pages/${id}?role=${role}`, {
+    const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
       cache: "no-store",
     });
 
@@ -1217,7 +1242,7 @@ export default function PageDetailPage() {
   }
 
   async function refreshBlocks() {
-    const res = await fetch(`/api/blocks?role=${role}`, {
+    const res = await fetch(`/api/blocks?role=${role}&region=${region}`, {
       cache: "no-store",
     });
 
@@ -1226,7 +1251,7 @@ export default function PageDetailPage() {
       ? (json.blocks as ApiBlockRecord[])
       : [];
 
-    setAllBlocks(rawBlocks);
+    setAllBlocks(rawBlocks.filter(isBlockInCurrentRegion));
   }
 
   async function handleSave() {
@@ -1235,13 +1260,15 @@ export default function PageDetailPage() {
     try {
       setIsSaving(true);
 
-      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+      const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: pageName.trim(),
           slug: pageSlug.trim(),
           status: pageStatus,
+          regionId: region,
+          regionName: regionLabel,
           updatedByUserId: "user-1",
         }),
       });
@@ -1267,11 +1294,13 @@ export default function PageDetailPage() {
     try {
       setIsActing(true);
 
-      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+      const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action,
+          regionId: region,
+          regionName: regionLabel,
           updatedByUserId: "user-1",
         }),
       });
@@ -1297,13 +1326,15 @@ export default function PageDetailPage() {
     try {
       setAttachLoadingBlockId(blockId);
 
-      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+      const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "attach_block",
           sectionId: selectedSection.sectionId,
           blockId,
+          regionId: region,
+          regionName: regionLabel,
           updatedByUserId: "user-1",
           skipAllowedComponentCheck: true,
         }),
@@ -1331,13 +1362,15 @@ export default function PageDetailPage() {
     try {
       setRemoveLoadingBlockId(blockId);
 
-      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+      const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "remove_block",
           sectionId: selectedSection.sectionId,
           blockId,
+          regionId: region,
+          regionName: regionLabel,
           updatedByUserId: "user-1",
         }),
       });
@@ -1369,6 +1402,7 @@ export default function PageDetailPage() {
 
     const params = new URLSearchParams({
       role,
+      region,
       pageId: page.id,
       sectionId: selectedSection.sectionId,
       allowed: allowed.join(","),
@@ -1376,7 +1410,7 @@ export default function PageDetailPage() {
       sectionLabel: selectedSection.label,
       sectionKey: selectedSection.key,
       lockedComponentId: fallbackComponentId,
-      returnTo: `/pages/${page.id}?role=${role}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`,
+      returnTo: `/pages/${page.id}?role=${role}&region=${region}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`,
     });
 
     if (selectedSection.defaultComponentId) {
@@ -1710,7 +1744,7 @@ export default function PageDetailPage() {
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/pages?role=${role}`)}
+                  onClick={() => router.push(withRegion("/pages"))}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -1718,6 +1752,10 @@ export default function PageDetailPage() {
                 </button>
 
                 <StatusPill status={pageStatus} />
+
+                <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
               </div>
 
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
@@ -1729,9 +1767,10 @@ export default function PageDetailPage() {
               </h1>
 
               <p className="mt-2 max-w-[820px] text-sm leading-6 text-slate-500">
-                This page inherits its structure from the{" "}
+                This page belongs to <span className="font-medium text-slate-700">{regionLabel}</span>{" "}
+                and inherits its structure from the{" "}
                 <span className="font-medium text-slate-700">{page.templateName}</span>{" "}
-                template.
+                global template.
               </p>
             </div>
 
@@ -1789,7 +1828,7 @@ export default function PageDetailPage() {
                 {pageStatus === "approved" || pageStatus === "published" ? (
                   <button
                     type="button"
-                    onClick={() => router.push(`/pages/${page.id}/publish?role=${role}`)}
+                    onClick={() => router.push(withRegion(`/pages/${page.id}/publish`))}
                     className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 text-sm font-medium text-emerald-700 transition hover:bg-emerald-100"
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -1799,7 +1838,7 @@ export default function PageDetailPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/${page.templateId}?role=${role}`)}
+                  onClick={() => router.push(withRegion(`/templates/${page.templateId}`))}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <LayoutTemplate className="h-4 w-4" />
@@ -1814,13 +1853,14 @@ export default function PageDetailPage() {
           <div className="grid flex-1 gap-4 xl:grid-cols-[300px_minmax(0,1fr)]">
             <div className="flex h-[92px] flex-col justify-center rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
               <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                Template
+                Region / Template
               </p>
               <p className="mt-1.5 truncate text-sm font-semibold text-slate-900">
+                {regionLabel}
+              </p>
+              <p className="mt-1 truncate text-xs font-medium text-slate-500">
                 {page.templateName}
               </p>
-
-              <div className="mt-2.5 h-1.5 opacity-0" />
             </div>
 
             <div className="flex h-[92px] flex-col justify-center rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-sm">
@@ -2039,7 +2079,7 @@ export default function PageDetailPage() {
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
                       Once selected, you will be able to generate a new block or reuse an
-                      approved one from the library below.
+                      approved regional one from the library below.
                     </p>
                   </div>
                 </Panel>
@@ -2047,7 +2087,7 @@ export default function PageDetailPage() {
                 <>
                   <Panel
                     title={selectedSection.label}
-                    subtitle="Build this section by generating a governed block or attaching an approved compatible block."
+                    subtitle={`Build this ${regionLabel} section by generating a governed block or attaching an approved compatible regional block.`}
                     icon={<Blocks className="h-5 w-5" />}
                   >
                     <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -2097,7 +2137,7 @@ export default function PageDetailPage() {
 
                   <Panel
                     title="Attached blocks"
-                    subtitle="These blocks are already assigned to this section."
+                    subtitle={`These ${regionLabel} blocks are already assigned to this section.`}
                     icon={<CheckCircle2 className="h-5 w-5" />}
                   >
                     {attachedBlocksForSelectedSection.length > 0 ? (
@@ -2108,10 +2148,10 @@ export default function PageDetailPage() {
                             block={block}
                             onEdit={() =>
                               router.push(
-                                `/blocks/${block.id}/review?role=${role}&editMode=page_builder&pageId=${page.id}&sectionId=${
+                                `/blocks/${block.id}/review?role=${role}&region=${region}&editMode=page_builder&pageId=${page.id}&sectionId=${
                                   selectedSection.sectionId
                                 }&returnTo=${encodeURIComponent(
-                                  `/pages/${page.id}?role=${role}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`
+                                  `/pages/${page.id}?role=${role}&region=${region}&tab=sections&sectionId=${selectedSection.sectionId}#section-workspace`
                                 )}`
                               )
                             }
@@ -2127,7 +2167,7 @@ export default function PageDetailPage() {
                         </p>
                         <p className="mt-1 text-sm text-slate-500">
                           Start by generating a new governed block, or choose one from the
-                          approved block library below.
+                          approved regional block library below.
                         </p>
 
                         <div className="mt-5 flex flex-wrap justify-center gap-3">

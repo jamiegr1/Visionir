@@ -677,6 +677,19 @@ function NewBlockPageContent() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const currentUser = useMemo(() => ({ id: "user-1", role }), [role]);
   const canCreate = hasPermission(currentUser.role, "block.create");
 
@@ -911,6 +924,8 @@ const shouldLockComponentSelection = Boolean(
     try {
       const enrichedPrompt = `
 Block Name: ${blockName}
+Region: ${regionLabel}
+Region ID: ${region}
 Block Type: ${selectedBlockType.name}
 Block Type ID: ${selectedBlockType.id}
 Selected Variant: ${selectedVariant.name}
@@ -941,6 +956,8 @@ ${prompt}
             category: selectedBlockType.name,
             componentId: selectedBlockType.id,
             variantId: selectedVariant.id,
+            regionId: region,
+            regionName: regionLabel,
             pageId,
             sectionId,
             pageName: pageNameFromUrl,
@@ -969,6 +986,9 @@ ${prompt}
               variantId: selectedVariant.id,
               componentName: selectedBlockType.name,
               variantName: selectedVariant.name,
+
+              regionId: region,
+              regionName: regionLabel,
 
               pageId,
               sectionId,
@@ -999,6 +1019,7 @@ ${prompt}
       window.setTimeout(() => {
         const reviewParams = new URLSearchParams({
           role,
+          region,
         });
         
         if (isPageBuilderMode) {
@@ -1008,7 +1029,7 @@ ${prompt}
           reviewParams.set(
             "returnTo",
             returnToFromUrl ||
-              `/pages/${pageId}?role=${role}&tab=sections&sectionId=${sectionId}#section-workspace`
+              `/pages/${pageId}?role=${role}&region=${region}&tab=sections&sectionId=${sectionId}#section-workspace`
           );
         }
         
@@ -1058,7 +1079,7 @@ ${prompt}
           </p>
           <button
             type="button"
-            onClick={() => router.push(`/block-types?role=${role}`)}
+            onClick={() => router.push(withRegion("/block-types"))}
             className="mt-5 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#3f5ff0]"
           >
             Go to Block Type Library
@@ -1071,7 +1092,7 @@ ${prompt}
   if (step === "generating") {
     return (
       <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
-        <TopBar title="Generating" stepLabel="Step 3 of 3" />
+        <TopBar title={`Generating · ${regionLabel}`} stepLabel="Step 3 of 3" />
         <div className="flex flex-1 items-center justify-center px-8 pt-5 pb-4">
           <Generating progress={progress} label={progressLabel} />
         </div>
@@ -1083,7 +1104,7 @@ ${prompt}
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-[#f6f7fb] text-slate-900">
-      <TopBar title="Create Block" stepLabel={`Step ${stepNumber} of 3`} />
+      <TopBar title={`Create Block · ${regionLabel}`} stepLabel={`Step ${stepNumber} of 3`} />
 
       <div className="flex flex-1 items-center justify-center overflow-hidden px-8 py-6">
         <div className="mx-auto flex max-h-[calc(100dvh-150px)] w-full max-w-[1040px] flex-col rounded-[30px] bg-white px-7 pt-5 pb-6 shadow-[0_10px_35px_rgba(15,23,42,0.04)] ring-1 ring-[#eef1f6]">
@@ -1092,8 +1113,20 @@ ${prompt}
               <ProgressHeader
                 currentStep={1}
                 title="Block Context"
-                subtitle="Define the core block details before choosing the governed block type."
+                subtitle={`Define the core block details for ${regionLabel} before choosing the governed block type.`}
               />
+
+              <div className="mb-4 rounded-[22px] border border-[#dbe5ff] bg-[#f7f9ff] px-5 py-4">
+                <div className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#5b7cff]">
+                  Regional block workspace
+                </div>
+                <div className="mt-1 text-[15px] font-semibold text-[#111827]">
+                  {regionLabel}
+                </div>
+                <p className="mt-1 text-[13px] leading-5 text-[#7d859d]">
+                  This block will be generated as a region-specific asset. Global templates and block types remain available, but the saved block belongs to this regional workspace.
+                </p>
+              </div>
 
               <div className="overflow-hidden rounded-[22px] border border-[#e8ecf4] bg-white">
                 <FormRow label="Block Name">
@@ -1108,7 +1141,7 @@ ${prompt}
                   <TextInput
                     value={location}
                     onChange={setLocation}
-                    placeholder="Food, Feed & Agriculture"
+                    placeholder={`${regionLabel} page, section or business area`}
                   />
                 </FormRow>
 
@@ -1141,7 +1174,7 @@ ${prompt}
                   type="button"
                   onClick={() => {
                     const returnTo = searchParams.get("returnTo");
-                    router.push(returnTo || `/dashboard?role=${role}`);
+                    router.push(returnTo || withRegion("/dashboard"));
                   }}
                   className="min-w-[120px] rounded-lg bg-[#eef2fb] px-6 py-3 text-sm font-semibold text-[#7380b3] transition-all duration-200 hover:bg-[#dfe6fb] hover:text-[#4b5ea8] hover:shadow-md"
                 >
@@ -1225,6 +1258,9 @@ ${prompt}
                 <div className="mt-1 text-[16px] font-semibold text-[#111827]">
                   {selectedBlockType.name} — {selectedVariant.name}
                 </div>
+                <div className="mt-2 inline-flex rounded-full border border-[#dbe5ff] bg-white px-3 py-1 text-[12px] font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </div>
                 <p className="mt-1 text-[13px] text-[#7d859d]">
                   {selectedVariant.description}
                 </p>
@@ -1247,7 +1283,7 @@ ${prompt}
                 </h3>
                 <p className="mt-2 text-[13px] text-[#7d859d]">
                   All generated blocks are validated against organisational design,
-                  accessibility, performance, and content standards.
+                  accessibility, performance, and content standards before being saved into {regionLabel}.
                 </p>
 
                 <div className="mt-4 grid grid-cols-3 gap-x-8 gap-y-4">

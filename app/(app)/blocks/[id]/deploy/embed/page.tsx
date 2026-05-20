@@ -75,6 +75,19 @@ export default function BlockDeployEmbedPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const [loading, setLoading] = useState(true);
   const [editable, setEditable] = useState<BlockData | null>(null);
   const [viewport, setViewport] = useState<ViewportMode>("desktop");
@@ -86,7 +99,7 @@ export default function BlockDeployEmbedPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
         const json = await res.json().catch(() => ({}));
@@ -108,7 +121,7 @@ export default function BlockDeployEmbedPage() {
     if (id) {
       void loadBlock();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
 
@@ -148,7 +161,10 @@ export default function BlockDeployEmbedPage() {
       .replace(/`/g, "\\`")
       .replace(/\$\{/g, "\\${");
 
-    return `<div id="visionir-block-${id}"></div>
+    return `<!-- Visionir Region: ${regionLabel} -->
+<!-- Visionir Region ID: ${region} -->
+
+<div id="visionir-block-${id}"></div>
 <script>
 (function () {
   var container = document.getElementById("visionir-block-${id}");
@@ -184,6 +200,8 @@ export default function BlockDeployEmbedPage() {
         body: JSON.stringify({
           status: "published",
           publishedAt: new Date().toISOString(),
+          regionId: region,
+          regionName: regionLabel,
         }),
       });
   
@@ -194,7 +212,7 @@ export default function BlockDeployEmbedPage() {
         throw new Error(json?.error || "Failed to finalise block");
       }
   
-      router.push(`/dashboard?role=${role}&refresh=${Date.now()}`);
+      router.push(`/dashboard?role=${role}&region=${region}&refresh=${Date.now()}`);
       router.refresh();
     } catch (error) {
       console.error("Failed to complete deployment:", error);
@@ -246,7 +264,7 @@ export default function BlockDeployEmbedPage() {
                   Embed to Optimizely
                 </h2>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                  Follow these simple steps to add this approved block into
+                  Follow these simple steps to add this approved {regionLabel} block into
                   Optimizely.
                 </p>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
@@ -257,7 +275,27 @@ export default function BlockDeployEmbedPage() {
 
             <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
               <section>
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                <div className="rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Regional Deployment
+                      </p>
+
+                      <p className="mt-2 text-[16px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {regionLabel}
+                      </p>
+
+                      <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                        This embed code belongs to the {regionLabel} workspace and should be deployed into the matching regional CMS environment.
+                      </p>
+                    </div>
+
+                    <StatusPill tone="blue">Region</StatusPill>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
@@ -309,7 +347,7 @@ export default function BlockDeployEmbedPage() {
                       Helpful Note
                     </p>
                     <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
-                      The generated embed code is already approved and ready to use.
+                      The generated embed code is already approved and ready to use inside the {regionLabel} environment.
                       No technical edits should be needed before adding it into
                       Optimizely.
                     </p>
@@ -341,11 +379,17 @@ export default function BlockDeployEmbedPage() {
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                  Deploy to Optimizely - Instructions
-                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    Deploy to Optimizely - Instructions
+                  </h1>
+
+                  <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
-                  This block is production-ready and can now be embedded into
+                  This {regionLabel} block is production-ready and can now be embedded into
                   Optimizely using a JavaScript block.
                 </p>
               </div>
@@ -456,6 +500,13 @@ export default function BlockDeployEmbedPage() {
                     Ready For Production
                   </span>
                 </span>
+
+                <span>
+                  Region:{" "}
+                  <span className="font-medium text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
+                </span>
               </div>
 
               <div className="flex items-center gap-3">
@@ -486,6 +537,7 @@ export default function BlockDeployEmbedPage() {
                 <span>Accessibility: WCAG AA ✓</span>
                 <span>Design Tokens: Locked ✓</span>
                 <span>Restricted Scripts: Enabled ✓</span>
+                <span>{regionLabel} Workspace ✓</span>
               </div>
             </div>
           </div>

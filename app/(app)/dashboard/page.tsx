@@ -397,9 +397,11 @@ function MetricCard({
 function RecentBlockRow({
   block,
   role,
+  region,
 }: {
   block: DashboardBlock;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
 
@@ -412,7 +414,7 @@ function RecentBlockRow({
 
   return (
     <div
-      onClick={() => router.push(`/blocks/${block.id}/details?role=${role}`)}
+      onClick={() => router.push(`/blocks/${block.id}/details?role=${role}&region=${region}`)}
       className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_140px_140px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#102746] text-[10px] font-semibold text-white shadow-sm">
@@ -447,16 +449,18 @@ function RecentBlockRow({
 function RecentPageRow({
   page,
   role,
+  region,
 }: {
   page: PageSummary;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
   const completed = page.sections.filter((section) => section.completed).length;
 
   return (
     <div
-      onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+      onClick={() => router.push(`/pages/${page.id}?role=${role}&region=${region}`)}
       className="grid cursor-pointer grid-cols-[56px_minmax(0,1fr)_140px_140px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="flex h-[46px] w-[46px] items-center justify-center rounded-2xl border border-slate-200 bg-[#143861] text-[10px] font-semibold text-white shadow-sm">
@@ -491,15 +495,17 @@ function RecentPageRow({
 function TemplateRow({
   template,
   role,
+  region,
 }: {
   template: TemplateSummary;
   role: Role;
+  region: string;
 }) {
   const router = useRouter();
 
   return (
     <div
-      onClick={() => router.push(`/templates/${template.id}?role=${role}`)}
+      onClick={() => router.push(`/templates/${template.id}?role=${role}&region=${region}`)}
       className="grid cursor-pointer grid-cols-[minmax(0,1fr)_110px_110px] items-center gap-4 rounded-[22px] border border-transparent px-3 py-3 transition hover:border-slate-200 hover:bg-slate-50/80"
     >
       <div className="min-w-0">
@@ -540,6 +546,20 @@ export default function DashboardPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const isActiveDataRegion = region === "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const canAccessApprovals = useMemo(
     () =>
       hasPermission(role, "block.approve") ||
@@ -561,13 +581,13 @@ export default function DashboardPage() {
         setLoading(true);
 
         const [blocksRes, pagesRes, templatesRes] = await Promise.all([
-          fetch(`/api/blocks?role=${role}&refresh=${refreshKey}`, {
+          fetch(`/api/blocks?role=${role}&region=${region}&refresh=${refreshKey}`, {
             cache: "no-store",
           }),
-          fetch(`/api/pages?role=${role}&refresh=${refreshKey}`, {
+          fetch(`/api/pages?role=${role}&region=${region}&refresh=${refreshKey}`, {
             cache: "no-store",
           }),
-          fetch(`/api/templates?role=${role}&refresh=${refreshKey}`, {
+          fetch(`/api/templates?role=${role}&region=${region}&refresh=${refreshKey}`, {
             cache: "no-store",
           }),
         ]);
@@ -637,8 +657,8 @@ export default function DashboardPage() {
           return bTime - aTime;
         });
 
-        setBlocks(mappedBlocks);
-        setPages(rawPages);
+        setBlocks(isActiveDataRegion ? mappedBlocks : []);
+        setPages(isActiveDataRegion ? rawPages : []);
         setTemplates(rawTemplates);
       } catch (error) {
         console.error("Failed to load dashboard data:", error);
@@ -651,7 +671,7 @@ export default function DashboardPage() {
     }
 
     void loadDashboardData();
-  }, [role, refreshKey]);
+  }, [role, region, refreshKey, isActiveDataRegion]);
 
   const visibleBlocks = useMemo(() => {
     return blocks.filter((block) => {
@@ -735,7 +755,9 @@ export default function DashboardPage() {
         ? Math.round(
             blockScores.reduce((sum, score) => sum + score, 0) / blockScores.length
           )
-        : 98;
+        : blocks.length > 0
+          ? 98
+          : 0;
 
     return {
       templates: templates.length,
@@ -772,6 +794,9 @@ export default function DashboardPage() {
                   <h1 className="mt-2 text-[30px] font-semibold leading-none tracking-[-0.05em] text-slate-900">
                     Mediascout
                   </h1>
+                  <p className="mt-2 text-sm font-medium text-[#4f6fff]">
+                    {regionLabel}
+                  </p>
                 </div>
 
                 <div className="flex h-[56px] w-[56px] shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-white p-1 shadow-sm">
@@ -793,6 +818,9 @@ export default function DashboardPage() {
                 </span>
                 <span className="inline-flex items-center rounded-full bg-[#eef3ff] px-2.5 py-1 text-[11px] font-semibold text-[#4f6fff] ring-1 ring-[#dbe5ff]">
                   Role: {role}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200">
+                  Region: {regionLabel}
                 </span>
               </div>
             </div>
@@ -817,20 +845,20 @@ export default function DashboardPage() {
                   <div className="grid gap-2">
                     <button
                       type="button"
-                      onClick={() => router.push(`/templates/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/templates/new"))}
                       className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
                         <LayoutTemplate className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-medium text-slate-900">
-                        Create Template
+                        Create Global Template
                       </span>
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => router.push(`/pages/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/pages/new"))}
                       className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
@@ -843,7 +871,7 @@ export default function DashboardPage() {
 
                     <button
                       type="button"
-                      onClick={() => router.push(`/blocks/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/blocks/new"))}
                       className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
                     >
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
@@ -857,7 +885,7 @@ export default function DashboardPage() {
                     {canAccessApprovals ? (
                       <button
                         type="button"
-                        onClick={() => router.push(`/approvals?role=${role}`)}
+                        onClick={() => router.push(withRegion("/approvals"))}
                         className="flex items-center gap-3 rounded-[16px] border border-slate-200 bg-white px-3 py-2.5 text-left shadow-[0_6px_18px_rgba(15,23,42,0.03)] transition hover:border-slate-300 hover:bg-slate-50"
                       >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#eef3ff] text-[#4f6fff] ring-1 ring-[#dbe5ff]">
@@ -925,13 +953,42 @@ export default function DashboardPage() {
 
         <main className="min-w-0 flex-1 overflow-y-auto">
           <div className="mx-auto max-w-[1680px] px-6 py-6 lg:px-8">
+            <div className="mb-6 rounded-[32px] border border-slate-200/90 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-6 shadow-[0_14px_40px_rgba(15,23,42,0.05)]">
+              <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                    Regional Workspace
+                  </p>
+                  <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.05em] text-slate-900 lg:text-[40px]">
+                    {regionLabel}
+                  </h1>
+                  <p className="mt-3 max-w-[900px] text-sm leading-7 text-slate-500">
+                    {isActiveDataRegion
+                      ? "Current regional workspace showing active pages, blocks, approvals and global templates."
+                      : "This region is ready for setup. Global templates are available, but no regional pages or blocks have been created yet."}
+                  </p>
+                </div>
+
+                {!isActiveDataRegion ? (
+                  <button
+                    type="button"
+                    onClick={() => router.push(withRegion("/pages/new"))}
+                    className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
+                  >
+                    Create first regional page
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
             <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="relative max-w-[360px] flex-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Search pages, templates or blocks"
+                  placeholder={`Search ${regionLabel} pages, blocks or global templates`}
                   className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-[#cfd8f6] focus:ring-4 focus:ring-[#eef3ff]"
                 />
               </div>
@@ -939,16 +996,16 @@ export default function DashboardPage() {
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/templates/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/templates/new"))}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
-                  Template
+                  Global Template
                   <Plus className="h-4 w-4" />
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/pages/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/pages/new"))}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   Page
@@ -957,7 +1014,7 @@ export default function DashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/blocks/new?role=${role}`)}
+                  onClick={() => router.push(withRegion("/blocks/new"))}
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-[#5b7cff] px-5 text-sm font-medium text-white shadow-[0_14px_28px_rgba(91,124,255,0.22)] transition hover:bg-[#4c6ff5]"
                 >
                   Generate Block
@@ -968,7 +1025,7 @@ export default function DashboardPage() {
 
             <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
               <MetricCard
-                label="Templates"
+                label="Global Templates"
                 value={totals.templates}
                 tone="blue"
                 icon={<LayoutTemplate className="h-5 w-5" />}
@@ -999,15 +1056,35 @@ export default function DashboardPage() {
               />
             </div>
 
+            <section className="mb-6 rounded-[28px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-5 shadow-[0_10px_30px_rgba(15,23,42,0.04)] lg:p-6">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#4f6fff]">
+                    Regional operating model
+                  </p>
+                  <h2 className="mt-1 text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    {regionLabel} content, global templates.
+                  </h2>
+                  <p className="mt-2 max-w-[920px] text-sm leading-6 text-slate-500">
+                    Pages, blocks, approvals and publishing activity are shown for the selected regional workspace. Templates remain global governance assets that every region can use.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3 text-sm font-semibold text-[#4f6fff]">
+                  Active region: {regionLabel}
+                </div>
+              </div>
+            </section>
+
             <div className="grid gap-6 2xl:grid-cols-[1.25fr_1fr]">
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Recent Page Activity"
-                  subtitle="Latest governed pages moving through the platform."
+                  subtitle={`Latest governed pages in ${regionLabel}.`}
                   right={
                     <button
                       type="button"
-                      onClick={() => router.push(`/pages?role=${role}`)}
+                      onClick={() => router.push(withRegion("/pages"))}
                       className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                     >
                       View Pages
@@ -1029,11 +1106,11 @@ export default function DashboardPage() {
                     </div>
                   ) : recentPages.length === 0 ? (
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
-                      No pages yet.
+                      No pages created for this region yet.
                     </div>
                   ) : (
                     recentPages.map((page) => (
-                      <RecentPageRow key={page.id} page={page} role={role} />
+                      <RecentPageRow key={page.id} page={page} role={role} region={region} />
                     ))
                   )}
                 </div>
@@ -1042,7 +1119,7 @@ export default function DashboardPage() {
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Approval Queue"
-                  subtitle="Everything currently waiting for governance review."
+                  subtitle={`Everything currently waiting for governance review in ${regionLabel}.`}
                   right={
                     <div className="inline-flex items-center gap-2 rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
                       <Clock3 className="h-3.5 w-3.5" />
@@ -1082,7 +1159,7 @@ export default function DashboardPage() {
                     Keep the workflow moving
                   </h3>
                   <p className="mt-2 max-w-[420px] text-sm leading-6 text-slate-600">
-                    Review pending work across pages and blocks so teams can keep
+                    Review pending work across pages and blocks in {regionLabel} so teams can keep
                     building within governance.
                   </p>
 
@@ -1091,8 +1168,8 @@ export default function DashboardPage() {
                     onClick={() =>
                       router.push(
                         canAccessApprovals
-                          ? `/approvals?role=${role}`
-                          : `/pages?role=${role}`
+                          ? withRegion("/approvals")
+                          : withRegion("/pages")
                       )
                     }
                     className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
@@ -1108,11 +1185,11 @@ export default function DashboardPage() {
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Recent Block Activity"
-                  subtitle="Latest governed blocks across the workspace."
+                  subtitle={`Latest governed blocks in ${regionLabel}.`}
                   right={
                     <button
                       type="button"
-                      onClick={() => router.push(`/blocks?role=${role}`)}
+                      onClick={() => router.push(withRegion("/blocks"))}
                       className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                     >
                       View Blocks
@@ -1134,11 +1211,11 @@ export default function DashboardPage() {
                     </div>
                   ) : recentBlocks.length === 0 ? (
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
-                      No recent blocks yet.
+                      No blocks created for this region yet.
                     </div>
                   ) : (
                     recentBlocks.map((block) => (
-                      <RecentBlockRow key={block.id} block={block} role={role} />
+                      <RecentBlockRow key={block.id} block={block} role={role} region={region} />
                     ))
                   )}
                 </div>
@@ -1147,11 +1224,11 @@ export default function DashboardPage() {
               <section className="rounded-[30px] border border-slate-200/90 bg-white p-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Template Snapshot"
-                  subtitle="Current governed template blueprints."
+                  subtitle="Global governed template blueprints available to all regions."
                   right={
                     <button
                       type="button"
-                      onClick={() => router.push(`/templates?role=${role}`)}
+                      onClick={() => router.push(withRegion("/templates"))}
                       className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
                     >
                       View Templates
@@ -1172,11 +1249,11 @@ export default function DashboardPage() {
                     </div>
                   ) : recentTemplates.length === 0 ? (
                     <div className="rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm text-slate-400">
-                      No templates yet.
+                      No global templates yet.
                     </div>
                   ) : (
                     recentTemplates.map((template) => (
-                      <TemplateRow key={template.id} template={template} role={role} />
+                      <TemplateRow key={template.id} template={template} role={role} region={region} />
                     ))
                   )}
                 </div>
@@ -1209,7 +1286,7 @@ export default function DashboardPage() {
               <section className="rounded-[30px] border border-slate-200/90 bg-white px-5 py-5 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
                 <SectionHeader
                   title="Platform Summary"
-                  subtitle="A governed operating view across templates, pages and blocks."
+                  subtitle={`A governed operating view for ${regionLabel}. Templates remain global.`}
                 />
 
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -1270,23 +1347,21 @@ export default function DashboardPage() {
                     Build with governance from the start
                   </h3>
                   <p className="mt-2 max-w-[420px] text-sm leading-6 text-slate-600">
-                    Create templates, launch pages from approved structures, and
-                    generate governed blocks inside a platform built for controlled
-                    web evolution.
+                    Create pages from global approved templates and generate governed blocks for {regionLabel} inside a platform built for controlled web evolution.
                   </p>
 
                   <div className="mt-5 flex flex-wrap gap-3">
                     <button
                       type="button"
-                      onClick={() => router.push(`/templates/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/templates/new"))}
                       className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 ring-1 ring-[#dbe5ff] transition hover:bg-slate-50"
                     >
-                      Create Template
+                      Create Global Template
                     </button>
 
                     <button
                       type="button"
-                      onClick={() => router.push(`/pages/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/pages/new"))}
                       className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-medium text-slate-700 ring-1 ring-[#dbe5ff] transition hover:bg-slate-50"
                     >
                       Create Page
@@ -1294,7 +1369,7 @@ export default function DashboardPage() {
 
                     <button
                       type="button"
-                      onClick={() => router.push(`/blocks/new?role=${role}`)}
+                      onClick={() => router.push(withRegion("/blocks/new"))}
                       className="inline-flex items-center gap-2 rounded-2xl bg-[#5b7cff] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#4c6ff5]"
                     >
                       Generate Block

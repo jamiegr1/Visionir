@@ -231,6 +231,33 @@ export default function BlockApprovalPage() {
   const id = params.id;
   const searchParams = useSearchParams();
 
+  const region = searchParams.get("region") || "mediascout-uk";
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function appendRegionToUrl(value: string, role: Role) {
+    if (!value) return value;
+
+    try {
+      const url = new URL(value, window.location.origin);
+      url.searchParams.set("role", role);
+      url.searchParams.set("region", region);
+      return `${url.pathname}${url.search}${url.hash}`;
+    } catch {
+      const joiner = value.includes("?") ? "&" : "?";
+      return `${value}${joiner}role=${role}&region=${region}`;
+    }
+  }
+
+  function withRegion(path: string, role: Role) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const returnTo = searchParams.get("returnTo") || "";
   const pageId = searchParams.get("pageId") || "";
   const sectionId = searchParams.get("sectionId") || "";
@@ -316,7 +343,7 @@ export default function BlockApprovalPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/blocks/${id}?role=${user.role}`, {
+        const res = await fetch(`/api/blocks/${id}?role=${user.role}&region=${region}`, {
           cache: "no-store",
         });
         const json = await res.json().catch(() => ({}));
@@ -338,7 +365,7 @@ export default function BlockApprovalPage() {
     }
 
     void loadBlock();
-  }, [id, currentUser]);
+  }, [id, currentUser, region]);
 
   useEffect(() => {
     return () => {
@@ -357,7 +384,7 @@ export default function BlockApprovalPage() {
       router.replace(
         isPageBuilderApproval
           ? getPageBuilderReturnUrl(currentUser.role)
-          : `/blocks/${id}/deploy?role=${currentUser.role}`
+          : `/blocks/${id}/deploy?role=${currentUser.role}&region=${region}`
       );
     }
   }, [id, loading, router, status, currentUser]);
@@ -457,7 +484,7 @@ export default function BlockApprovalPage() {
               return;
             }
             
-            router.replace(`/blocks/${id}/deploy?role=${currentRole}`);
+            router.replace(`/blocks/${id}/deploy?role=${currentRole}&region=${region}`);
           }
         } catch (error) {
           console.error("Auto-approve failed:", error);
@@ -476,6 +503,7 @@ export default function BlockApprovalPage() {
     showInternalReview,
     status,
     currentUser,
+    region,
   ]);
 
   const DEFAULT_BLOCK_IMAGE = "/farmerimage.jpg";
@@ -513,10 +541,14 @@ export default function BlockApprovalPage() {
 
     const user = currentUser;
 
-    const res = await fetch(`/api/blocks/${id}?role=${user.role}`, {
+    const res = await fetch(`/api/blocks/${id}?role=${user.role}&region=${region}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: nextStatus }),
+      body: JSON.stringify({
+        status: nextStatus,
+        regionId: region,
+        regionName: regionLabel,
+      }),
     });
 
     const json = await res.json().catch(() => ({}));
@@ -532,13 +564,15 @@ export default function BlockApprovalPage() {
   async function attachBlockToPageSection() {
     if (!currentUser || !pageId || !sectionId) return;
   
-    const res = await fetch(`/api/pages/${pageId}?role=${currentUser.role}`, {
+    const res = await fetch(`/api/pages/${pageId}?role=${currentUser.role}&region=${region}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "attach_block",
         sectionId,
         blockId: id,
+        regionId: region,
+        regionName: regionLabel,
         updatedByUserId: currentUser.id,
         skipAllowedComponentCheck: true,
       }),
@@ -569,7 +603,7 @@ export default function BlockApprovalPage() {
           return;
         }
         
-        router.replace(`/blocks/${id}/deploy?role=${currentUser.role}`);
+        router.replace(`/blocks/${id}/deploy?role=${currentUser.role}&region=${region}`);
       }
     } catch (error) {
       console.error("Approve failed:", error);
@@ -691,18 +725,36 @@ export default function BlockApprovalPage() {
                 </h2>
                 <p className="mt-1 text-[13px] leading-5 text-slate-500">
                   {showInternalReview
-                    ? "Automated checks are validating this block before final internal review."
-                    : "Automated governance checks are validating this block before approval."}
+                    ? `Automated checks are validating this ${regionLabel} block before final internal review.`
+                    : `Automated governance checks are validating this ${regionLabel} block before approval.`}
                 </p>
                 <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
-                  Role: {currentUser.role}
+                  Role: {currentUser.role} · Region: {regionLabel}
                 </p>
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4 pr-2">
               <section>
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                <div className="rounded-[24px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
+                        Regional Approval
+                      </p>
+                      <p className="mt-2 text-[16px] font-semibold tracking-[-0.03em] text-slate-900">
+                        {regionLabel}
+                      </p>
+                      <p className="mt-2 text-[12.5px] leading-5 text-slate-600">
+                        This approval belongs to the {regionLabel} workspace. Approved blocks will return to the same region and page section.
+                      </p>
+                    </div>
+
+                    <StatusPill tone="blue">Region</StatusPill>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.04)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
@@ -798,13 +850,19 @@ export default function BlockApprovalPage() {
           <div className="shrink-0 border-b border-slate-200 bg-[#f5f7fb] px-8 py-5">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
-                  {showInternalReview ? "Block Submitted for Approval" : "Running Governance Checks"}
-                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-[20px] font-semibold tracking-[-0.03em] text-slate-900">
+                    {showInternalReview ? "Block Submitted for Approval" : "Running Governance Checks"}
+                  </h1>
+
+                  <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                    {regionLabel}
+                  </span>
+                </div>
                 <p className="mt-1 text-sm text-slate-500">
                   {showInternalReview
-                    ? "Visionir is now running automated compliance and governance checks before final internal sign-off."
-                    : "Visionir is running the 5 automated governance checks. Internal team review is skipped for your role."}
+                    ? `Visionir is now running automated compliance and governance checks for this ${regionLabel} block before final internal sign-off.`
+                    : `Visionir is running the 5 automated governance checks for this ${regionLabel} block. Internal team review is skipped for your role.`}
                 </p>
               </div>
 
@@ -909,6 +967,9 @@ export default function BlockApprovalPage() {
                   Status: <span className={cx("font-medium", statusColorClass)}>{statusLabel}</span>
                 </span>
                 <span>Governance checks completed: {approvedCount}/{checks.length}</span>
+                <span>
+                  Region: <span className="font-medium text-[#4f6fff]">{regionLabel}</span>
+                </span>
               </div>
 
               {(userCanReject || userCanApprove) && (
@@ -945,6 +1006,7 @@ export default function BlockApprovalPage() {
                 <span>Brand Compliance: 100% ✓</span>
                 <span>Accessibility: WCAG AA ✓</span>
                 <span>Design Tokens: Locked ✓</span>
+                <span>{regionLabel} Workspace ✓</span>
               </div>
             </div>
           </div>

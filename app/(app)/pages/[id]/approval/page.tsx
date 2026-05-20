@@ -565,6 +565,20 @@ export default function PageApprovalPage() {
     return isRole(value) ? value : "admin";
   }, [searchParams]);
 
+  const region = searchParams.get("region") || "mediascout-uk";
+
+  const regionLabel =
+    region === "mediascout-dubai"
+      ? "Mediascout Dubai"
+      : region === "mediascout-france"
+        ? "Mediascout France"
+        : "Mediascout UK";
+
+  function withRegion(path: string) {
+    const joiner = path.includes("?") ? "&" : "?";
+    return `${path}${joiner}role=${role}&region=${region}`;
+  }
+
   const id = params.id;
 
   const [loading, setLoading] = useState(true);
@@ -583,7 +597,7 @@ export default function PageApprovalPage() {
       try {
         setLoading(true);
 
-        const res = await fetch(`/api/pages/${id}?role=${role}`, {
+        const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -610,14 +624,14 @@ export default function PageApprovalPage() {
     if (id) {
       void loadPage();
     }
-  }, [id, role]);
+  }, [id, role, region]);
 
   useEffect(() => {
     async function loadBlocks() {
       try {
         setBlocksLoading(true);
 
-        const res = await fetch(`/api/blocks?role=${role}`, {
+        const res = await fetch(`/api/blocks?role=${role}&region=${region}`, {
           cache: "no-store",
         });
 
@@ -636,7 +650,7 @@ export default function PageApprovalPage() {
     }
 
     void loadBlocks();
-  }, [role]);
+  }, [role, region]);
 
   const sortedSections = useMemo(() => {
     return (page?.sections ?? []).slice().sort((a, b) => a.order - b.order);
@@ -744,7 +758,7 @@ export default function PageApprovalPage() {
   }
 
   async function refreshPage() {
-    const res = await fetch(`/api/pages/${id}?role=${role}`, {
+    const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
       cache: "no-store",
     });
 
@@ -768,6 +782,8 @@ export default function PageApprovalPage() {
       const payload: Record<string, unknown> = {
         action,
         updatedByUserId: "user-1",
+        regionId: region,
+        regionName: regionLabel,
       };
 
       if (action === "request_changes") {
@@ -775,7 +791,7 @@ export default function PageApprovalPage() {
         payload.changesRequestedSections = selectedSections;
       }
 
-      const res = await fetch(`/api/pages/${id}?role=${role}`, {
+      const res = await fetch(`/api/pages/${id}?role=${role}&region=${region}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -809,23 +825,23 @@ export default function PageApprovalPage() {
 
   const workflowSummary =
     pageStatus === "draft"
-      ? "This page is still being prepared and has not yet entered governance review."
+      ? `This ${regionLabel} page is still being prepared and has not yet entered governance review.`
       : pageStatus === "in_progress"
-        ? "This page is being assembled and still has incomplete content areas."
+        ? `This ${regionLabel} page is being assembled and still has incomplete content areas.`
         : pageStatus === "pending_approval"
-          ? "This page is awaiting reviewer sign-off before it can move forward."
+          ? `This ${regionLabel} page is awaiting reviewer sign-off before it can move forward.`
           : pageStatus === "approved"
-            ? "This page has been approved and is ready for publishing."
+            ? `This ${regionLabel} page has been approved and is ready for publishing.`
             : pageStatus === "changes_requested"
-              ? "This page has requested amendments and requires updates before resubmission."
+              ? `This ${regionLabel} page has requested amendments and requires updates before resubmission.`
               : pageStatus === "published"
-                ? "This page has been published."
+                ? `This ${regionLabel} page has been published.`
                 : "This page is archived.";
 
   if (loading) {
     return (
       <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
-        Loading page approval…
+        Loading regional page approval…
       </div>
     );
   }
@@ -833,7 +849,7 @@ export default function PageApprovalPage() {
   if (!page) {
     return (
       <div className="flex min-h-[calc(100dvh-72px)] items-center justify-center bg-[#f5f7fb] text-slate-500">
-        Page not found.
+        Regional page not found.
       </div>
     );
   }
@@ -847,7 +863,7 @@ export default function PageApprovalPage() {
               <div className="mb-3 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
-                  onClick={() => router.push(`/approvals?role=${role}`)}
+                  onClick={() => router.push(withRegion("/approvals"))}
                   className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -855,10 +871,14 @@ export default function PageApprovalPage() {
                 </button>
 
                 <StatusPill status={pageStatus} />
+
+                <span className="inline-flex items-center rounded-full border border-[#dbe5ff] bg-[#eef3ff] px-3 py-1.5 text-xs font-semibold text-[#4f6fff]">
+                  {regionLabel}
+                </span>
               </div>
 
               <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#4f6fff]">
-                Page Approval
+                Regional Page Approval
               </p>
 
               <h1 className="mt-2 text-[30px] font-semibold tracking-[-0.04em] text-slate-900 lg:text-[34px]">
@@ -866,7 +886,7 @@ export default function PageApprovalPage() {
               </h1>
 
               <p className="mt-2 max-w-[820px] text-sm leading-6 text-slate-500">
-                Review this page against its governed structure, attached blocks,
+                Review this ${regionLabel} page against its governed structure, attached blocks,
                 completion state, and workflow readiness before approving or requesting changes.
               </p>
             </div>
@@ -923,7 +943,7 @@ export default function PageApprovalPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push(`/pages/${page.id}?role=${role}`)}
+                  onClick={() => router.push(`/pages/${page.id}?role=${role}&region=${region}`)}
                   className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
                 >
                   <Eye className="h-4 w-4" />
@@ -936,13 +956,13 @@ export default function PageApprovalPage() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard
-            label="Sections"
+            label="Regional Sections"
             value={sortedSections.length}
             tone="blue"
             icon={<FileText className="h-5 w-5" />}
           />
           <MetricCard
-            label="Completed"
+            label="Completed Sections"
             value={completedSections.length}
             tone="emerald"
             icon={<CheckCircle2 className="h-5 w-5" />}
@@ -954,7 +974,7 @@ export default function PageApprovalPage() {
             icon={<LayoutTemplate className="h-5 w-5" />}
           />
           <MetricCard
-            label="Attached Blocks"
+            label="Regional Blocks"
             value={totalAttachedBlocks}
             tone="blue"
             icon={<Blocks className="h-5 w-5" />}
@@ -970,8 +990,8 @@ export default function PageApprovalPage() {
         <div className="mt-6 grid gap-6 xl:grid-cols-[380px_minmax(0,1fr)]">
           <aside className="space-y-6 xl:sticky xl:top-6 xl:self-start">
             <Panel
-              title="Approval Summary"
-              subtitle="A reviewer-focused overview of page readiness."
+              title="Regional Approval Summary"
+              subtitle={`A reviewer-focused overview of ${regionLabel} page readiness.`}
               icon={<ShieldCheck className="h-5 w-5" />}
             >
               <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
@@ -990,6 +1010,34 @@ export default function PageApprovalPage() {
                   label="Ready blocks"
                   value={`${pageReadyBlocks.length}/${attachedBlocks.length}`}
                 />
+              </div>
+            </Panel>
+
+            <Panel
+              title="Regional Governance"
+              subtitle="How this page behaves within the regional workspace structure."
+              icon={<Sparkles className="h-5 w-5" />}
+            >
+              <div className="rounded-[22px] border border-[#dbe5ff] bg-[linear-gradient(180deg,#ffffff_0%,#f8fafe_100%)] p-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4f6fff]">
+                      Active Region
+                    </p>
+
+                    <h3 className="mt-1 text-[18px] font-semibold tracking-[-0.03em] text-slate-900">
+                      {regionLabel}
+                    </h3>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      This approval workflow belongs to the {regionLabel} workspace. Pages and blocks remain isolated to this region while still inheriting the organisation’s global governance structure and templates.
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[#dbe5ff] bg-white px-4 py-3 text-sm font-semibold text-[#4f6fff]">
+                    Regional Workflow
+                  </div>
+                </div>
               </div>
             </Panel>
 
@@ -1058,7 +1106,7 @@ export default function PageApprovalPage() {
 
             <Panel
               title="Metadata"
-              subtitle="Core page information."
+              subtitle="Core regional page information."
               icon={<FileText className="h-5 w-5" />}
             >
               <MetaRow label="Page ID" value={page.id} />
@@ -1070,7 +1118,7 @@ export default function PageApprovalPage() {
 
             <Panel
               title="Governance Signals"
-              subtitle="Quick indicators for reviewer attention."
+              subtitle={`Quick governance indicators for ${regionLabel}.`}
               icon={<Sparkles className="h-5 w-5" />}
             >
               <div className="flex flex-wrap gap-2">
@@ -1102,7 +1150,7 @@ export default function PageApprovalPage() {
           <main className="min-w-0 space-y-6">
             <Panel
               title="Section Review"
-              subtitle="Review every governed page section and the status of the blocks attached to it."
+              subtitle={`Review every governed ${regionLabel} page section and the status of the attached regional blocks.`}
               icon={<LayoutTemplate className="h-5 w-5" />}
             >
               {blocksLoading ? (
@@ -1140,7 +1188,7 @@ export default function PageApprovalPage() {
 
             <Panel
               title="Page Preview"
-              subtitle="A composed review preview using the actual attached blocks within each page section."
+              subtitle={`A composed ${regionLabel} review preview using the actual attached blocks within each page section.`}
               icon={<Eye className="h-5 w-5" />}
             >
               {sortedSections.length === 0 ? (
